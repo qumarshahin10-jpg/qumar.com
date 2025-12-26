@@ -5,13 +5,7 @@
 <title>Cricket Scorer – Ultimate Improved</title>
 
 <style>
-.scorer{
- color:#00ffcc;
- font-size:14px;
- margin-top:10px;
- font-weight:bold;
-}
-
+.scorer{color:#00ffcc;font-size:14px;margin-top:10px;font-weight:bold}
 body{background:#0e3d1a;color:white;font-family:Arial;text-align:center}
 .box{background:black;max-width:520px;margin:auto;padding:15px;border:3px solid gold;border-radius:10px}
 .score{font-size:48px;color:gold;font-weight:bold}
@@ -25,32 +19,57 @@ button{padding:10px;margin:4px;font-size:15px;font-weight:bold}
 .out{color:#ff3333;font-weight:bold}
 .target{color:#00ffcc;font-weight:bold}
 .rrr{color:#ffd700;font-weight:bold}
-.four{
- background:#1e90ff;
- color:white;
+.four{background:#1e90ff;color:white}
+.six{background:#32cd32;color:black}
+
+/* section heading green */
+.section b{color:#00ff66}
+
+/* win ui */
+#winTag{color:#00ff66;font-weight:bold;margin-left:6px}
+#winnerBoard{color:#00ff66;font-size:20px;font-weight:bold;margin-top:6px}
+.strikeBat{
+  color: gold;
+  font-weight: bold;
+}
+.strikeIcon{
+  color: gold;
+  margin-right: 5px;
+}
+/* OUT batsman red color */
+.outBat {
+  color: #ff3333;
+  font-weight: bold;
 }
 
-.six{
- background:#32cd32;
- color:black;
+/* optional cross mark */
+.outBat::after {
+  content: " ✖";
+  color: #ff3333;
 }
-
 </style>
 </head>
 
 <body>
 
 <div class="box">
-<h3 id="team"></h3>
+
+<h3>
+ <span id="team"></span>
+ <span id="winTag" style="display:none">🏆 WIN</span>
+</h3>
+
 <div id="inningInfo"></div>
 
 <div class="score">
 <span id="runs">0</span>/<span id="wickets">0</span>
 </div>
 
+<div id="winnerBoard" style="display:none"></div>
+
 <div>
 Overs: <span id="overs">0.0</span> |
-Balls: <span id="balls">0</span>/36
+Balls: <span id="balls">0</span>/<span id="totalBalls"></span>
 </div>
 
 <div id="target" class="target"></div>
@@ -73,8 +92,6 @@ Balls: <span id="balls">0</span>/36
 <button class="undo" onclick="undo()">UNDO</button>
 </div>
 
-
-
 <div class="section">
 <b>Batting Scorecard</b>
 <div id="scorecard"></div>
@@ -96,12 +113,8 @@ Balls: <span id="balls">0</span>/36
 </div>
 
 </div>
-<div>
- <div class="scorer">
- Scorer : Shahin Qumar
-</div>
-</div>
 
+<div class="scorer">Scorer : Shahin Qumar</div>
 
 <script>
 const teamEl=document.getElementById("team"),
@@ -114,41 +127,68 @@ scorecardEl=document.getElementById("scorecard"),
 bowlingEl=document.getElementById("bowling"),
 targetEl=document.getElementById("target"),
 rrrEl=document.getElementById("rrr"),
-inningInfo=document.getElementById("inningInfo");
+inningInfo=document.getElementById("inningInfo"),
+totalBallsEl=document.getElementById("totalBalls"),
+winTag=document.getElementById("winTag"),
+winnerBoard=document.getElementById("winnerBoard");
 
 let team1=prompt("Team 1 Name")||"Team A";
 let team2=prompt("Team 2 Name")||"Team B";
 
+let totalOvers=parseInt(prompt("Overs?"))||6;
+let totalBalls=totalOvers*6;
+totalBallsEl.innerText=totalBalls;
+
 let innings=1,target=0;
 let runs=0,wickets=0,balls=0;
 let batsmen=[],bowlers=[];
-let striker=0,nonStriker=1;
+let striker=0,nonStriker=0;
 let currentBowler=null;
 let undoStack=[];
 let firstBatting=[],firstBowling=[];
+let matchOver=false;
+
+/* ---- EXISTING LOGIC (UNCHANGED) ---- */
+
+function cloneState(){
+ return JSON.parse(JSON.stringify({
+  innings,target,runs,wickets,balls,
+  batsmen,bowlers,striker,nonStriker,
+  bowlerName:currentBowler?.name,
+  firstBatting,firstBowling,matchOver
+ }));
+}
+function restoreState(s){
+ innings=s.innings;target=s.target;
+ runs=s.runs;wickets=s.wickets;balls=s.balls;
+ batsmen=s.batsmen;bowlers=s.bowlers;
+ striker=s.striker;nonStriker=s.nonStriker;
+ firstBatting=s.firstBatting;firstBowling=s.firstBowling;
+ matchOver=s.matchOver;
+ currentBowler=bowlers.find(b=>b.name===s.bowlerName)||null;
+}
+function save(){undoStack.push(cloneState());}
 
 function newBatsman(){
  return {name:prompt("Batsman Name")||"Player",runs:0,balls:0,out:false};
 }
-
 function newBowler(){
  let name=prompt("Bowler Name")||"Bowler";
  let exist=bowlers.find(b=>b.name===name);
- if(exist){currentBowler=exist;return exist;}
- let b={name:name,balls:0,runs:0,wickets:0};
- bowlers.push(b);currentBowler=b;return b;
+ if(exist){currentBowler=exist;return;}
+ let b={name,balls:0,runs:0,wickets:0};
+ bowlers.push(b);currentBowler=b;
 }
 
 function resetInnings(){
  runs=wickets=balls=0;
  batsmen=[];bowlers=[];
  striker=0;nonStriker=1;
+ matchOver=false;
+ winTag.style.display="none";
+ winnerBoard.style.display="none";
  batsmen.push(newBatsman(),newBatsman());
- currentBowler=newBowler();
-}
-
-function save(){
- undoStack.push(JSON.stringify({runs,wickets,balls,batsmen,bowlers,striker,nonStriker,currentBowler,innings,target,firstBatting,firstBowling}));
+ newBowler();
 }
 
 function update(){
@@ -157,46 +197,81 @@ function update(){
  runsEl.innerText=runs;wicketsEl.innerText=wickets;
  ballsEl.innerText=balls;
  oversEl.innerText=Math.floor(balls/6)+"."+(balls%6);
-
- currentEl.innerHTML=
- `<div class="${batsmen[striker].out?"out strike":"strike"}">
- ${batsmen[striker].name} - ${batsmen[striker].runs}(${batsmen[striker].balls})
+ currentEl.innerHTML =
+ `<div class="${batsmen[striker].out ? "out" : "strikeBat"}">
+   <span class="strikeIcon">★</span>
+   ${batsmen[striker].name} - ${batsmen[striker].runs}(${batsmen[striker].balls})
  </div>
- <div class="${batsmen[nonStriker].out?"out":""}">
- ${batsmen[nonStriker].name} - ${batsmen[nonStriker].runs}(${batsmen[nonStriker].balls})
- </div>`;
-
+ <div class="${batsmen[nonStriker].out ? "out" : ""}">
+   ${batsmen[nonStriker].name} - ${batsmen[nonStriker].runs}(${batsmen[nonStriker].balls})
+ </div>`; 
  renderBatting();renderBowling();updateRRR();
 }
 
-function play(r){
- save();runs+=r;balls++;
- batsmen[striker].runs+=r;batsmen[striker].balls++;
- currentBowler.runs+=r;currentBowler.balls++;
- if(r%2)changeStrike();endBall();
+function showWin(team){
+ winTag.style.display="inline";
+ winnerBoard.innerText=team+" WON THE MATCH";
+ winnerBoard.style.display="block";
 }
 
-function extra(){save();runs++;currentBowler.runs++;update();}
+function play(r){
+ if(matchOver)return;
+ save();
+ runs+=r;balls++;
+ batsmen[striker].runs+=r;
+ batsmen[striker].balls++;
+ currentBowler.runs+=r;
+ currentBowler.balls++;
+ if(r%2)changeStrike();
+ endBall();
+}
+
+function extra(){
+ if(matchOver) return;
+ save();
+ runs++;                  // extra run
+ currentBowler.runs++;    // bowler run
+ update();                // सिर्फ update
+}
 
 function wicket(){
- save();balls++;wickets++;
- batsmen[striker].balls++;batsmen[striker].out=true;
- currentBowler.wickets++;currentBowler.balls++;
- batsmen.push(newBatsman());striker=batsmen.length-1;endBall();
+ if(matchOver)return;
+ save();
+ balls++;wickets++;
+ batsmen[striker].balls++;
+ batsmen[striker].out=true;
+ currentBowler.wickets++;
+ currentBowler.balls++;
+ batsmen.push(newBatsman());
+ striker=batsmen.length-1;
+ endBall();
 }
 
 function changeStrike(){[striker,nonStriker]=[nonStriker,striker];}
 
 function endBall(){
- if(balls%6===0&&balls<36){changeStrike();newBowler();}
- if(balls===36||wickets===10){
+ if(innings===2 && runs>=target && !matchOver){
+  matchOver=true;
+  alert(team2+" WON");
+  showWin(team2);
+  update();return;
+ }
+ if(balls%6===0 && balls<totalBalls){
+  changeStrike();newBowler();
+ }
+ if(balls===totalBalls || wickets===10){
   if(innings===1){
    firstBatting=JSON.parse(JSON.stringify(batsmen));
    firstBowling=JSON.parse(JSON.stringify(bowlers));
    renderFirst();
-   target=runs+1;alert("Target: "+target);
+   target=runs+1;
+   alert("Target: "+target);
    innings=2;resetInnings();
-  }else alert(runs>=target?team2+" WON":team1+" WON");
+  }else if(!matchOver){
+   matchOver=true;
+   alert(team1+" WON");
+   showWin(team1);
+  }
  }
  update();
 }
@@ -204,46 +279,37 @@ function endBall(){
 function renderBatting(){
  scorecardEl.innerHTML="";
  batsmen.forEach((b,i)=>{
- scorecardEl.innerHTML+=
- `<div class="${b.out?"out":""}">
- ${i+1}. ${b.name} – ${b.runs}(${b.balls}) ${b.out?"OUT":"NOT OUT"}
- </div>`;
+scorecardEl.innerHTML+=`
+<span class="${b.out ? 'outBat' : ''}">
+${i+1}. ${b.name} - ${b.runs}(${b.balls}) ${b.out ? 'OUT' : 'NOT OUT'}
+</span><br>`;
  });
 }
-
 function renderBowling(){
  bowlingEl.innerHTML="";
  bowlers.forEach((b,i)=>{
- bowlingEl.innerHTML+=
- `${i+1}. ${b.name} – ${Math.floor(b.balls/6)}.${b.balls%6} overs | ${b.runs} runs | ${b.wickets} wkts<br>`;
+  bowlingEl.innerHTML+=`${i+1}. ${b.name} – ${Math.floor(b.balls/6)}.${b.balls%6} overs | ${b.runs} runs | ${b.wickets} wkts<br>`;
  });
 }
-
 function renderFirst(){
- document.getElementById("firstBat").innerHTML="";
+ firstBat.innerHTML="";firstBowl.innerHTML="";
  firstBatting.forEach((b,i)=>{
- document.getElementById("firstBat").innerHTML+=
- `${i+1}. ${b.name} – ${b.runs}(${b.balls}) ${b.out?"OUT":"NOT OUT"}<br>`;
+  firstBat.innerHTML+=`${i+1}. ${b.name} – ${b.runs}(${b.balls}) ${b.out?"OUT":"NOT OUT"}<br>`;
  });
- document.getElementById("firstBowl").innerHTML="";
  firstBowling.forEach((b,i)=>{
- document.getElementById("firstBowl").innerHTML+=
- `${i+1}. ${b.name} – ${Math.floor(b.balls/6)}.${b.balls%6} overs | ${b.runs} runs | ${b.wickets} wkts<br>`;
+  firstBowl.innerHTML+=`${i+1}. ${b.name} – ${Math.floor(b.balls/6)}.${b.balls%6} overs | ${b.runs} runs | ${b.wickets} wkts<br>`;
  });
 }
-
 function updateRRR(){
- if(innings===2){
-  let bl=36-balls,rl=target-runs;
+ if(innings===2 && !matchOver){
+  let bl=totalBalls-balls,rl=target-runs;
   if(bl>0&&rl>0)
    rrrEl.innerHTML=`Need ${rl} runs in ${bl} balls | RRR: ${((rl/bl)*6).toFixed(2)}`;
  }
 }
-
 function undo(){
  if(!undoStack.length)return;
- let s=JSON.parse(undoStack.pop());
- Object.assign(window,s);update();
+ restoreState(undoStack.pop());update();
 }
 
 resetInnings();update();
