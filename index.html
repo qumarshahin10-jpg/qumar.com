@@ -47,6 +47,12 @@ button{padding:10px;margin:4px;font-size:15px;font-weight:bold}
   content: " ✖";
   color: #ff3333;
 }
+.currentBowler{
+  color: #ff9800;
+  font-weight: bold;
+  text-shadow: 0 0 6px rgba(255,152,0,0.8);
+}
+ 
 </style>
 </head>
 
@@ -90,6 +96,8 @@ Balls: <span id="balls">0</span>/<span id="totalBalls"></span>
 <button class="wide" onclick="extra()">WD / NB</button>
 <button class="wicket" onclick="wicket()">WICKET</button>
 <button class="undo" onclick="undo()">UNDO</button>
+<button onclick="showMemories()">📜 MATCH MEMORY</button>
+<button onclick="manageMemories()">🗑️ MANAGE MEMORY</button>
 </div>
 
 <div class="section">
@@ -103,12 +111,12 @@ Balls: <span id="balls">0</span>/<span id="totalBalls"></span>
 </div>
 
 <div class="section">
-<b>📘Batting Record</b>
+<b>📘 Batting Record</b>
 <div id="firstBat"></div>
 </div>
 
 <div class="section">
-<b>📘Bowling Record</b>
+<b>📘 Bowling Record</b>
 <div id="firstBowl"></div>
 </div>
 
@@ -149,7 +157,6 @@ let firstBatting=[],firstBowling=[];
 let matchOver=false;
 
 /* ---- EXISTING LOGIC (UNCHANGED) ---- */
-
 function cloneState(){
  return JSON.parse(JSON.stringify({
   innings,target,runs,wickets,balls,
@@ -210,8 +217,18 @@ function update(){
 
 function showWin(team){
  winTag.style.display="inline";
- winnerBoard.innerText=team+" WON THE MATCH";
+
+ let winData = getWinnerSummary(team);
+
+ winnerBoard.innerHTML = `
+  ${winData.result}<br>
+  <span style="font-size:14px;color:#ffd700">
+   ${winData.summary}
+  </span>
+ `;
  winnerBoard.style.display="block";
+
+ saveMatchMemory(winData.result + " | " + winData.summary);
 }
 
 function play(r){
@@ -222,6 +239,7 @@ function play(r){
  batsmen[striker].balls++;
  currentBowler.runs+=r;
  currentBowler.balls++;
+ 
  if(r%2)changeStrike();
  endBall();
 }
@@ -250,30 +268,58 @@ function wicket(){
 function changeStrike(){[striker,nonStriker]=[nonStriker,striker];}
 
 function endBall(){
- if(innings===2 && runs>=target && !matchOver){
-  matchOver=true;
-  alert(team2+" WON");
-  showWin(team2);
-  update();return;
- }
- if(balls%6===0 && balls<totalBalls){
-  changeStrike();newBowler();
- }
- if(balls===totalBalls || wickets===10){
-  if(innings===1){
-   firstBatting=JSON.parse(JSON.stringify(batsmen));
-   firstBowling=JSON.parse(JSON.stringify(bowlers));
-   renderFirst();
-   target=runs+1;
-   alert("Target: "+target);
-   innings=2;resetInnings();
-  }else if(!matchOver){
-   matchOver=true;
-   alert(team1+" WON");
-   showWin(team1);
+
+  // 🏆 Team 2 wins while chasing
+  if(innings === 2 && runs >= target && !matchOver){
+    matchOver = true;
+    showWin(team2);
+    update();
+    return;
   }
- }
- update();
+
+  // 🔁 Over change
+  if(balls % 6 === 0 && balls < totalBalls){
+    changeStrike();
+    newBowler();
+  }
+
+  // 🛑 Innings / Match end
+  if(balls === totalBalls || wickets === 10){
+
+    // 👉 First innings end
+    if(innings === 1){
+      firstBatting = JSON.parse(JSON.stringify(batsmen));
+      firstBowling = JSON.parse(JSON.stringify(bowlers));
+      renderFirst();
+      target = runs + 1;
+      alert("Target: " + target);
+      innings = 2;
+      resetInnings();
+    }
+
+    // 👉 Second innings end
+    else if(!matchOver){
+
+      // 🤝 TIE
+      if(runs === target - 1){
+        matchOver = true;
+        let oversPlayed = Math.floor(balls/6) + "." + (balls%6);
+        let tieText = `MATCH TIED | Score: ${runs}/${wickets} in ${oversPlayed} overs | Target ${target-1}`;
+        winnerBoard.innerHTML = tieText;
+        winnerBoard.style.display = "block";
+        saveMatchMemory(tieText);
+        alert("MATCH TIED");
+      }
+
+      // 🏆 Team 1 wins (defending)
+      else{
+        matchOver = true;
+        showWin(team1);
+      }
+    }
+  }
+
+  update();
 }
 
 function renderBatting(){
@@ -288,9 +334,15 @@ ${i+1}. ${b.name} - ${b.runs}(${b.balls}) ${b.out ? 'OUT' : 'NOT OUT'}
 function renderBowling(){
  bowlingEl.innerHTML="";
  bowlers.forEach((b,i)=>{
-  bowlingEl.innerHTML+=`${i+1}. ${b.name} – ${Math.floor(b.balls/6)}.${b.balls%6} overs | ${b.runs} runs | ${b.wickets} wkts<br>`;
+  let cls = (currentBowler && b.name === currentBowler.name) ? "currentBowler" : "";
+  bowlingEl.innerHTML+=`
+  <span class="${cls}">
+   ${i+1}. ${b.name} – ${Math.floor(b.balls/6)}.${b.balls%6} overs | 
+   ${b.runs} runs | ${b.wickets} wkts
+  </span><br>`;
  });
 }
+
 function renderFirst(){
  firstBat.innerHTML="";firstBowl.innerHTML="";
  firstBatting.forEach((b,i)=>{
@@ -313,6 +365,103 @@ function undo(){
 }
 
 resetInnings();update();
+function saveMatchMemory(resultText){
+  let memory = {
+    date: new Date().toLocaleString(),
+    team1: team1,
+    team2: team2,
+    overs: totalOvers,
+    result: resultText,
+    firstInnings: {
+      team: team1,
+      score: firstBatting
+    },
+    secondInnings: {
+      team: team2,
+      score: batsmen
+    }
+  };
+
+  let allMatches = JSON.parse(localStorage.getItem("cricketMemories")) || [];
+  allMatches.push(memory);
+  localStorage.setItem("cricketMemories", JSON.stringify(allMatches));
+}
+function showMemories(){
+ let data = JSON.parse(localStorage.getItem("cricketMemories")) || [];
+ if(!data.length){
+   alert("No match memories saved ❤️");
+   return;
+ }
+
+ let text = "🏏 MATCH MEMORIES 🏏\n\n";
+ data.forEach((m,i)=>{
+  text += `${i+1}. ${m.date}\n${m.team1} vs ${m.team2}\nResult: ${m.result}\n\n`;
+ });
+ alert(text);
+}
+function manageMemories(){
+ let data = JSON.parse(localStorage.getItem("cricketMemories")) || [];
+ if(!data.length){
+   alert("No match memories to delete ❤️");
+   return;
+ }
+
+ let msg = "🗑️ MATCH MEMORIES (Type number to delete)\n\n";
+ data.forEach((m,i)=>{
+  msg += `${i+1}. ${m.date} | ${m.team1} vs ${m.team2} | ${m.result}\n`;
+ });
+
+ let del = prompt(msg + "\nEnter match number to DELETE:");
+ if(!del) return;
+
+ let index = parseInt(del) - 1;
+ if(isNaN(index) || index < 0 || index >= data.length){
+   alert("Invalid number ❌");
+   return;
+ }
+
+ if(confirm("Are you sure you want to delete this match memory?")){
+   data.splice(index,1);
+   localStorage.setItem("cricketMemories", JSON.stringify(data));
+   alert("✅ Match memory deleted");
+ }
+}
+function getResultText(winner){
+ if(innings === 2){
+   // chasing team won
+   let wicketsLeft = 10 - wickets;
+   return `${winner} won by ${wicketsLeft} wicket${wicketsLeft>1?'s':''}`;
+ }else{
+   // defending team won
+   let runMargin = target - 1 - runs;
+   return `${winner} won by ${runMargin} run${runMargin>1?'s':''}`;
+ }
+}
+
+function getWinnerSummary(winner){
+ let oversPlayed = Math.floor(balls/6) + "." + (balls%6);
+
+ if(innings === 2){
+   // chasing team won
+   let wicketsLeft = 10 - wickets;
+   return {
+     result: `${winner} won by ${wicketsLeft} wicket${wicketsLeft>1?'s':''}`,
+     summary: `Score: ${runs}/${wickets} in ${oversPlayed} overs | Chased target ${target-1}`
+   };
+ }else{
+   // defending team won
+   let runMargin = target - 1 - runs;
+   return {
+     result: `${winner} won by ${runMargin} run${runMargin>1?'s':''}`,
+     summary: `Score: ${runs}/${wickets} in ${oversPlayed} overs | Defended target ${target-1}`
+   };
+ }
+}
+function getTieSummary(){
+ let oversPlayed = Math.floor(balls/6) + "." + (balls%6);
+ return `MATCH TIED | Score: ${runs}/${wickets} in ${oversPlayed} overs | Target ${target-1}`;
+}
+
 </script>
 
 </body>
