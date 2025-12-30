@@ -3,56 +3,109 @@
 <head>
 <meta charset="UTF-8">
 <title>Cricket Scorer – Ultimate Improved</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
 .scorer{color:#00ffcc;font-size:14px;margin-top:10px;font-weight:bold}
-body{background:#0e3d1a;color:white;font-family:Arial;text-align:center}
-.box{background:black;max-width:520px;margin:auto;padding:15px;border:3px solid gold;border-radius:10px}
-.score{font-size:48px;color:gold;font-weight:bold}
-button{padding:10px;margin:4px;font-size:15px;font-weight:bold}
-.run{background:#eee}
-.wide{background:orange}
-.wicket{background:red;color:white}
-.undo{background:gray;color:white}
-.section{background:#111;padding:8px;margin-top:8px;text-align:left;font-size:14px}
-.strike{color:gold;font-weight:bold}
-.out{color:#ff3333;font-weight:bold}
-.target{color:#00ffcc;font-weight:bold}
-.rrr{color:#ffd700;font-weight:bold}
-.four{background:#1e90ff;color:white}
-.six{background:#32cd32;color:black}
+body{
+  background:#ffffff;
+  color:#000;
+  font-family:Arial;
+  text-align:center;
+}
 
-/* section heading green */
-.section b{color:#00ff66}
+.box{
+  width:100vw;        /* pura viewport width */
+  max-width:100vw;   /* koi limit nahi */
+  margin:0;          /* gap khatam */
+  padding:16px;
+  border:3px solid #c62828;
+  border-radius:0;   /* edge to edge */
+  box-sizing:border-box;
+}
+/* SCORE */
+.score{
+  font-size:48px;
+  color:#f9a825;
+  font-weight:bold;
+}
 
-/* win ui */
-#winTag{color:#00ff66;font-weight:bold;margin-left:6px}
-#winnerBoard{color:#00ff66;font-size:20px;font-weight:bold;margin-top:6px}
+/* SECTIONS */
+.section{
+  background:#f5f5f5;
+  padding:8px;
+  margin-top:8px;
+  text-align:left;
+  font-size:14px;
+  border:1px solid #ddd;
+}
+
+/* Section heading */
+.section b{
+  color:#c62828;
+}
+
+/* Buttons */
+button{
+  padding:10px;
+  margin:4px;
+  font-size:15px;
+  font-weight:bold;
+  border-radius:4px;
+  border:1px solid #999;
+}
+
+.run{background:#eeeeee}
+.wide{background:#ffb300}
+.wicket{background:#d32f2f;color:white}
+.undo{background:#9e9e9e;color:white}
+.four{background:#1976d2;color:white}
+.six{background:#43a047;color:white}
+
+/* Current batsman */
 .strikeBat{
-  color: gold;
-  font-weight: bold;
-}
-.strikeIcon{
-  color: gold;
-  margin-right: 5px;
-}
-/* OUT batsman red color */
-.outBat {
-  color: #ff3333;
-  font-weight: bold;
+  color: green;
+  font-weight:bold;
 }
 
-/* optional cross mark */
-.outBat::after {
-  content: " ✖";
-  color: #ff3333;
+.strikeIcon{
+  color:#f9a825;
 }
+
+/* OUT batsman */
+.outBat{
+  color:#ff7f7f;
+  font-weight:bold;
+}
+
+.outBat::after{
+  content:" ✖";
+}
+
+/* Bowling current */
 .currentBowler{
-  color: #ff9800;
-  font-weight: bold;
-  text-shadow: 0 0 6px rgba(255,152,0,0.8);
+  color:green;
+  font-weight:bold;
 }
- 
+
+/* Footer */
+.scorer{
+  color:#00796b;
+  font-size:14px;
+  margin-top:10px;
+  font-weight:bold;
+}
+@media (max-width:767px){
+  .box{
+    max-width:100%;
+    margin:0;
+    border-radius:0;
+  }
+}
+@media (min-width:600px){
+  body{
+    margin:0;
+  }
+}
 </style>
 </head>
 
@@ -98,6 +151,7 @@ Balls: <span id="balls">0</span>/<span id="totalBalls"></span>
 <button class="undo" onclick="undo()">UNDO</button>
 <button onclick="showMemories()">📜 MATCH MEMORY</button>
 <button onclick="manageMemories()">🗑️ MANAGE MEMORY</button>
+
 </div>
 
 <div class="section">
@@ -111,12 +165,12 @@ Balls: <span id="balls">0</span>/<span id="totalBalls"></span>
 </div>
 
 <div class="section">
-<b>📘 Batting Record</b>
+<b>📘 First Innings Batting Record</b>
 <div id="firstBat"></div>
 </div>
 
 <div class="section">
-<b>📘 Bowling Record</b>
+<b>📘 First Innings Bowling Record</b>
 <div id="firstBowl"></div>
 </div>
 
@@ -183,7 +237,14 @@ function newBowler(){
  let name=prompt("Bowler Name")||"Bowler";
  let exist=bowlers.find(b=>b.name===name);
  if(exist){currentBowler=exist;return;}
- let b={name,balls:0,runs:0,wickets:0};
+ let b={
+  name,
+  balls:0,
+  runs:0,
+  wickets:0,
+  wides:0,
+  wicketsTaken:[]   // ✅ kis batsman ko out kiya
+};
  bowlers.push(b);currentBowler=b;
 }
 
@@ -247,21 +308,33 @@ function play(r){
 function extra(){
  if(matchOver) return;
  save();
- runs++;                  // extra run
+
+ runs++;                  // team run
  currentBowler.runs++;    // bowler run
- update();                // सिर्फ update
+ currentBowler.wides++;   // ✅ wide count
+
+ update();
 }
 
 function wicket(){
  if(matchOver)return;
  save();
- balls++;wickets++;
+
+ balls++;
+ wickets++;
+
  batsmen[striker].balls++;
  batsmen[striker].out=true;
+
  currentBowler.wickets++;
  currentBowler.balls++;
+
+ // ✅ WHO TOOK WHO'S WICKET
+ currentBowler.wicketsTaken.push(batsmen[striker].name);
+
  batsmen.push(newBatsman());
  striker=batsmen.length-1;
+
  endBall();
 }
 
@@ -335,10 +408,19 @@ function renderBowling(){
  bowlingEl.innerHTML="";
  bowlers.forEach((b,i)=>{
   let cls = (currentBowler && b.name === currentBowler.name) ? "currentBowler" : "";
+
+  let wkText = b.wicketsTaken.length
+    ? ` | Wkts: ${b.wicketsTaken.join(", ")}`
+    : "";
+
   bowlingEl.innerHTML+=`
   <span class="${cls}">
-   ${i+1}. ${b.name} – ${Math.floor(b.balls/6)}.${b.balls%6} overs | 
-   ${b.runs} runs | ${b.wickets} wkts
+   ${i+1}. ${b.name} –
+   ${Math.floor(b.balls/6)}.${b.balls%6} overs |
+   ${b.runs} runs |
+   ${b.wickets} wkts |
+   ${b.wides} WD
+   ${wkText}
   </span><br>`;
  });
 }
