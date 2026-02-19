@@ -147,6 +147,8 @@ Balls: <span id="balls">0</span>/<span id="totalBalls"></span>
 <button class="run four" onclick="play(4)">4</button>
 <button class="run six" onclick="play(6)">6</button><br>
 <button class="wide" onclick="extra()">WD / NB</button>
+<button onclick="bye()">BYE</button>
+<button onclick="legBye()">LEG BYE</button>
 <button class="wicket" onclick="wicket()">WICKET</button>
 <button class="undo" onclick="undo()">UNDO</button>
 <button onclick="showMemories()">📜 MATCH MEMORY</button>
@@ -243,7 +245,9 @@ function newBowler(){
   runs:0,
   wickets:0,
   wides:0,
-  wicketsTaken:[]   // ✅ kis batsman ko out kiya
+  byes:0,
+  legByes:0,
+  wicketsTaken:[]
 };
  bowlers.push(b);currentBowler=b;
 }
@@ -267,8 +271,8 @@ function update(){
  oversEl.innerText=Math.floor(balls/6)+"."+(balls%6);
  currentEl.innerHTML =
  `<div class="${batsmen[striker].out ? "out" : "strikeBat"}">
-   <span class="strikeIcon">★</span>
    ${batsmen[striker].name} - ${batsmen[striker].runs}(${batsmen[striker].balls})
+   <span class="strikeIcon">🏏</span>
  </div>
  <div class="${batsmen[nonStriker].out ? "out" : ""}">
    ${batsmen[nonStriker].name} - ${batsmen[nonStriker].runs}(${batsmen[nonStriker].balls})
@@ -543,7 +547,40 @@ function getTieSummary(){
  let oversPlayed = Math.floor(balls/6) + "." + (balls%6);
  return `MATCH TIED | Score: ${runs}/${wickets} in ${oversPlayed} overs | Target ${target-1}`;
 }
+function bye(){
+ if(matchOver) return;
+ save();
 
+ let r = parseInt(prompt("How many BYE runs?")) || 0;
+ if(r <= 0) return;
+
+ runs += r;
+ balls++;
+
+ currentBowler.balls++;
+ currentBowler.byes += r;   // Bowler ke against nahi jayega run
+
+ if(r % 2) changeStrike();
+
+ endBall();
+}
+function legBye(){
+ if(matchOver) return;
+ save();
+
+ let r = parseInt(prompt("How many LEG BYE runs?")) || 0;
+ if(r <= 0) return;
+
+ runs += r;
+ balls++;
+
+ currentBowler.balls++;
+ currentBowler.legByes += r;
+
+ if(r % 2) changeStrike();
+
+ endBall();
+}
 </script>
 
 </body>
