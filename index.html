@@ -153,7 +153,7 @@ Balls: <span id="balls">0</span>/<span id="totalBalls"></span>
 <button class="undo" onclick="undo()">UNDO</button>
 <button onclick="showMemories()">📜 MATCH MEMORY</button>
 <button onclick="manageMemories()">🗑️ MANAGE MEMORY</button>
-<button onclick="clearMatch()">🔄 NEW MATCH</button>
+
 </div>
 
 <div class="section">
@@ -221,9 +221,6 @@ function cloneState(){
   firstBatting,firstBowling,matchOver
  }));
 }
-function autoSave(){
-  localStorage.setItem("liveMatchState", JSON.stringify(cloneState()));
-}
 function restoreState(s){
  innings=s.innings;target=s.target;
  runs=s.runs;wickets=s.wickets;balls=s.balls;
@@ -280,7 +277,7 @@ function update(){
  <div class="${batsmen[nonStriker].out ? "out" : ""}">
    ${batsmen[nonStriker].name} - ${batsmen[nonStriker].runs}(${batsmen[nonStriker].balls})
  </div>`; 
- renderBatting();renderBowling();updateRRR();autoSave();
+ renderBatting();renderBowling();updateRRR();
 }
 
 function showWin(team){
@@ -374,15 +371,7 @@ function endBall(){
       target = runs + 1;
       alert("Target: " + target);
       innings = 2;
-      let saved = localStorage.getItem("liveMatchState");
-
-if(saved){
-  restoreState(JSON.parse(saved));
-  update();
-}else{
-  resetInnings();
-  update();
-}
+      resetInnings();
     }
 
     // 👉 Second innings end
@@ -591,10 +580,6 @@ function legBye(){
  if(r % 2) changeStrike();
 
  endBall();
-}
-function clearMatch(){
-  localStorage.removeItem("liveMatchState");
-  location.reload();
 }
 </script>
 
