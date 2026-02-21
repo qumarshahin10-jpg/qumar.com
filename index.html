@@ -26,6 +26,10 @@ button{padding:10px;margin:4px;font-size:15px;font-weight:bold;border-radius:4px
 .outBat::after{content:" ✖";}
 .currentBowler{color:green;font-weight:bold;}
 .fow-list { font-size: 13px; color: #555; line-height: 1.4; }
+/* Graph position style */
+#graphContainer{background:#fff; padding:10px; margin-top:15px; border:3px solid #00796b; border-radius:8px;}
+canvas{width:100%; height:220px; display:block;}
+#crrBox{font-size: 18px; color: #d32f2f; font-weight: bold; margin: 5px 0;}
 @media (max-width:767px){.box{border-radius:0;}}
 </style>
 </head>
@@ -40,7 +44,8 @@ button{padding:10px;margin:4px;font-size:15px;font-weight:bold;border-radius:4px
 
 <div id="inningInfo"></div>
 <div class="score"><span id="runs">0</span>/<span id="wickets">0</span></div>
-<div id="winnerBoard" style="display:none; padding:10px; background:#fff3e0; margin:10px; border:1px solid orange; border-radius:8px;"></div>
+
+<div id="crrBox">CRR: 0.00</div>
 
 <div>
 Overs: <span id="overs">0.0</span> |
@@ -88,6 +93,17 @@ Balls: <span id="balls">0</span>/<span id="totalBalls"></span>
 <div id="firstFow" class="fow-list"></div>
 </div>
 <div class="section"><b>Previous Inning Bowling</b><div id="firstBowl"></div></div>
+
+<div id="graphContainer">
+    <b>📈 Match Progress Graph</b>
+    <canvas id="matchGraph"></canvas>
+    <div style="font-size:10px; display:flex; justify-content:center; gap:10px; margin-top:5px;">
+        <span><span style="color:blue">━</span> Team 1</span>
+        <span><span style="color:red">━</span> Team 2</span>
+        <span><span style="color:black">●</span> Wicket</span>
+    </div>
+</div>
+
 </div>
 
 <div class="scorer">Scorer : Shahin Qumar</div>
@@ -98,13 +114,18 @@ ballsEl=document.getElementById("balls"), oversEl=document.getElementById("overs
 scorecardEl=document.getElementById("scorecard"), bowlingEl=document.getElementById("bowling"), rrrEl=document.getElementById("rrr"),
 inningInfo=document.getElementById("inningInfo"), totalBallsEl=document.getElementById("totalBalls"), winTag=document.getElementById("winTag"),
 winnerBoard=document.getElementById("winnerBoard"), pBox=document.getElementById("partnershipBox"),
-fowEl=document.getElementById("fow"), firstFowEl=document.getElementById("firstFow");
+fowEl=document.getElementById("fow"), firstFowEl=document.getElementById("firstFow"), crrEl=document.getElementById("crrBox");
 
 let team1, team2, totalOvers, totalBalls;
 let innings=1, target=0, runs=0, wickets=0, balls=0;
 let batsmen=[], bowlers=[], striker=0, nonStriker=0, currentBowler=null;
 let partnershipRuns=0, partnershipBalls=0, undoStack=[], firstBatting=[], firstBowling=[], firstFow=[], matchOver=false;
 let fow = []; 
+
+let overByOverData = { 
+    inning1: [{runs: 0, wickets: 0, over: 0}], 
+    inning2: [{runs: 0, wickets: 0, over: 0}] 
+};
 
 window.onload = function() {
     let saved = localStorage.getItem("cricketMatch");
@@ -139,7 +160,6 @@ function resetInnings() {
     partnershipRuns=0; partnershipBalls=0;
     matchOver=false;
     winTag.style.display="none";
-    winnerBoard.style.display="none";
     batsmen.push(createNewBatsman(), createNewBatsman());
     createNewBowler();
 }
@@ -210,10 +230,18 @@ function endBall() {
     if(innings === 2 && runs >= target) {
         matchOver = true; showWin(team2); update(); return;
     }
+    
+    if(balls % 6 === 0 || wickets > (innings === 1 ? overByOverData.inning1[overByOverData.inning1.length-1].wickets : overByOverData.inning2[overByOverData.inning2.length-1].wickets)) {
+        let dataPoint = {runs: runs, wickets: wickets, over: balls/6};
+        if(innings === 1) overByOverData.inning1.push(dataPoint);
+        else overByOverData.inning2.push(dataPoint);
+    }
+
     if(balls % 6 === 0 && balls < totalBalls && wickets < 10) {
         changeStrike();
         createNewBowler();
     }
+
     if(balls === totalBalls || wickets === 10) {
         if(innings === 1) {
             firstBatting = JSON.parse(JSON.stringify(batsmen));
@@ -225,7 +253,7 @@ function endBall() {
             resetInnings();
         } else if(!matchOver) {
             matchOver = true;
-            if(runs === target - 1) { winnerBoard.innerText = "MATCH TIED!"; winnerBoard.style.display = "block"; }
+            if(runs === target - 1) { alert("MATCH TIED!"); }
             else { showWin(team1); }
         }
     }
@@ -239,12 +267,19 @@ function update() {
     runsEl.innerText = runs; wicketsEl.innerText = wickets;
     ballsEl.innerText = balls;
     oversEl.innerText = Math.floor(balls/6) + "." + (balls%6);
+    
+    // CRR Calculation
+    let totalOversPlayed = balls / 6;
+    let crr = totalOversPlayed > 0 ? (runs / totalOversPlayed).toFixed(2) : "0.00";
+    crrEl.innerText = "CRR: " + crr;
+
     currentEl.innerHTML = `
         <div class="strikeBat">${batsmen[striker].name} - ${batsmen[striker].runs}(${batsmen[striker].balls}) <span class="strikeIcon">🏏</span></div>
         <div>${batsmen[nonStriker].name} - ${batsmen[nonStriker].runs}(${batsmen[nonStriker].balls})</div>`;
     pBox.innerText = `🤝 Partnership: ${partnershipRuns} runs (${partnershipBalls} balls)`;
     renderScorecards();
     updateRRR();
+    drawGraph();
 }
 
 function renderScorecards() {
@@ -280,19 +315,17 @@ function updateRRR() {
 
 function showWin(winner) {
     winTag.style.display = "inline";
-    winnerBoard.style.display = "block";
     let msg = (innings === 2) ? `${winner} won by ${10 - wickets} wickets!` : `${winner} won by ${target - 1 - runs} runs!`;
-    
-    // Save to memory and get Man of the Match
     let mom = saveMatchMemory(msg);
-    winnerBoard.innerHTML = `🏆 ${msg}<br><br><span style="color:#d32f2f; font-weight:bold;">🎖️ MAN OF THE MATCH: ${mom}</span>`;
+    alert("🏆 " + msg + "\n🎖️ MAN OF THE MATCH: " + mom);
 }
 
 function saveMatch() {
     let state = {
         team1, team2, totalOvers, totalBalls, innings, target, runs, wickets, balls,
         batsmen, bowlers, striker, nonStriker, partnershipRuns, partnershipBalls,
-        firstBatting, firstBowling, firstFow, fow, matchOver, bowlerName: currentBowler?.name
+        firstBatting, firstBowling, firstFow, fow, matchOver, bowlerName: currentBowler?.name,
+        overByOverData
     };
     localStorage.setItem("cricketMatch", JSON.stringify(state));
 }
@@ -305,6 +338,7 @@ function loadState(s) {
     firstBatting=s.firstBatting; firstBowling=s.firstBowling; 
     firstFow=s.firstFow || []; fow=s.fow || [];
     matchOver=s.matchOver;
+    overByOverData = s.overByOverData || { inning1: [{runs: 0, wickets: 0, over: 0}], inning2: [{runs: 0, wickets: 0, over: 0}] };
     currentBowler = bowlers.find(b => b.name === s.bowlerName);
 }
 
@@ -313,60 +347,27 @@ function undo() { if(!undoStack.length) return; loadState(JSON.parse(undoStack.p
 
 function saveMatchMemory(res) {
     let mem = JSON.parse(localStorage.getItem("cricketMemories")) || [];
-    
-    // Logic for Top Scorer
     let allBatsmen = [...firstBatting, ...batsmen];
     let topScorer = allBatsmen.reduce((max, b) => (b.runs > (max.runs || 0)) ? b : max, {});
-    
-    // Logic for Best Bowler
     let allBowlers = [...firstBowling, ...bowlers];
     let bestBowler = allBowlers.reduce((best, b) => {
         if (b.wickets > (best.wickets || 0)) return b;
         if (b.wickets === best.wickets && b.runs < (best.runs || Infinity)) return b;
         return best;
     }, {});
-
-    // --- MAN OF THE MATCH LOGIC (Points based) ---
     let playersMap = {};
-    allBatsmen.forEach(b => { 
-        if(!playersMap[b.name]) playersMap[b.name] = 0;
-        playersMap[b.name] += b.runs; // 1 run = 1 point
-    });
-    allBowlers.forEach(b => {
-        if(!playersMap[b.name]) playersMap[b.name] = 0;
-        playersMap[b.name] += (b.wickets * 25); // 1 wicket = 25 points
-    });
-
-    let momName = Object.keys(playersMap).reduce((a, b) => playersMap[a] > playersMap[b] ? a : b, "No Data");
-    let momScore = playersMap[momName] || 0;
-
-    let t1Score = `${target-1}/${firstBatting.filter(b=>b.out).length} (${Math.floor((totalBalls)/6)} ov)`;
-    let t2Score = `${runs}/${wickets} (${Math.floor(balls/6)}.${balls%6} ov)`;
-
-    let matchDetail = {
-        date: new Date().toLocaleString(),
-        summary: `${team1}: ${t1Score}\n${team2}: ${t2Score}`,
-        target: `Target: ${target}`,
-        topScorer: `Top Scorer: ${topScorer.name} ${topScorer.runs}(${topScorer.balls})`,
-        bestBowler: `Best Bowler: ${bestBowler.name} ${bestBowler.wickets}/${bestBowler.runs}`,
-        mom: `Man of the Match: ${momName}`,
-        result: `Result: ${res}`
-    };
-
-    mem.push(matchDetail);
-    localStorage.setItem("cricketMemories", JSON.stringify(mem));
+    allBatsmen.forEach(b => { if(!playersMap[b.name]) playersMap[b.name]=0; playersMap[b.name]+=b.runs; });
+    allBowlers.forEach(b => { if(!playersMap[b.name]) playersMap[b.name]=0; playersMap[b.name]+=(b.wickets*25); });
+    let momName = Object.keys(playersMap).reduce((a, b) => playersMap[a] > playersMap[b] ? a : b, "N/A");
+    let matchDetail = { date: new Date().toLocaleString(), summary: `${team1} vs ${team2}`, mom: momName, result: res };
+    mem.push(matchDetail); localStorage.setItem("cricketMemories", JSON.stringify(mem));
     return momName;
 }
 
 function showMemories() {
     let data = JSON.parse(localStorage.getItem("cricketMemories")) || [];
     if(!data.length) { alert("No Memories!"); return; }
-    
-    let report = data.map(m => 
-        `📅 ${m.date}\n${m.summary}\n🎯 ${m.target}\n🌟 ${m.topScorer}\n🔥 ${m.bestBowler}\n🎖️ ${m.mom}\n🏆 ${m.result}`
-    ).join("\n\n------------------\n\n");
-    
-    alert(report);
+    alert(data.map(m => `📅 ${m.date}\n🏏 ${m.summary}\n🎖️ MOM: ${m.mom}\n🏆 ${m.result}`).join("\n\n---\n\n"));
 }
 
 function manageMemories() { if(confirm("Clear all history?")) { localStorage.removeItem("cricketMemories"); alert("Cleared!"); } }
@@ -374,6 +375,61 @@ function manageMemories() { if(confirm("Clear all history?")) { localStorage.rem
 function bye() { if(matchOver) return; saveUndo(); let r = parseInt(prompt("Byes?"))||0; runs+=r; balls++; currentBowler.balls++; if(r%2) changeStrike(); endBall(); saveMatch(); }
 function legBye() { if(matchOver) return; saveUndo(); let r = parseInt(prompt("Leg Byes?"))||0; runs+=r; balls++; currentBowler.balls++; if(r%2) changeStrike(); endBall(); saveMatch(); }
 
+function drawGraph() {
+    const canvas = document.getElementById("matchGraph");
+    const ctx = canvas.getContext("2d");
+    const w = canvas.width = canvas.offsetWidth;
+    const h = canvas.height = canvas.offsetHeight;
+    ctx.clearRect(0, 0, w, h);
+    
+    const margin = 35;
+    const chartW = w - margin - 20;
+    const chartH = h - margin - 20;
+
+    let allPoints = [...overByOverData.inning1, ...overByOverData.inning2];
+    let maxR = Math.max(target, ...allPoints.map(p => p.runs), 20);
+    
+    const getX = (o) => margin + (o / totalOvers) * chartW;
+    const getY = (r) => (h - margin) - (r / maxR) * chartH;
+
+    ctx.strokeStyle = "#888"; ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(margin, 10); ctx.lineTo(margin, h - margin); 
+    ctx.lineTo(w - 10, h - margin); 
+    ctx.stroke();
+
+    ctx.fillStyle = "#555"; ctx.font = "10px Arial"; ctx.textAlign = "center";
+    for(let i=0; i <= totalOvers; i++) {
+        ctx.fillText(i, getX(i), h - margin + 15);
+    }
+    ctx.textAlign = "right";
+    let step = maxR > 100 ? 20 : 10;
+    for(let i=0; i <= maxR; i += step) {
+        ctx.fillText(i, margin - 5, getY(i) + 3);
+    }
+
+    drawInningLine(ctx, overByOverData.inning1, "blue", getX, getY);
+    if(overByOverData.inning2.length > 1) drawInningLine(ctx, overByOverData.inning2, "red", getX, getY);
+}
+
+function drawInningLine(ctx, data, color, getX, getY) {
+    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath();
+    data.forEach((p, i) => {
+        let x = getX(p.over); let y = getY(p.runs);
+        if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    let lastW = 0;
+    data.forEach((p, i) => {
+        if(p.wickets > lastW) {
+            ctx.fillStyle = "black"; ctx.beginPath();
+            ctx.arc(getX(p.over), getY(p.runs), 4, 0, Math.PI*2);
+            ctx.fill();
+            lastW = p.wickets;
+        }
+    });
+}
 </script>
 </body>
 </html>
