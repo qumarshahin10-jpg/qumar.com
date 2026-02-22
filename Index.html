@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Time Tracker - Full Screen</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    /* पूरे पेज को फुल स्क्रीन सेट करना */
+    html, body { margin: 0; padding: 0; height: 100%; width: 100%; overflow-x: hidden; }
+    body { font-family: 'Segoe UI', Arial; background:#f0f2f5; display: flex; flex-direction: column; align-items: center; }
+
+    /* कंटेनर अब पूरी विड्थ लेगा */
+    .container { 
+        background: white; 
+        width: 100%; 
+        min-height: 100vh; 
+        box-sizing: border-box;
+        padding: 20px; 
+        display: flex; 
+        flex-direction: column;
+    }
+    
+    .calendar-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 0 10px; }
+    .nav-btn { cursor: pointer; font-size: 24px; padding: 10px; background: #eee; border-radius: 50%; border: none; }
+    #monthYear { font-size: 22px; font-weight: bold; color: #007bff; }
+
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 20px; }
+    .day-name { font-weight: bold; background: #e9ecef; padding: 10px; border-radius: 8px; font-size: 14px; text-align: center; }
+    .day { padding: 15px 5px; background: #f8f9fa; border-radius: 10px; cursor: pointer; position: relative; font-size: 16px; text-align: center; border: 1px solid #eee; }
+    .today { border: 2px solid #007bff; font-weight: bold; }
+    .selected { background: #007bff !important; color: white; }
+    .has-data::after { content: '★'; position: absolute; bottom: 3px; left: 50%; transform: translateX(-50%); color: #ffc107; font-size: 12px; }
+
+    /* टेबल अब पूरी जगह लेगा */
+    .input-section { margin-top: 20px; width: 100%; overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; background: #fff; }
+    th, td { border: 1px solid #ddd; padding: 12px; text-align: center; }
+    th { background: #007bff; color: white; font-size: 14px; }
+    
+    /* इनपुट बॉक्स को बड़ा करना */
+    input { width: 95%; padding: 8px; border: 1px solid #eee; outline: none; font-size: 14px; border-radius: 4px; }
+    input[type="time"] { cursor: pointer; }
+
+    .btn-row { display: flex; justify-content: space-between; gap: 15px; margin-bottom: 30px; }
+    .action-btn { flex: 1; padding: 15px; border-radius: 10px; border: none; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.3s; }
+    .add-btn { background: #e7f3ff; color: #007bff; }
+    .save-btn { background: #007bff; color: white; }
+    .add-btn:active, .save-btn:active { transform: scale(0.98); }
+
+    /* ग्राफ को बड़ा और रिस्पॉन्सिव बनाना */
+    .chart-container { 
+        width: 100%; 
+        padding: 15px; 
+        background: #fff; 
+        border-radius: 15px; 
+        border: 1px solid #ddd; 
+        box-sizing: border-box; 
+        margin-top: auto;
+        min-height: 300px;
+    }
+
+    /* Modal Styling */
+    .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; }
+    .modal-content { background: white; padding: 25px; border-radius: 15px; width: 90%; max-width: 400px; }
+    .modal-btns { display: flex; gap: 10px; margin-top: 20px; }
+    .m-btn { flex: 1; padding: 12px; border-radius: 8px; border: none; color: white; cursor: pointer; font-weight: bold; }
+
+    @media (min-width: 768px) {
+        .container { max-width: 900px; margin: 20px; min-height: auto; border-radius: 20px; }
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <div class="calendar-header">
+        <button class="nav-btn" onclick="changeMonth(-1)">⬅️</button>
+        <div id="monthYear"></div>
+        <button class="nav-btn" onclick="changeMonth(1)">➡️</button>
+    </div>
+    
+    <div class="calendar-grid" id="calendar"></div>
+    
+    <div id="dateLabel" style="font-size: 20px; font-weight: bold; margin-bottom: 15px; color: #333;">तारीख चुनें</div>
+
+    <div class="input-section">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 40%;">Subject</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+        </table>
+        <div class="btn-row">
+            <button class="action-btn add-btn" onclick="addRow()">+ Row जोड़ें</button>
+            <button class="action-btn save-btn" onclick="saveData()">डेटा Save करें</button>
+        </div>
+    </div>
+
+    <div class="chart-container">
+        <canvas id="dualChart"></canvas>
+    </div>
+</div>
+
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal-content">
+        <h4 id="popDate" style="margin:0 0 15px 0; border-bottom:2px solid #f0f2f5; padding-bottom: 10px; font-size: 20px;">Report</h4>
+        <div id="modalOutput" style="font-size: 16px; line-height: 1.6;"></div>
+        <div class="modal-btns">
+            <button class="m-btn" style="background:#6c757d;" onclick="closeModal()">बंद करें</button>
+            <button class="m-btn" style="background:#dc3545;" onclick="deleteData()">डिलीट करें</button>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentViewDate = new Date();
+let currentSelectedDate = "";
+let myChart;
+
+function generateCalendar(){
+    const calendar = document.getElementById("calendar");
+    const year = currentViewDate.getFullYear();
+    const month = currentViewDate.getMonth();
+    const firstDay = new Date(year, month, 1).getDay();
+    const lastDate = new Date(year, month + 1, 0).getDate();
+    const monthNames = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+
+    document.getElementById("monthYear").innerHTML = monthNames[month] + " " + year;
+    calendar.innerHTML = "";
+    ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"].forEach(d => { calendar.innerHTML += `<div class="day-name">${d}</div>`; });
+
+    for(let i = 0; i < firstDay; i++) calendar.innerHTML += `<div></div>`;
+
+    const realToday = new Date();
+    for(let day = 1; day <= lastDate; day++){
+        let key = `${year}-${month + 1}-${day}`;
+        let hasData = localStorage.getItem(key) ? "has-data" : "";
+        let isToday = (day === realToday.getDate() && month === realToday.getMonth() && year === realToday.getFullYear()) ? "today" : "";
+        calendar.innerHTML += `<div class="day ${isToday} ${hasData}" onclick="clickDate(this, '${key}', ${day})">${day}</div>`;
+    }
+    updateChart();
+}
+
+function changeMonth(step) {
+    currentViewDate.setMonth(currentViewDate.getMonth() + step);
+    generateCalendar();
+}
+
+function addRow(sub="", start="", end="", total="") {
+    const tbody = document.getElementById("tableBody");
+    const row = tbody.insertRow();
+    row.innerHTML = `
+        <td><input type="text" class="sub" value="${sub}" placeholder="उदा: Maths"></td>
+        <td><input type="time" class="start" value="${start}" oninput="calcRow(this)"></td>
+        <td><input type="time" class="end" value="${end}" oninput="calcRow(this)"></td>
+        <td class="total-cell" style="font-weight:bold; color:#007bff;">${total || '0'}h</td>
+    `;
+}
+
+function calcRow(input) {
+    const row = input.parentElement.parentElement;
+    const sVal = row.querySelector(".start").value;
+    const eVal = row.querySelector(".end").value;
+    if(sVal && eVal) {
+        let s = sVal.split(':'); let e = eVal.split(':');
+        let diff = (new Date(0,0,0,e[0],e[1]) - new Date(0,0,0,s[0],s[1])) / 3600000;
+        if(diff < 0) diff += 24;
+        row.querySelector(".total-cell").innerText = diff.toFixed(1) + "h";
+    }
+}
+
+function clickDate(el, key, day) {
+    document.querySelectorAll('.day').forEach(d => d.classList.remove('selected'));
+    el.classList.add('selected');
+    currentSelectedDate = key;
+    document.getElementById("dateLabel").innerText = "चयनित तारीख: " + day;
+    document.getElementById("tableBody").innerHTML = "";
+    let saved = JSON.parse(localStorage.getItem(key));
+    if(saved) {
+        saved.forEach(r => addRow(r.sub, r.start, r.end, r.total));
+        showPopup(day, saved);
+    } else { addRow(); }
+}
+
+function saveData() {
+    if(!currentSelectedDate) return alert("कृपया कैलेंडर से एक तारीख चुनें!");
+    let data = []; let totalH = 0;
+    document.querySelectorAll("#tableBody tr").forEach(row => {
+        let sub = row.querySelector(".sub").value;
+        let start = row.querySelector(".start").value;
+        let end = row.querySelector(".end").value;
+        let total = parseFloat(row.querySelector(".total-cell").innerText);
+        if(sub) { data.push({sub, start, end, total}); totalH += total; }
+    });
+    if(totalH > 24) return alert("कुल पढ़ाई 24 घंटे से ज्यादा नहीं हो सकती!");
+    localStorage.setItem(currentSelectedDate, JSON.stringify(data));
+    generateCalendar();
+    alert("Data सफलतापूर्वक Save हो गया!");
+}
+
+function updateChart() {
+    const year = currentViewDate.getFullYear();
+    const month = currentViewDate.getMonth();
+    const lastDate = new Date(year, month + 1, 0).getDate();
+    let labels = [], studyData = [];
+
+    for (let i = 1; i <= lastDate; i++) {
+        labels.push(i);
+        let saved = JSON.parse(localStorage.getItem(`${year}-${month + 1}-${i}`));
+        studyData.push(saved ? saved.reduce((s, r) => s + r.total, 0) : 0);
+    }
+
+    const ctx = document.getElementById('dualChart').getContext('2d');
+    if (myChart) myChart.destroy();
+    myChart = new Chart(ctx, {
+        data: {
+            labels: labels,
+            datasets: [
+                { type: 'bar', label: 'पढ़ाई के घंटे', data: studyData, backgroundColor: 'rgba(0, 123, 255, 0.5)', borderColor: '#007bff', borderWidth: 1 },
+                { type: 'line', label: 'प्रगति रेखा', data: studyData, borderColor: '#dc3545', borderWidth: 3, tension: 0, fill: false, pointRadius: 4 }
+            ]
+        },
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false,
+            scales: { y: { min: 0, max: 24, title: { display: true, text: 'Hours' } } },
+            plugins: { legend: { position: 'top' } }
+        }
+    });
+}
+
+function showPopup(day, data) {
+    let sum = data.reduce((s, r) => s + r.total, 0);
+    let html = `<ul style="padding-left: 20px;">`;
+    data.forEach(r => html += `<li><b>${r.sub}:</b> ${r.total}h</li>`);
+    html += `</ul><p style="font-size: 18px; border-top: 1px dashed #ccc; padding-top: 10px;"><b>कुल समय:</b> ${sum.toFixed(1)}h<br><b>वेस्ट टाइम:</b> ${(24-sum).toFixed(1)}h</p>`;
+    document.getElementById("popDate").innerText = "तारीख " + day + " की रिपोर्ट";
+    document.getElementById("modalOutput").innerHTML = html;
+    document.getElementById("modalOverlay").style.display = "flex";
+}
+
+function deleteData() {
+    if(confirm("क्या आप वाकई इस दिन का डेटा डिलीट करना चाहते हैं?")) { 
+        localStorage.removeItem(currentSelectedDate); 
+        closeModal(); 
+        generateCalendar(); 
+    }
+}
+function closeModal() { document.getElementById("modalOverlay").style.display = "none"; }
+
+generateCalendar();
+</script>
+</body>
+</html>
