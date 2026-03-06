@@ -77,6 +77,13 @@ Balls: <span id="balls">0</span>/<span id="totalBalls"></span>
         <span><span style="color:black">●</span> Wicket</span>  
     </div>  
 </div>  </div>  <div class="scorer">Scorer : Shahin Qumar</div> 
+<div id="scorecardModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:1000; overflow-y:auto; padding:20px;">
+    <div style="background:white; padding:20px; border-radius:10px; max-width:500px; margin:auto;">
+        <button onclick="document.getElementById('scorecardModal').style.display='none'" style="float:right;">❌ बंद करें</button>
+        <div id="modalContent"></div>
+    </div>
+</div>
+
 <script>  
 const teamEl = document.getElementById("team"),
     runsEl = document.getElementById("runs"),
@@ -366,9 +373,25 @@ function updateRRR() {
 function showWin(winner) {
     winTag.style.display = "inline";
     let msg = (innings === 2) ? `${winner} won by ${10 - wickets} wickets!` : `${winner} won by ${target - 1 - runs} runs!`;
+    
+    // यह फंक्शन हिस्ट्री में डेटा डालता है
+    saveMatchToHistory(); 
+    
     saveMatchMemory(msg);
     alert("🏆 " + msg);
 }
+
+// यह नया फंक्शन स्क्रिप्ट में जोड़ें
+function saveMatchToHistory() {
+    saveMatch(); 
+    let matchData = JSON.parse(localStorage.getItem("cricketMatch"));
+    let history = JSON.parse(localStorage.getItem("cricketMatchHistory") || "[]");
+
+    matchData.timestamp = new Date().toLocaleString();
+    history.push(matchData);
+    localStorage.setItem("cricketMatchHistory", JSON.stringify(history));
+}
+
 
 function saveMatch() {
     let state = {
@@ -402,12 +425,71 @@ function saveMatchMemory(res) {
 }
 
 function showMemories() {
-    let data = JSON.parse(localStorage.getItem("cricketMemories")) || [];
-    if (!data.length) { alert("No Memories!"); return; }
-    alert(data.map(m => `📅 ${m.date}\n🏏 ${m.summary}\n🏆 ${m.result}`).join("\n\n"));
+    let history = JSON.parse(localStorage.getItem("cricketMatchHistory")) || [];
+    
+    if (history.length === 0) {
+        alert("कोई पुराना मैच डेटा उपलब्ध नहीं है!");
+        return;
+    }
+
+    let modal = document.getElementById("scorecardModal");
+    let content = document.getElementById("modalContent");
+
+    // लिस्ट तैयार करें
+    let listHTML = `<h3>मैच का इतिहास (क्लिक करें)</h3>`;
+    history.forEach((m, index) => {
+        listHTML += `
+            <div onclick="showFullScorecard(${index})" style="padding:10px; border-bottom:1px solid #ccc; cursor:pointer;">
+                <b>${m.team1} vs ${m.team2}</b><br>
+                <small>${m.timestamp} - ${m.runs}/${m.wickets}</small>
+            </div>`;
+    });
+
+    content.innerHTML = listHTML;
+    modal.style.display = "block"; // Modal खोलें
 }
 
-function manageMemories() { if (confirm("Clear all history?")) { localStorage.removeItem("cricketMemories"); alert("Cleared!"); } }
+
+
+function manageMemories() {
+    let history = JSON.parse(localStorage.getItem("cricketMatchHistory") || "[]");
+    
+    if (history.length === 0) {
+        alert("कोई मैच हिस्ट्री उपलब्ध नहीं है!");
+        return;
+    }
+
+    let modal = document.getElementById("scorecardModal");
+    let content = document.getElementById("modalContent");
+
+    // चेकबॉक्स लिस्ट बनाना
+    let listHTML = `<h3>मैच डिलीट करें</h3>`;
+    history.forEach((m, i) => {
+        listHTML += `<div><input type="checkbox" class="match-check" value="${i}"> 
+        ${m.timestamp} | ${m.team1} vs ${m.team2}</div>`;
+    });
+    
+    listHTML += `<br><button onclick="deleteSelected()">✅ चुनिंदा डिलीट करें</button>`;
+    content.innerHTML = listHTML;
+    modal.style.display = "block";
+}
+
+// चुनिंदा मैचों को डिलीट करने का फंक्शन
+function deleteSelected() {
+    let history = JSON.parse(localStorage.getItem("cricketMatchHistory") || "[]");
+    let checkboxes = document.querySelectorAll('.match-check:checked');
+    
+    if (checkboxes.length === 0) { alert("कोई मैच नहीं चुना!"); return; }
+
+    let indices = Array.from(checkboxes).map(cb => parseInt(cb.value)).sort((a, b) => b - a);
+    
+    indices.forEach(idx => history.splice(idx, 1));
+    
+    localStorage.setItem("cricketMatchHistory", JSON.stringify(history));
+    alert("चुनिंदा मैच डिलीट कर दिए गए!");
+    document.getElementById('scorecardModal').style.display = 'none';
+}
+
 // बाय (Bye): बॉलर के खाते में रन नहीं जुड़ते
 function bye() {
     if(matchOver) return;
@@ -468,6 +550,50 @@ function drawInningLine(ctx, data, color, getX, getY) {
         if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     });
     ctx.stroke();
+}
+function showFullScorecard(index) {
+    let history = JSON.parse(localStorage.getItem("cricketMatchHistory") || "[]");
+    let m = history[index];
+    let modal = document.getElementById("scorecardModal");
+    let content = document.getElementById("modalContent");
+
+    let resultMsg = m.runs >= m.target ? `${m.team2} won by ${10 - m.wickets} wickets!` : `${m.team1} won by ${m.target - 1 - m.runs} runs!`;
+
+    content.innerHTML = `
+        <h2 style="text-align:center; color:#c62828;">🏆 ${m.runs >= m.target ? m.team2 : m.team1} WON</h2>
+        <p style="text-align:center"><b>${resultMsg}</b></p>
+        
+        <div style="background:#fff3e0; padding:10px; border-radius:5px; margin-bottom:10px; border:1px solid #ffcc80;">
+            <b>${m.team1}:</b> ${m.target - 1} runs<br>
+            <b>${m.team2}:</b> ${m.runs}/${m.wickets} (${Math.floor(m.balls/6)}.${m.balls%6} overs)
+        </div>
+        <hr>
+        
+        <h4 style="margin:5px 0;">Innings 2: ${m.team2}</h4>
+        <b>Batting:</b>
+        <table width="100%" border="1" style="font-size:12px; border-collapse:collapse;">
+            <tr style="background:#eee;"><th>Batter</th><th>R</th><th>B</th><th>4s</th><th>6s</th></tr>
+            ${m.batsmen.map(b => `<tr><td>${b.name}</td><td>${b.runs}</td><td>${b.balls}</td><td>${b.fours}</td><td>${b.sixes}</td></tr>`).join("")}
+        </table>
+        <b>Bowling:</b>
+        <table width="100%" border="1" style="font-size:12px; border-collapse:collapse; margin-bottom:10px;">
+            <tr style="background:#eee;"><th>Bowler</th><th>O</th><th>M</th><th>R</th><th>W</th><th>NB</th><th>WD</th></tr>
+            ${m.bowlers.map(b => `<tr><td>${b.name}</td><td>${Math.floor(b.balls/6)}.${b.balls%6}</td><td>${b.maidens}</td><td>${b.runs}</td><td>${b.wickets}</td><td>${b.noBalls}</td><td>${b.wides}</td></tr>`).join("")}
+        </table>
+
+        <h4 style="margin:5px 0;">Innings 1: ${m.team1}</h4>
+        <b>Batting:</b>
+        <table width="100%" border="1" style="font-size:12px; border-collapse:collapse;">
+            <tr style="background:#eee;"><th>Batter</th><th>R</th><th>B</th><th>4s</th><th>6s</th></tr>
+            ${m.firstBatting.map(b => `<tr><td>${b.name}</td><td>${b.runs}</td><td>${b.balls}</td><td>${b.fours || 0}</td><td>${b.sixes || 0}</td></tr>`).join("")}
+        </table>
+        <b>Bowling:</b>
+        <table width="100%" border="1" style="font-size:12px; border-collapse:collapse;">
+            <tr style="background:#eee;"><th>Bowler</th><th>O</th><th>M</th><th>R</th><th>W</th><th>NB</th><th>WD</th></tr>
+            ${m.firstBowling.map(b => `<tr><td>${b.name}</td><td>${Math.floor(b.balls/6)}.${b.balls%6}</td><td>${b.maidens || 0}</td><td>${b.runs}</td><td>${b.wickets}</td><td>${b.noBalls || 0}</td><td>${b.wides || 0}</td></tr>`).join("")}
+        </table>
+    `;
+    modal.style.display = "block";
 }
 
 </script>  </body> 
