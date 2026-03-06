@@ -1,435 +1,436 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Cricket Scorer – Ultimate Improved</title>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-.scorer{color:#00796b;font-size:14px;margin-top:10px;font-weight:bold}
-body{background:#ffffff;color:#000;font-family:Arial;text-align:center;}
-.box{width:100vw;max-width:100vw;margin:0;padding:16px;border:3px solid #c62828;box-sizing:border-box;}
-.score{font-size:48px;color:#f9a825;font-weight:bold;}
-.section{background:#f5f5f5;padding:8px;margin-top:8px;text-align:left;font-size:14px;border:1px solid #ddd;}
-.section b{color:#c62828;}
-button{padding:10px;margin:4px;font-size:15px;font-weight:bold;border-radius:4px;border:1px solid #999;cursor:pointer;}
-.run{background:#eeeeee}
-.wide{background:#ffb300}
-.wicket{background:#d32f2f;color:white}
-.undo{background:#9e9e9e;color:white}
-.four{background:#1976d2;color:white}
-.six{background:#43a047;color:white}
-.reset{background:#000;color:white}
-#partnershipBox{margin-top:8px;padding:6px;background:#f5f5f5;border-radius:6px;font-weight:bold;color:#333;}
-.strikeBat{color: green;font-weight:bold;}
-.strikeIcon{color:#f9a825;}
-.outBat{color:#ff7f7f;font-weight:bold;}
-.outBat::after{content:" ✖";}
-.currentBowler{color:green;font-weight:bold;}
-.fow-list { font-size: 13px; color: #555; line-height: 1.4; }
-/* Graph position style */
-#graphContainer{background:#fff; padding:10px; margin-top:15px; border:3px solid #00796b; border-radius:8px;}
-canvas{width:100%; height:220px; display:block;}
-#crrBox{font-size: 18px; color: #d32f2f; font-weight: bold; margin: 5px 0;}
-@media (max-width:767px){.box{border-radius:0;}}
-</style>
-</head>
-
-<body>
-
-<div class="box">
-<h3>
- <span id="team"></span>
- <span id="winTag" style="display:none">🏆 WIN</span>
-</h3>
-
-<div id="inningInfo"></div>
-<div class="score"><span id="runs">0</span>/<span id="wickets">0</span></div>
-
-<div id="crrBox">CRR: 0.00</div>
-
-<div>
-Overs: <span id="overs">0.0</span> |
-Balls: <span id="balls">0</span>/<span id="totalBalls"></span>
-</div>
-
-<div id="rrr" style="color:blue; font-weight:bold; margin:5px;"></div>
-
-<div class="section">
-<b>Current Batsmen</b>
-<div id="current"></div>
-</div>
-
-<div id="partnershipBox">🤝 Partnership: 0 runs (0 balls)</div>
-
-<div style="margin-top:10px;">
-<button class="run" onclick="play(0)">0</button>
-<button class="run" onclick="play(1)">1</button>
-<button class="run" onclick="play(2)">2</button>
-<button class="run" onclick="play(3)">3</button>
-<button class="run four" onclick="play(4)">4</button>
-<button class="run six" onclick="play(6)">6</button><br>
-<button class="wide" onclick="extra()">WD / NB</button>
-<button onclick="bye()">BYE</button>
-<button onclick="legBye()">LEG BYE</button>
-<button class="wicket" onclick="wicket()">WICKET</button>
-<button class="undo" onclick="undo()">UNDO</button><br>
-<button onclick="showMemories()">📜 MATCH MEMORY</button>
-<button onclick="manageMemories()">🗑️ MANAGE MEMORY</button>
-<button class="reset" onclick="resetMatch()">🔄 NEW MATCH</button>
-</div>
-
-<div class="section">
-<b>Fall of Wickets</b>
-<div id="fow" class="fow-list"></div>
-</div>
-
-<div class="section"><b>Batting Scorecard</b><div id="scorecard"></div></div>
-<div class="section"><b>Bowling Scorecard (Wickets Detail)</b><div id="bowling"></div></div>
-
-<div class="section">
-<b>Previous Inning Batting</b>
-<div id="firstBat"></div>
-<br><b>FOW (Prev):</b>
-<div id="firstFow" class="fow-list"></div>
-</div>
-<div class="section"><b>Previous Inning Bowling</b><div id="firstBowl"></div></div>
-
-<div id="graphContainer">
-    <b>📈 Match Progress Graph</b>
-    <canvas id="matchGraph"></canvas>
-    <div style="font-size:10px; display:flex; justify-content:center; gap:10px; margin-top:5px;">
-        <span><span style="color:blue">━</span> Team 1</span>
-        <span><span style="color:red">━</span> Team 2</span>
-        <span><span style="color:black">●</span> Wicket</span>
-    </div>
-</div>
-
-</div>
-
-<div class="scorer">Scorer : Shahin Qumar</div>
-
-<script>
-const teamEl=document.getElementById("team"), runsEl=document.getElementById("runs"), wicketsEl=document.getElementById("wickets"),
-ballsEl=document.getElementById("balls"), oversEl=document.getElementById("overs"), currentEl=document.getElementById("current"),
-scorecardEl=document.getElementById("scorecard"), bowlingEl=document.getElementById("bowling"), rrrEl=document.getElementById("rrr"),
-inningInfo=document.getElementById("inningInfo"), totalBallsEl=document.getElementById("totalBalls"), winTag=document.getElementById("winTag"),
-winnerBoard=document.getElementById("winnerBoard"), pBox=document.getElementById("partnershipBox"),
-fowEl=document.getElementById("fow"), firstFowEl=document.getElementById("firstFow"), crrEl=document.getElementById("crrBox");
-
-let team1, team2, totalOvers, totalBalls;
-let innings=1, target=0, runs=0, wickets=0, balls=0;
-let batsmen=[], bowlers=[], striker=0, nonStriker=0, currentBowler=null;
-let partnershipRuns=0, partnershipBalls=0, undoStack=[], firstBatting=[], firstBowling=[], firstFow=[], matchOver=false;
-let fow = []; 
-
-let overByOverData = { 
-    inning1: [{runs: 0, wickets: 0, over: 0}], 
-    inning2: [{runs: 0, wickets: 0, over: 0}] 
-};
-
-window.onload = function() {
-    let saved = localStorage.getItem("cricketMatch");
-    if(saved) {
-        loadState(JSON.parse(saved));
-    } else {
-        startNewGame();
-    }
-    update();
-};
-
-function startNewGame() {
-    team1 = prompt("Team 1 Name") || "Team A";
-    team2 = prompt("Team 2 Name") || "Team B";
-    totalOvers = parseInt(prompt("Overs?")) || 6;
-    totalBalls = totalOvers * 6;
-    resetInnings();
-    saveMatch();
-}
-
-function resetMatch() {
-    if(confirm("New match start karein?")) {
-        localStorage.removeItem("cricketMatch");
-        location.reload();
-    }
-}
-
-function resetInnings() {
-    runs=wickets=balls=0;
-    batsmen=[]; bowlers=[]; fow=[];
-    striker=0; nonStriker=1;
-    partnershipRuns=0; partnershipBalls=0;
-    matchOver=false;
-    winTag.style.display="none";
-    batsmen.push(createNewBatsman(), createNewBatsman());
-    createNewBowler();
-}
-
-function createNewBatsman() {
-    return {name: prompt("Batsman Name") || "Player", runs: 0, balls: 0, out: false, bTag: ""};
-}
-
-function createNewBowler() {
-    let name = prompt("Bowler Name") || "Bowler";
-    let exist = bowlers.find(b => b.name === name);
-    if(exist) { currentBowler = exist; return; }
-    let b = { name, balls: 0, runs: 0, wickets: 0, wides: 0, byes: 0, legByes: 0, wicketsTaken: [] };
-    bowlers.push(b);
-    currentBowler = b;
-}
-
-function play(r) {
-    if(matchOver) return;
-    saveUndo();
-    runs += r; balls++;
-    batsmen[striker].runs += r;
-    batsmen[striker].balls++;
-    currentBowler.runs += r;
-    currentBowler.balls++;
-    partnershipRuns += r;
-    partnershipBalls++;
-    if(r % 2) changeStrike();
-    endBall();
-    saveMatch();
-}
-
-function extra() {
-    if(matchOver) return;
-    saveUndo();
-    runs++;
-    currentBowler.runs++;
-    currentBowler.wides++;
-    if(innings === 2 && runs >= target) { matchOver = true; showWin(team2); }
-    update();
-    saveMatch();
-}
-
-function wicket() {
-    if(matchOver) return;
-    saveUndo();
-    let curOver = Math.floor(balls/6) + "." + (balls%6);
-    fow.push(`${runs}/${wickets + 1} (${batsmen[striker].name}, ${curOver} ov)`);
-    balls++; wickets++;
-    batsmen[striker].balls++;
-    batsmen[striker].out = true;
-    batsmen[striker].bTag = currentBowler.name; 
-    currentBowler.wickets++;
-    currentBowler.balls++;
-    currentBowler.wicketsTaken.push(batsmen[striker].name);
-    partnershipRuns = 0; partnershipBalls = 0;
-    if(wickets < 10) {
-        batsmen.push(createNewBatsman());
-        striker = batsmen.length - 1;
-    }
-    endBall();
-    saveMatch();
-}
-
-function changeStrike() { [striker, nonStriker] = [nonStriker, striker]; }
-
-function endBall() {
-    if(innings === 2 && runs >= target) {
-        matchOver = true; showWin(team2); update(); return;
-    }
-    
-    if(balls % 6 === 0 || wickets > (innings === 1 ? overByOverData.inning1[overByOverData.inning1.length-1].wickets : overByOverData.inning2[overByOverData.inning2.length-1].wickets)) {
-        let dataPoint = {runs: runs, wickets: wickets, over: balls/6};
-        if(innings === 1) overByOverData.inning1.push(dataPoint);
-        else overByOverData.inning2.push(dataPoint);
-    }
-
-    if(balls % 6 === 0 && balls < totalBalls && wickets < 10) {
-        changeStrike();
-        createNewBowler();
-    }
-
-    if(balls === totalBalls || wickets === 10) {
-        if(innings === 1) {
-            firstBatting = JSON.parse(JSON.stringify(batsmen));
-            firstBowling = JSON.parse(JSON.stringify(bowlers));
-            firstFow = [...fow]; 
-            target = runs + 1;
-            alert("Innings Over! Target: " + target);
-            innings = 2;
-            resetInnings();
-        } else if(!matchOver) {
-            matchOver = true;
-            if(runs === target - 1) { alert("MATCH TIED!"); }
-            else { showWin(team1); }
-        }
-    }
-    update();
-}
-
-function update() {
-    teamEl.innerText = (innings === 1 ? team1 : team2);
-    totalBallsEl.innerText = totalBalls;
-    inningInfo.innerText = "Innings: " + innings + (target > 0 ? " | Target: " + target : "");
-    runsEl.innerText = runs; wicketsEl.innerText = wickets;
-    ballsEl.innerText = balls;
-    oversEl.innerText = Math.floor(balls/6) + "." + (balls%6);
-    
-    // CRR Calculation
-    let totalOversPlayed = balls / 6;
-    let crr = totalOversPlayed > 0 ? (runs / totalOversPlayed).toFixed(2) : "0.00";
-    crrEl.innerText = "CRR: " + crr;
-
-    currentEl.innerHTML = `
-        <div class="strikeBat">${batsmen[striker].name} - ${batsmen[striker].runs}(${batsmen[striker].balls}) <span class="strikeIcon">🏏</span></div>
-        <div>${batsmen[nonStriker].name} - ${batsmen[nonStriker].runs}(${batsmen[nonStriker].balls})</div>`;
-    pBox.innerText = `🤝 Partnership: ${partnershipRuns} runs (${partnershipBalls} balls)`;
-    renderScorecards();
-    updateRRR();
-    drawGraph();
-}
-
-function renderScorecards() {
-    scorecardEl.innerHTML = batsmen.map((b,i) => {
-        let dismissInfo = b.out ? `<span class="outBat">OUT (b ${b.bTag})</span>` : "NOT OUT";
-        return `<div>${i+1}. ${b.name} - ${b.runs}(${b.balls}) | ${dismissInfo}</div>`;
-    }).join("");
-    bowlingEl.innerHTML = bowlers.map(b => {
-        let wktsList = b.wicketsTaken.length > 0 ? ` [${b.wicketsTaken.join(", ")}]` : "";
-        return `<div class="${currentBowler && b.name===currentBowler.name?'currentBowler':''}">
-            ${b.name}: ${Math.floor(b.balls/6)}.${b.balls%6} | R: ${b.runs} | W: ${b.wickets}${wktsList}
-        </div>`;
-    }).join("");
-    fowEl.innerHTML = fow.length > 0 ? fow.join(" , ") : "No wickets yet";
-    document.getElementById("firstBat").innerHTML = firstBatting.map((b,i) => {
-        let dismissInfo = b.out ? `OUT (b ${b.bTag})` : "NOT OUT";
-        return `${i+1}. ${b.name} - ${b.runs}(${b.balls}) | ${dismissInfo}<br>`;
-    }).join("");
-    document.getElementById("firstBowl").innerHTML = firstBowling.map(b => {
-        let wktsList = b.wicketsTaken.length > 0 ? ` (${b.wicketsTaken.join(", ")})` : "";
-        return `${b.name} - ${b.wickets} wkts${wktsList}<br>`;
-    }).join("");
-    firstFowEl.innerHTML = firstFow.length > 0 ? firstFow.join(" , ") : "N/A";
-}
-
-function updateRRR() {
-    if(innings === 2 && !matchOver) {
-        let bl = totalBalls - balls;
-        let rl = target - runs;
-        rrrEl.innerText = bl > 0 ? `Need ${rl} from ${bl} balls (RRR: ${((rl/bl)*6).toFixed(2)})` : "";
-    } else { rrrEl.innerText = ""; }
-}
-
-function showWin(winner) {
-    winTag.style.display = "inline";
-    let msg = (innings === 2) ? `${winner} won by ${10 - wickets} wickets!` : `${winner} won by ${target - 1 - runs} runs!`;
-    let mom = saveMatchMemory(msg);
-    alert("🏆 " + msg + "\n🎖️ MAN OF THE MATCH: " + mom);
-}
-
-function saveMatch() {
-    let state = {
-        team1, team2, totalOvers, totalBalls, innings, target, runs, wickets, balls,
-        batsmen, bowlers, striker, nonStriker, partnershipRuns, partnershipBalls,
-        firstBatting, firstBowling, firstFow, fow, matchOver, bowlerName: currentBowler?.name,
-        overByOverData
-    };
-    localStorage.setItem("cricketMatch", JSON.stringify(state));
-}
-
-function loadState(s) {
-    team1=s.team1; team2=s.team2; totalOvers=s.totalOvers; totalBalls=s.totalBalls;
-    innings=s.innings; target=s.target; runs=s.runs; wickets=s.wickets; balls=s.balls;
-    batsmen=s.batsmen; bowlers=s.bowlers; striker=s.striker; nonStriker=s.nonStriker;
-    partnershipRuns=s.partnershipRuns; partnershipBalls=s.partnershipBalls;
-    firstBatting=s.firstBatting; firstBowling=s.firstBowling; 
-    firstFow=s.firstFow || []; fow=s.fow || [];
-    matchOver=s.matchOver;
-    overByOverData = s.overByOverData || { inning1: [{runs: 0, wickets: 0, over: 0}], inning2: [{runs: 0, wickets: 0, over: 0}] };
-    currentBowler = bowlers.find(b => b.name === s.bowlerName);
-}
-
-function saveUndo() { undoStack.push(JSON.stringify(JSON.parse(localStorage.getItem("cricketMatch")))); }
-function undo() { if(!undoStack.length) return; loadState(JSON.parse(undoStack.pop())); update(); saveMatch(); }
-
-function saveMatchMemory(res) {
-    let mem = JSON.parse(localStorage.getItem("cricketMemories")) || [];
-    let allBatsmen = [...firstBatting, ...batsmen];
-    let topScorer = allBatsmen.reduce((max, b) => (b.runs > (max.runs || 0)) ? b : max, {});
-    let allBowlers = [...firstBowling, ...bowlers];
-    let bestBowler = allBowlers.reduce((best, b) => {
-        if (b.wickets > (best.wickets || 0)) return b;
-        if (b.wickets === best.wickets && b.runs < (best.runs || Infinity)) return b;
-        return best;
-    }, {});
-    let playersMap = {};
-    allBatsmen.forEach(b => { if(!playersMap[b.name]) playersMap[b.name]=0; playersMap[b.name]+=b.runs; });
-    allBowlers.forEach(b => { if(!playersMap[b.name]) playersMap[b.name]=0; playersMap[b.name]+=(b.wickets*25); });
-    let momName = Object.keys(playersMap).reduce((a, b) => playersMap[a] > playersMap[b] ? a : b, "N/A");
-    let matchDetail = { date: new Date().toLocaleString(), summary: `${team1} vs ${team2}`, mom: momName, result: res };
-    mem.push(matchDetail); localStorage.setItem("cricketMemories", JSON.stringify(mem));
-    return momName;
-}
-
-function showMemories() {
-    let data = JSON.parse(localStorage.getItem("cricketMemories")) || [];
-    if(!data.length) { alert("No Memories!"); return; }
-    alert(data.map(m => `📅 ${m.date}\n🏏 ${m.summary}\n🎖️ MOM: ${m.mom}\n🏆 ${m.result}`).join("\n\n---\n\n"));
-}
-
-function manageMemories() { if(confirm("Clear all history?")) { localStorage.removeItem("cricketMemories"); alert("Cleared!"); } }
-
-function bye() { if(matchOver) return; saveUndo(); let r = parseInt(prompt("Byes?"))||0; runs+=r; balls++; currentBowler.balls++; if(r%2) changeStrike(); endBall(); saveMatch(); }
-function legBye() { if(matchOver) return; saveUndo(); let r = parseInt(prompt("Leg Byes?"))||0; runs+=r; balls++; currentBowler.balls++; if(r%2) changeStrike(); endBall(); saveMatch(); }
-
-function drawGraph() {
-    const canvas = document.getElementById("matchGraph");
-    const ctx = canvas.getContext("2d");
-    const w = canvas.width = canvas.offsetWidth;
-    const h = canvas.height = canvas.offsetHeight;
-    ctx.clearRect(0, 0, w, h);
-    
-    const margin = 35;
-    const chartW = w - margin - 20;
-    const chartH = h - margin - 20;
-
-    let allPoints = [...overByOverData.inning1, ...overByOverData.inning2];
-    let maxR = Math.max(target, ...allPoints.map(p => p.runs), 20);
-    
-    const getX = (o) => margin + (o / totalOvers) * chartW;
-    const getY = (r) => (h - margin) - (r / maxR) * chartH;
-
-    ctx.strokeStyle = "#888"; ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(margin, 10); ctx.lineTo(margin, h - margin); 
-    ctx.lineTo(w - 10, h - margin); 
-    ctx.stroke();
-
-    ctx.fillStyle = "#555"; ctx.font = "10px Arial"; ctx.textAlign = "center";
-    for(let i=0; i <= totalOvers; i++) {
-        ctx.fillText(i, getX(i), h - margin + 15);
-    }
-    ctx.textAlign = "right";
-    let step = maxR > 100 ? 20 : 10;
-    for(let i=0; i <= maxR; i += step) {
-        ctx.fillText(i, margin - 5, getY(i) + 3);
-    }
-
-    drawInningLine(ctx, overByOverData.inning1, "blue", getX, getY);
-    if(overByOverData.inning2.length > 1) drawInningLine(ctx, overByOverData.inning2, "red", getX, getY);
-}
-
-function drawInningLine(ctx, data, color, getX, getY) {
-    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath();
-    data.forEach((p, i) => {
-        let x = getX(p.over); let y = getY(p.runs);
-        if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
-
-    let lastW = 0;
-    data.forEach((p, i) => {
-        if(p.wickets > lastW) {
-            ctx.fillStyle = "black"; ctx.beginPath();
-            ctx.arc(getX(p.over), getY(p.runs), 4, 0, Math.PI*2);
-            ctx.fill();
-            lastW = p.wickets;
-        }
-    });
-}
-</script>
-</body>
-</html>
+<!DOCTYPE html>  <html>  
+<head>  
+<meta charset="UTF-8">  
+<title>Cricket Scorer – Ultimate Improved</title>  
+<meta name="viewport" content="width=device-width, initial-scale=1.0">  
+<style>  
+.scorer{color:#00796b;font-size:14px;margin-top:10px;font-weight:bold}  
+body{background:#ffffff;color:#000;font-family:Arial;text-align:center;}  
+.box{width:100vw;max-width:100vw;margin:0;padding:16px;border:3px solid #c62828;box-sizing:border-box;}  
+.score{font-size:48px;color:#f9a825;font-weight:bold;}  
+.section{background:#f5f5f5;padding:8px;margin-top:8px;text-align:left;font-size:14px;border:1px solid #ddd;}  
+.section b{color:#c62828;}  
+button{padding:10px;margin:4px;font-size:15px;font-weight:bold;border-radius:4px;border:1px solid #999;cursor:pointer;}  
+.run{background:#eeeeee}  
+.wide{background:#ffb300}  
+.wicket{background:#d32f2f;color:white}  
+.undo{background:#9e9e9e;color:white}  
+.four{background:#1976d2;color:white}  
+.six{background:#43a047;color:white}  
+.reset{background:#000;color:white}  
+#partnershipBox{margin-top:8px;padding:6px;background:#f5f5f5;border-radius:6px;font-weight:bold;color:#333;}  
+.strikeBat{color: green;font-weight:bold;}  
+.strikeIcon{color:#f9a825;}  
+.outBat{color:#ff7f7f;font-weight:bold;}  
+.outBat::after{content:" ✖";}  
+.currentBowler{color:green;font-weight:bold;}  
+.fow-list { font-size: 13px; color: #555; line-height: 1.4; }  
+/* Graph position style */  
+#graphContainer{background:#fff; padding:10px; margin-top:15px; border:3px solid #00796b; border-radius:8px;}  
+canvas{width:100%; height:220px; display:block;}  
+#crrBox{font-size: 18px; color: #d32f2f; font-weight: bold; margin: 5px 0;}  
+@media (max-width:767px){.box{border-radius:0;}}  
+</style>  
+</head>  <body>  <div class="box">  
+<h3>  
+ <span id="team"></span>  
+ <span id="winTag" style="display:none">🏆 WIN</span>  
+</h3>  <div id="inningInfo"></div>  
+<div class="score"><span id="runs">0</span>/<span id="wickets">0</span></div>  <div id="crrBox">CRR: 0.00</div>  <div>  
+Overs: <span id="overs">0.0</span> |  
+Balls: <span id="balls">0</span>/<span id="totalBalls"></span>  
+</div>  <div id="rrr" style="color:blue; font-weight:bold; margin:5px;"></div>  <div class="section">  
+<b>Current Batsmen</b>  
+<div id="current"></div>  
+</div>  <div id="partnershipBox">🤝 Partnership: 0 runs (0 balls)</div>  <div style="margin-top:10px;">  
+<button class="run" onclick="play(0)">0</button>  
+<button class="run" onclick="play(1)">1</button>  
+<button class="run" onclick="play(2)">2</button>  
+<button class="run" onclick="play(3)">3</button>  
+<button class="run four" onclick="play(4)">4</button>  
+<button class="run six" onclick="play(6)">6</button><br>  
+<button class="wide" onclick="extra()">WD / NB</button>  
+<button onclick="bye()">BYE</button>  
+<button onclick="legBye()">LEG BYE</button>  
+<button class="wicket" onclick="wicket()">WICKET</button>  
+<button class="undo" onclick="undo()">UNDO</button><br>  
+<button onclick="showMemories()">📜 MATCH MEMORY</button>  
+<button onclick="manageMemories()">🗑️ MANAGE MEMORY</button>  
+<button class="reset" onclick="resetMatch()">🔄 NEW MATCH</button>  
+</div>  <div class="section">  
+<b>Fall of Wickets</b>  
+<div id="fow" class="fow-list"></div>  
+</div>  <div class="section"><b>Batting Scorecard</b><div id="scorecard"></div></div>  
+<div class="section"><b>Bowling Scorecard (Wickets Detail)</b><div id="bowling"></div></div>  <div class="section">  
+<b>Previous Inning Batting</b>  
+<div id="firstBat"></div>  
+<br><b>FOW (Prev):</b>  
+<div id="firstFow" class="fow-list"></div>  
+</div>  
+<div class="section"><b>Previous Inning Bowling</b><div id="firstBowl"></div></div>  <div id="graphContainer">  
+    <b>📈 Match Progress Graph</b>  
+    <canvas id="matchGraph"></canvas>  
+    <div style="font-size:10px; display:flex; justify-content:center; gap:10px; margin-top:5px;">  
+        <span><span style="color:blue">━</span> Team 1</span>  
+        <span><span style="color:red">━</span> Team 2</span>  
+        <span><span style="color:black">●</span> Wicket</span>  
+    </div>  
+</div>  </div>  <div class="scorer">Scorer : Shahin Qumar</div>  <script>  
+const teamEl=document.getElementById("team"), runsEl=document.getElementById("runs"), wicketsEl=document.getElementById("wickets"),  
+ballsEl=document.getElementById("balls"), oversEl=document.getElementById("overs"), currentEl=document.getElementById("current"),  
+scorecardEl=document.getElementById("scorecard"), bowlingEl=document.getElementById("bowling"), rrrEl=document.getElementById("rrr"),  
+inningInfo=document.getElementById("inningInfo"), totalBallsEl=document.getElementById("totalBalls"), winTag=document.getElementById("winTag"),  
+winnerBoard=document.getElementById("winnerBoard"), pBox=document.getElementById("partnershipBox"),  
+fowEl=document.getElementById("fow"), firstFowEl=document.getElementById("firstFow"), crrEl=document.getElementById("crrBox");  
+  
+let team1, team2, totalOvers, totalBalls;  
+let innings=1, target=0, runs=0, wickets=0, balls=0;  
+let batsmen=[], bowlers=[], striker=0, nonStriker=0, currentBowler=null;  
+let partnershipRuns=0, partnershipBalls=0, undoStack=[], firstBatting=[], firstBowling=[], firstFow=[], matchOver=false;  
+let fow = [];   
+  
+let overByOverData = {   
+    inning1: [{runs: 0, wickets: 0, over: 0}],   
+    inning2: [{runs: 0, wickets: 0, over: 0}]   
+};  
+  
+window.onload = function() {  
+    let saved = localStorage.getItem("cricketMatch");  
+    if(saved) {  
+        loadState(JSON.parse(saved));  
+    } else {  
+        startNewGame();  
+    }  
+    update();  
+};  
+  
+function startNewGame() {  
+    team1 = prompt("Team 1 Name") || "Team A";  
+    team2 = prompt("Team 2 Name") || "Team B";  
+    totalOvers = parseInt(prompt("Overs?")) || 6;  
+    totalBalls = totalOvers * 6;  
+    resetInnings();  
+    saveMatch();  
+}  
+  
+function resetMatch() {  
+    if(confirm("New match start karein?")) {  
+        localStorage.removeItem("cricketMatch");  
+        location.reload();  
+    }  
+}  
+  
+function resetInnings() {  
+    runs=wickets=balls=0;  
+    batsmen=[]; bowlers=[]; fow=[];  
+    striker=0; nonStriker=1;  
+    partnershipRuns=0; partnershipBalls=0;  
+    matchOver=false;  
+    winTag.style.display="none";  
+    batsmen.push(createNewBatsman(), createNewBatsman());  
+    createNewBowler();  
+}  
+  
+function createNewBatsman() {  
+    return {  
+        name: prompt("Batsman Name") || "Player",  
+        runs: 0,  
+        balls: 0,  
+        fours: 0,  
+        sixes: 0,  
+        out: false,  
+        bTag: ""  
+    };  
+}  
+  
+function createNewBowler() {  
+    let name = prompt("Bowler Name") || "Bowler";  
+    let exist = bowlers.find(b => b.name === name);  
+    if(exist) { currentBowler = exist; return; }  
+    let b = { name, balls: 0, runs: 0, wickets: 0, wides: 0, byes: 0, legByes: 0, wicketsTaken: [] };  
+    bowlers.push(b);  
+    currentBowler = b;  
+}  
+  
+function play(r) {  
+    if(matchOver) return;  
+    saveUndo();  
+    runs += r; balls++;  
+    batsmen[striker].runs += r;  
+    batsmen[striker].balls++;  
+    if(r === 4) batsmen[striker].fours++;  
+if(r === 6) batsmen[striker].sixes++;  
+    currentBowler.runs += r;  
+    currentBowler.balls++;  
+    partnershipRuns += r;  
+    partnershipBalls++;  
+    if(r % 2) changeStrike();  
+    endBall();  
+    saveMatch();  
+}  
+  
+function extra() {  
+    if(matchOver) return;  
+    saveUndo();  
+    runs++;  
+    currentBowler.runs++;  
+    currentBowler.wides++;  
+    if(innings === 2 && runs >= target) { matchOver = true; showWin(team2); }  
+    update();  
+    saveMatch();  
+}  
+  
+function wicket() {  
+    if(matchOver) return;  
+    saveUndo();  
+    let curOver = Math.floor(balls/6) + "." + (balls%6);  
+    fow.push(`${runs}/${wickets + 1} (${batsmen[striker].name}, ${curOver} ov)`);  
+    balls++; wickets++;  
+    batsmen[striker].balls++;  
+    batsmen[striker].out = true;  
+    batsmen[striker].bTag = currentBowler.name;   
+    currentBowler.wickets++;  
+    currentBowler.balls++;  
+    currentBowler.wicketsTaken.push(batsmen[striker].name);  
+    partnershipRuns = 0; partnershipBalls = 0;  
+    if(wickets < 10) {  
+        batsmen.push(createNewBatsman());  
+        striker = batsmen.length - 1;  
+    }  
+    endBall();  
+    saveMatch();  
+}  
+  
+function changeStrike() { [striker, nonStriker] = [nonStriker, striker]; }  
+  
+function endBall() {  
+    if(innings === 2 && runs >= target) {  
+        matchOver = true; showWin(team2); update(); return;  
+    }  
+      
+    if(balls % 6 === 0 || wickets > (innings === 1 ? overByOverData.inning1[overByOverData.inning1.length-1].wickets : overByOverData.inning2[overByOverData.inning2.length-1].wickets)) {  
+        let dataPoint = {runs: runs, wickets: wickets, over: balls/6};  
+        if(innings === 1) overByOverData.inning1.push(dataPoint);  
+        else overByOverData.inning2.push(dataPoint);  
+    }  
+  
+    if(balls % 6 === 0 && balls < totalBalls && wickets < 10) {  
+        changeStrike();  
+        createNewBowler();  
+    }  
+  
+    if(balls === totalBalls || wickets === 10) {  
+        if(innings === 1) {  
+            firstBatting = JSON.parse(JSON.stringify(batsmen));  
+            firstBowling = JSON.parse(JSON.stringify(bowlers));  
+            firstFow = [...fow];   
+            target = runs + 1;  
+            alert("Innings Over! Target: " + target);  
+            innings = 2;  
+            resetInnings();  
+        } else if(!matchOver) {  
+            matchOver = true;  
+            if(runs === target - 1) { alert("MATCH TIED!"); }  
+            else { showWin(team1); }  
+        }  
+    }  
+    update();  
+}  
+  
+function update() {  
+    teamEl.innerText = (innings === 1 ? team1 : team2);  
+    totalBallsEl.innerText = totalBalls;  
+    inningInfo.innerText = "Innings: " + innings + (target > 0 ? " | Target: " + target : "");  
+    runsEl.innerText = runs; wicketsEl.innerText = wickets;  
+    ballsEl.innerText = balls;  
+    oversEl.innerText = Math.floor(balls/6) + "." + (balls%6);  
+      
+    // CRR Calculation  
+    let totalOversPlayed = balls / 6;  
+    let crr = totalOversPlayed > 0 ? (runs / totalOversPlayed).toFixed(2) : "0.00";  
+    crrEl.innerText = "CRR: " + crr;  
+  
+    currentEl.innerHTML = `  
+        <div class="strikeBat">${batsmen[striker].name} - ${batsmen[striker].runs}(${batsmen[striker].balls}) <span class="strikeIcon">🏏</span></div>  
+        <div>${batsmen[nonStriker].name} - ${batsmen[nonStriker].runs}(${batsmen[nonStriker].balls})</div>`;  
+    pBox.innerText = `🤝 Partnership: ${partnershipRuns} runs (${partnershipBalls} balls)`;  
+    renderScorecards();  
+    updateRRR();  
+    drawGraph();  
+}  
+  
+function renderScorecards() {  
+    scorecardEl.innerHTML = `  
+<table style="width:100%; border-collapse:collapse; font-size:13px;">  
+<tr style="background:#e0e0e0;">  
+<th align="left">Batter</th>  
+<th>R</th>  
+<th>B</th>  
+<th>4s</th>  
+<th>6s</th>  
+<th>SR</th>  
+</tr>  
+  
+${batsmen.map((b,i)=>{  
+let sr = b.balls ? ((b.runs/b.balls)*100).toFixed(2) : "0.00";  
+let status = b.out ? `b ${b.bTag}` : "not out";  
+  
+return `  
+<tr style="border-bottom:1px solid #ddd;">  
+<td align="left">${b.name}<br><span style="font-size:11px;color:#666">${status}</span></td>  
+<td>${b.runs}</td>  
+<td>${b.balls}</td>  
+<td>${b.fours}</td>  
+<td>${b.sixes}</td>  
+<td>${sr}</td>  
+</tr>  
+`;  
+}).join("")}  
+  
+</table>  
+`;  
+    bowlingEl.innerHTML = bowlers.map(b => {  
+        let wktsList = b.wicketsTaken.length > 0 ? ` [${b.wicketsTaken.join(", ")}]` : "";  
+        return `<div class="${currentBowler && b.name===currentBowler.name?'currentBowler':''}">  
+            ${b.name}: ${Math.floor(b.balls/6)}.${b.balls%6} | R: ${b.runs} | W: ${b.wickets}${wktsList}  
+        </div>`;  
+    }).join("");  
+    fowEl.innerHTML = fow.length > 0 ? fow.join(" , ") : "No wickets yet";  
+    document.getElementById("firstBat").innerHTML = firstBatting.map((b,i) => {  
+        let dismissInfo = b.out ? `OUT (b ${b.bTag})` : "NOT OUT";  
+        return `${i+1}. ${b.name} - ${b.runs}(${b.balls}) | ${dismissInfo}<br>`;  
+    }).join("");  
+    document.getElementById("firstBowl").innerHTML = firstBowling.map(b => {  
+        let wktsList = b.wicketsTaken.length > 0 ? ` (${b.wicketsTaken.join(", ")})` : "";  
+        return `${b.name} - ${b.wickets} wkts${wktsList}<br>`;  
+    }).join("");  
+    firstFowEl.innerHTML = firstFow.length > 0 ? firstFow.join(" , ") : "N/A";  
+}  
+  
+function updateRRR() {  
+    if(innings === 2 && !matchOver) {  
+        let bl = totalBalls - balls;  
+        let rl = target - runs;  
+        rrrEl.innerText = bl > 0 ? `Need ${rl} from ${bl} balls (RRR: ${((rl/bl)*6).toFixed(2)})` : "";  
+    } else { rrrEl.innerText = ""; }  
+}  
+  
+function showWin(winner) {  
+    winTag.style.display = "inline";  
+    let msg = (innings === 2) ? `${winner} won by ${10 - wickets} wickets!` : `${winner} won by ${target - 1 - runs} runs!`;  
+    let mom = saveMatchMemory(msg);  
+    alert("🏆 " + msg + "\n🎖️ MAN OF THE MATCH: " + mom);  
+}  
+  
+function saveMatch() {  
+    let state = {  
+        team1, team2, totalOvers, totalBalls, innings, target, runs, wickets, balls,  
+        batsmen, bowlers, striker, nonStriker, partnershipRuns, partnershipBalls,  
+        firstBatting, firstBowling, firstFow, fow, matchOver, bowlerName: currentBowler?.name,  
+        overByOverData  
+    };  
+    localStorage.setItem("cricketMatch", JSON.stringify(state));  
+}  
+  
+function loadState(s) {  
+    team1=s.team1; team2=s.team2; totalOvers=s.totalOvers; totalBalls=s.totalBalls;  
+    innings=s.innings; target=s.target; runs=s.runs; wickets=s.wickets; balls=s.balls;  
+    batsmen=s.batsmen; bowlers=s.bowlers; striker=s.striker; nonStriker=s.nonStriker;  
+    partnershipRuns=s.partnershipRuns; partnershipBalls=s.partnershipBalls;  
+    firstBatting=s.firstBatting; firstBowling=s.firstBowling;   
+    firstFow=s.firstFow || []; fow=s.fow || [];  
+    matchOver=s.matchOver;  
+    overByOverData = s.overByOverData || { inning1: [{runs: 0, wickets: 0, over: 0}], inning2: [{runs: 0, wickets: 0, over: 0}] };  
+    currentBowler = bowlers.find(b => b.name === s.bowlerName);  
+}  
+  
+function saveUndo() { undoStack.push(JSON.stringify(JSON.parse(localStorage.getItem("cricketMatch")))); }  
+function undo() { if(!undoStack.length) return; loadState(JSON.parse(undoStack.pop())); update(); saveMatch(); }  
+  
+function saveMatchMemory(res) {  
+    let mem = JSON.parse(localStorage.getItem("cricketMemories")) || [];  
+    let allBatsmen = [...firstBatting, ...batsmen];  
+    let topScorer = allBatsmen.reduce((max, b) => (b.runs > (max.runs || 0)) ? b : max, {});  
+    let allBowlers = [...firstBowling, ...bowlers];  
+    let bestBowler = allBowlers.reduce((best, b) => {  
+        if (b.wickets > (best.wickets || 0)) return b;  
+        if (b.wickets === best.wickets && b.runs < (best.runs || Infinity)) return b;  
+        return best;  
+    }, {});  
+    let playersMap = {};  
+    allBatsmen.forEach(b => { if(!playersMap[b.name]) playersMap[b.name]=0; playersMap[b.name]+=b.runs; });  
+    allBowlers.forEach(b => { if(!playersMap[b.name]) playersMap[b.name]=0; playersMap[b.name]+=(b.wickets*25); });  
+    let momName = Object.keys(playersMap).reduce((a, b) => playersMap[a] > playersMap[b] ? a : b, "N/A");  
+    let matchDetail = { date: new Date().toLocaleString(), summary: `${team1} vs ${team2}`, mom: momName, result: res };  
+    mem.push(matchDetail); localStorage.setItem("cricketMemories", JSON.stringify(mem));  
+    return momName;  
+}  
+  
+function showMemories() {  
+    let data = JSON.parse(localStorage.getItem("cricketMemories")) || [];  
+    if(!data.length) { alert("No Memories!"); return; }  
+    alert(data.map(m => `📅 ${m.date}\n🏏 ${m.summary}\n🎖️ MOM: ${m.mom}\n🏆 ${m.result}`).join("\n\n---\n\n"));  
+}  
+  
+function manageMemories() { if(confirm("Clear all history?")) { localStorage.removeItem("cricketMemories"); alert("Cleared!"); } }  
+  
+function bye() { if(matchOver) return; saveUndo(); let r = parseInt(prompt("Byes?"))||0; runs+=r; balls++; currentBowler.balls++; if(r%2) changeStrike(); endBall(); saveMatch(); }  
+function legBye() { if(matchOver) return; saveUndo(); let r = parseInt(prompt("Leg Byes?"))||0; runs+=r; balls++; currentBowler.balls++; if(r%2) changeStrike(); endBall(); saveMatch(); }  
+  
+function drawGraph() {  
+    const canvas = document.getElementById("matchGraph");  
+    const ctx = canvas.getContext("2d");  
+    const w = canvas.width = canvas.offsetWidth;  
+    const h = canvas.height = canvas.offsetHeight;  
+    ctx.clearRect(0, 0, w, h);  
+      
+    const margin = 35;  
+    const chartW = w - margin - 20;  
+    const chartH = h - margin - 20;  
+  
+    let allPoints = [...overByOverData.inning1, ...overByOverData.inning2];  
+    let maxR = Math.max(target, ...allPoints.map(p => p.runs), 20);  
+      
+    const getX = (o) => margin + (o / totalOvers) * chartW;  
+    const getY = (r) => (h - margin) - (r / maxR) * chartH;  
+  
+    ctx.strokeStyle = "#888"; ctx.lineWidth = 1;  
+    ctx.beginPath();  
+    ctx.moveTo(margin, 10); ctx.lineTo(margin, h - margin);   
+    ctx.lineTo(w - 10, h - margin);   
+    ctx.stroke();  
+  
+    ctx.fillStyle = "#555"; ctx.font = "10px Arial"; ctx.textAlign = "center";  
+    for(let i=0; i <= totalOvers; i++) {  
+        ctx.fillText(i, getX(i), h - margin + 15);  
+    }  
+    ctx.textAlign = "right";  
+    let step = maxR > 100 ? 20 : 10;  
+    for(let i=0; i <= maxR; i += step) {  
+        ctx.fillText(i, margin - 5, getY(i) + 3);  
+    }  
+  
+    drawInningLine(ctx, overByOverData.inning1, "blue", getX, getY);  
+    if(overByOverData.inning2.length > 1) drawInningLine(ctx, overByOverData.inning2, "red", getX, getY);  
+}  
+  
+function drawInningLine(ctx, data, color, getX, getY) {  
+    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath();  
+    data.forEach((p, i) => {  
+        let x = getX(p.over); let y = getY(p.runs);  
+        if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);  
+    });  
+    ctx.stroke();  
+  
+    let lastW = 0;  
+    data.forEach((p, i) => {  
+        if(p.wickets > lastW) {  
+            ctx.fillStyle = "black"; ctx.beginPath();  
+            ctx.arc(getX(p.over), getY(p.runs), 4, 0, Math.PI*2);  
+            ctx.fill();  
+            lastW = p.wickets;  
+        }  
+    });  
+}  
+</script>  </body>  
+</html>  
