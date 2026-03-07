@@ -177,15 +177,6 @@ function play(r) {
     if (matchOver) return;
     saveUndo();
 
-    
-    // बस ये जोड़ें:
-    db.ref('liveMatch/').set({
-        runs: runs,
-        wickets: wickets
-    });
-}
- 
- 
     runs += r; balls++;
     bowlerRunsInOver += r;
     batsmen[striker].runs += r;
@@ -196,10 +187,19 @@ function play(r) {
     currentBowler.balls++;
     partnershipRuns += r;
     partnershipBalls++;
+    
     if (r % 2) changeStrike();
     endBall();
     saveMatch();
+
+    // Firebase में डेटा भेजें
+    db.ref('liveMatch/').set({
+        runs: runs,
+        wickets: wickets,
+        balls: balls
+    });
 }
+ 
 
 // वाइड बॉल: पेनल्टी + भाग कर लिए रन
 function wideBall() {
@@ -696,7 +696,7 @@ function showFullScorecard(index) {
  <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
  <script>
-  // Firebase configuration
+  // 1. सबसे पहले Config और Initialize
   const firebaseConfig = {
     apiKey: "AIzaSyB3_Yt5cc7eXXvxKLi...",
     authDomain: "bkcclive.firebaseapp.com",
@@ -707,24 +707,21 @@ function showFullScorecard(index) {
     appId: "1:1042728754418:web:4385c9fb980874195e446b"
   };
 
-  // लाइन 704 के बाद, यहाँ:
-console.log("Firebase Connected Successfully!");
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database(); // यहाँ db तैयार हुआ
+  console.log("Firebase Connected Successfully!");
 
-// सिंक वाला कोड यहाँ पेस्ट करें:
-db.ref('liveMatch/').on('value', (snapshot) => {
+  // 2. अब जब db तैयार है, तब डेटा सिंक वाला कोड चलाएं
+  db.ref('liveMatch/').on('value', (snapshot) => {
     const data = snapshot.val();
     if (data) {
         runs = data.runs;
         wickets = data.wickets;
-        update(); // यह अपने आप रिफ्रेश कर देगा
+        // अगर balls भी सिंक करना चाहते हैं, तो:
+        // balls = data.balls; 
+        update(); 
     }
-});
-  
-  // Firebase Initialize karein
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database(); // Yahan se aapka database activate ho gaya
-
-  console.log("Firebase Connected Successfully!");
+  });
  </script>
  
 </body> 
