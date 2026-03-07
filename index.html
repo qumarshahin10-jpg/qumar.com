@@ -176,6 +176,16 @@ function createNewBowler() {
 function play(r) {
     if (matchOver) return;
     saveUndo();
+
+    
+    // बस ये जोड़ें:
+    db.ref('liveMatch/').set({
+        runs: runs,
+        wickets: wickets
+    });
+}
+ 
+ 
     runs += r; balls++;
     bowlerRunsInOver += r;
     batsmen[striker].runs += r;
@@ -682,5 +692,40 @@ function showFullScorecard(index) {
     modal.style.display = "block";
 }
 
-</script>  </body> 
+</script>
+ <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
+ <script>
+  // Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyB3_Yt5cc7eXXvxKLi...",
+    authDomain: "bkcclive.firebaseapp.com",
+    databaseURL: "https://bkcclive-default-rtdb.firebaseio.com",
+    projectId: "bkcclive",
+    storageBucket: "bkcclive.appspot.com",
+    messagingSenderId: "1042728754418",
+    appId: "1:1042728754418:web:4385c9fb980874195e446b"
+  };
+
+  // लाइन 704 के बाद, यहाँ:
+console.log("Firebase Connected Successfully!");
+
+// सिंक वाला कोड यहाँ पेस्ट करें:
+db.ref('liveMatch/').on('value', (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+        runs = data.runs;
+        wickets = data.wickets;
+        update(); // यह अपने आप रिफ्रेश कर देगा
+    }
+});
+  
+  // Firebase Initialize karein
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database(); // Yahan se aapka database activate ho gaya
+
+  console.log("Firebase Connected Successfully!");
+ </script>
+ 
+</body> 
 </html>
