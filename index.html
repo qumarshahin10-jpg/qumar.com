@@ -79,7 +79,7 @@ Balls: <span id="balls">0</span>/<span id="totalBalls"></span>
 </div>  </div>  <div class="scorer">Scorer : Shahin Qumar</div> 
 <div id="scorecardModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:1000; overflow-y:auto; padding:20px;">
     <div style="background:white; padding:20px; border-radius:10px; max-width:500px; margin:auto;">
-        <button onclick="document.getElementById('scorecardModal').style.display='none'" style="float:right;">❌ बंद करें</button>
+        <button onclick="document.getElementById('scorecardModal').style.display='none'" style="float:right;">❌ </button>
         <div id="modalContent"></div>
     </div>
 </div>
@@ -303,45 +303,72 @@ function endBall() {
     }
     update();
 }
-
 function renderScorecards() {
-    // Batting Table
+    // 1. Current Batting Table
     scorecardEl.innerHTML = `
     <table style="width:100%; border-collapse:collapse; font-size:13px;">
         <tr style="background:#e0e0e0;"><th align="left">Batter</th><th>R</th><th>B</th><th>4s</th><th>6s</th><th>SR</th></tr>
-        ${batsmen.map(b => {
-        let sr = b.balls ? ((b.runs / b.balls) * 100).toFixed(2) : "0.00";
-        return `<tr style="border-bottom:1px solid #ddd;">
-                <td align="left">${b.name}<br><span style="font-size:11px;color:#666">${b.out ? b.bTag : "not out"}</span></td>
+        ${batsmen.map((b, index) => {
+            let sr = b.balls ? ((b.runs / b.balls) * 100).toFixed(2) : "0.00";
+            let isCurrent = (index === striker || index === nonStriker) && !b.out;
+            let rowStyle = isCurrent ? "color: green; font-weight: bold;" : "";
+            return `<tr style="border-bottom:1px solid #ddd; ${rowStyle}">
+                <td align="left">${b.name} ${isCurrent ? " 🏏" : ""}<br><span style="font-size:11px; ${isCurrent ? 'color: green;' : 'color: #666;'}">${b.out ? b.bTag : "not out"}</span></td>
                 <td>${b.runs}</td><td>${b.balls}</td><td>${b.fours}</td><td>${b.sixes}</td><td>${sr}</td>
             </tr>`;
-    }).join("")}
+        }).join("")}
     </table>`;
 
-    // Bowling Table (Like the Image)
+    // 2. Current Bowling Table
     bowlingEl.innerHTML = `
     <table style="width:100%; border-collapse:collapse; font-size:13px; margin-top:10px;">
-        <tr style="background:#f2f2f2; border-bottom:2px solid #ccc;">
-            <th align="left">Bowler</th><th>O</th><th>M</th><th>R</th><th>W</th><th>NB</th><th>WD</th><th>ECO</th>
-        </tr>
+        <tr style="background:#f2f2f2; border-bottom:2px solid #ccc;"><th>Bowler</th><th>O</th><th>M</th><th>R</th><th>W</th><th>NB</th><th>WD</th><th>ECO</th></tr>
         ${bowlers.map(b => {
-        let overs = Math.floor(b.balls / 6) + "." + (b.balls % 6);
-        let eco = b.balls > 0 ? ((b.runs / b.balls) * 6).toFixed(2) : "0.00";
-        let isCurrent = (currentBowler && b.name === currentBowler.name) ? "color:green; font-weight:bold;" : "";
-        return `<tr style="border-bottom:1px solid #ddd; ${isCurrent}">
+            let overs = Math.floor(b.balls / 6) + "." + (b.balls % 6);
+            let eco = b.balls > 0 ? ((b.runs / b.balls) * 6).toFixed(2) : "0.00";
+            let isCurrent = (currentBowler && b.name === currentBowler.name) ? "color:green; font-weight:bold;" : "";
+            return `<tr style="border-bottom:1px solid #ddd; ${isCurrent}">
                 <td align="left">${b.name}</td>
                 <td>${overs}</td><td>${b.maidens}</td><td>${b.runs}</td><td>${b.wickets}</td>
                 <td>${b.noBalls}</td><td>${b.wides}</td><td>${eco}</td>
             </tr>`;
-    }).join("")}
+        }).join("")}
     </table>`;
 
-    // FOW and Histories
+   // 3. Previous Inning Batting (Full Detailed Table)
+document.getElementById("firstBat").innerHTML = `
+    <table style="width:100%; border-collapse:collapse; font-size:12px;">
+        <tr style="background:#f2f2f2;"><th>Batter</th><th>R</th><th>B</th><th>4s</th><th>6s</th><th>SR</th></tr>
+        ${firstBatting.map(b => {
+            let sr = b.balls ? ((b.runs / b.balls) * 100).toFixed(2) : "0.00";
+            return `<tr style="border-bottom:1px solid #eee;">
+                <td align="left">${b.name}<br><small style="color:#666">${b.out ? b.bTag : "NOT OUT"}</small></td>
+                <td>${b.runs}</td><td>${b.balls}</td><td>${b.fours || 0}</td><td>${b.sixes || 0}</td><td>${sr}</td>
+            </tr>`;
+        }).join("")}
+    </table>`;
+
+// 4. Previous Inning Bowling (Full Detailed Table)
+document.getElementById("firstBowl").innerHTML = `
+    <table style="width:100%; border-collapse:collapse; font-size:12px; margin-top:10px;">
+        <tr style="background:#f2f2f2;"><th>Bowler</th><th>O</th><th>M</th><th>R</th><th>W</th><th>NB</th><th>WD</th><th>ECO</th></tr>
+        ${firstBowling.map(b => {
+            let overs = Math.floor(b.balls / 6) + "." + (b.balls % 6);
+            let eco = b.balls > 0 ? ((b.runs / b.balls) * 6).toFixed(2) : "0.00";
+            return `<tr style="border-bottom:1px solid #eee;">
+                <td>${b.name}</td>
+                <td>${overs}</td><td>${b.maidens}</td><td>${b.runs}</td><td>${b.wickets}</td>
+                <td>${b.noBalls || 0}</td><td>${b.wides || 0}</td><td>${eco}</td>
+            </tr>`;
+        }).join("")}
+    </table>`;
+
+
+    // FOW section
     fowEl.innerHTML = fow.length > 0 ? fow.join(" , ") : "No wickets yet";
-    document.getElementById("firstBat").innerHTML = firstBatting.map((b, i) => `${i + 1}. ${b.name} - ${b.runs}(${b.balls}) | ${b.out ? b.bTag : "NOT OUT"}<br>`).join("");
-    document.getElementById("firstBowl").innerHTML = firstBowling.map(b => `${b.name} - ${b.wickets} wkts (R:${b.runs})<br>`).join("");
     firstFowEl.innerHTML = firstFow.length > 0 ? firstFow.join(" , ") : "N/A";
 }
+
 
 function update() {
     teamEl.innerText = (innings === 1 ? team1 : team2);
@@ -522,35 +549,94 @@ function legBye() {
     endBall();
     saveMatch();
 }
-
 function drawGraph() {
     const canvas = document.getElementById("matchGraph");
     const ctx = canvas.getContext("2d");
     const w = canvas.width = canvas.offsetWidth;
     const h = canvas.height = canvas.offsetHeight;
     ctx.clearRect(0, 0, w, h);
-    const margin = 35;
+    
+    const margin = 45;
     const chartW = w - margin - 20;
-    const chartH = h - margin - 20;
-    let allPoints = [...overByOverData.inning1, ...overByOverData.inning2];
-    let maxR = Math.max(target, ...allPoints.map(p => p.runs), 20);
+    const chartH = h - margin - 30;
+    
+    let maxR = Math.max(target > 0 ? target : 0, 50); // रन स्केल के लिए
+    
     const getX = (o) => margin + (o / totalOvers) * chartW;
     const getY = (r) => (h - margin) - (r / maxR) * chartH;
-    ctx.strokeStyle = "#888"; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(margin, 10); ctx.lineTo(margin, h - margin); ctx.lineTo(w - 10, h - margin); ctx.stroke();
-    for (let i = 0; i <= totalOvers; i++) ctx.fillText(i, getX(i), h - margin + 15);
-    drawInningLine(ctx, overByOverData.inning1, "blue", getX, getY);
-    if (overByOverData.inning2.length > 1) drawInningLine(ctx, overByOverData.inning2, "red", getX, getY);
+
+    // 1. Grid Lines और Axis Ticks ड्रा करें
+    ctx.strokeStyle = "#ddd";
+    ctx.lineWidth = 1;
+    ctx.fillStyle = "#666";
+    ctx.font = "10px Arial";
+
+    // X-Axis (Overs)
+    for (let i = 0; i <= totalOvers; i++) {
+        let x = getX(i);
+        ctx.beginPath(); ctx.moveTo(x, margin/2); ctx.lineTo(x, h - margin); ctx.stroke();
+        ctx.fillText(i, x - 2, h - 25); // ओवर नंबर
+    }
+
+    // Y-Axis (Runs - अब हर 10 रन पर एक लाइन)
+    let step = 10; // यहाँ 10 कर दिया है
+    for (let i = 0; i <= maxR; i += step) {
+        let y = getY(i);
+        // ग्रिड लाइन ड्रा करें
+        ctx.beginPath(); 
+        ctx.strokeStyle = "#eee"; // हल्की लाइन
+        ctx.moveTo(margin, y); 
+        ctx.lineTo(w - 10, y); 
+        ctx.stroke();
+        
+        // रन नंबर लिखें
+        ctx.fillStyle = "#666";
+        ctx.fillText(i, 5, y + 3); 
+    }
+
+
+    // 2. Axis लाइन्स (Bold)
+    ctx.strokeStyle = "#000";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(margin, margin/2); ctx.lineTo(margin, h - margin);
+    ctx.lineTo(w - 10, h - margin);
+    ctx.stroke();
+
+    // 3. डेटा लाइनें ड्रा करें
+    drawInningLine(ctx, overByOverData.inning1, "#1976d2", getX, getY);
+    if (overByOverData.inning2.length > 1) {
+        drawInningLine(ctx, overByOverData.inning2, "#d32f2f", getX, getY);
+    }
 }
 
-function drawInningLine(ctx, data, color, getX, getY) {
-    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath();
+
+
+function drawInningLine(ctx, data, color, getX, getY, isFirstInning) {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    
     data.forEach((p, i) => {
-        let x = getX(p.over); let y = getY(p.runs);
+        let x = getX(p.over);
+        let y = getY(p.runs);
         if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     });
     ctx.stroke();
+
+    // विकेट्स को ब्लैक डॉट्स के रूप में दिखाएं
+    data.forEach(p => {
+        if (p.wickets > 0) {
+            ctx.fillStyle = "black";
+            ctx.beginPath();
+            ctx.arc(getX(p.over), getY(p.runs), 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    });
 }
+
+
+
 function showFullScorecard(index) {
     let history = JSON.parse(localStorage.getItem("cricketMatchHistory") || "[]");
     let m = history[index];
