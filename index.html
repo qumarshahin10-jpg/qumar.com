@@ -446,16 +446,32 @@ function update() {
     // ... (बाकी अपडेट फंक्शन्स) ...
 }
  
-
-function updateBatsmenDisplay(batsmenData) {
-    if (batsmenData) {
-        // डेटाबेस से आए नामों को अपने लोकल वेरिएबल में अपडेट करें
-        batsmen = batsmenData;
-        // फिर स्क्रीन को रिफ्रेश करें ताकि नाम दिखें
-        update();
+// यह फंक्शन डेटाबेस से पूरे बैटिंग स्टेट को सिंक करेगा
+function updateBatsmenDisplay(data) {
+    if (data && data.batsmen) {
+        batsmen = data.batsmen;
+        // ये लाइन सबसे ज़रूरी है, स्ट्राइकर की सही पोजीशन अपडेट करें
+        striker = data.striker !== undefined ? data.striker : 0;
+        nonStriker = data.nonStriker !== undefined ? data.nonStriker : 1;
+        
+        update(); // अब नाम सही दिखाएगा
     }
 }
+
+// और अपने लिसनर को ऐसे अपडेट करें:
+db.ref('liveMatch/').on('value', (snapshot) => {
+    let data = snapshot.val();
+    if (data) {
+        runs = data.runs || 0;
+        wickets = data.wickets || 0;
+        balls = data.balls || 0;
+        
+        // पूरा डेटा पास करें ताकि इंडेक्स भी मिल सके
+        updateBatsmenDisplay(data); 
+    }
+});
  
+
  
 // बाकी के फंक्शन्स (updateRRR, drawGraph, saveMatch आदि) वैसे ही रहेंगे जैसे पहले थे
 function updateRRR() {
@@ -777,21 +793,24 @@ function showFullScorecard(index) {
   const db = firebase.database(); // यहाँ db तैयार हुआ
   console.log("Firebase Connected Successfully!");
 
+// इसे इस तरह बदलें:
 db.ref('liveMatch/').on('value', (snapshot) => {
     let data = snapshot.val();
     if (data) {
+        // 1. स्कोर और बैट्समैन लिस्ट अपडेट करें
         runs = data.runs || 0;
         wickets = data.wickets || 0;
         balls = data.balls || 0;
         
         if (data.batsmen) {
             batsmen = data.batsmen;
-            // यह लाइन बहुत ज़रूरी है ताकि सही स्ट्राइकर दिखे
+            // 2. स्ट्राइकर और नॉन-स्ट्राइकर की पोजीशन को भी डेटाबेस से सिंक करें
             striker = data.striker !== undefined ? data.striker : 0;
             nonStriker = data.nonStriker !== undefined ? data.nonStriker : 1;
         }
         
-        update(); // अब नाम सही आएंगे
+        // 3. अब अपडेट करें
+        update(); 
     }
 });
   
