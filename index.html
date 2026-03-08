@@ -160,7 +160,8 @@ function resetMatch() {
         localStorage.removeItem("cricketMatch");
         
         // 3. सबसे आखिर में पेज रिफ्रेश करें
-        location.reload();
+        window.location.href = window.location.pathname + "?t=" + new Date().getTime();
+     
     }
 }
  
