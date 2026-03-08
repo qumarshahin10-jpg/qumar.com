@@ -719,19 +719,16 @@ function showFullScorecard(index) {
  db.ref('liveMatch/').on('value', (snapshot) => {
     const data = snapshot.val();
     if (data) {
-        runs = data.runs;
-        wickets = data.wickets;
-        balls = data.balls;
-        striker = data.striker;
-        nonStriker = data.nonStriker;
-        batsmen = data.batsmen; 
+        // सिर्फ वही अपडेट करें जो ज़रूरी और सुरक्षित है
+        runs = data.runs || 0;
+        wickets = data.wickets || 0;
+        balls = data.balls || 0;
         
-        // बॉलर को वापस सेट करें
-        currentBowler = bowlers.find(b => b.name === data.bowlerName);
-        
-        update(); // अब यह सब कुछ अपडेट कर देगा
+        // स्कोरबोर्ड को रिफ्रेश करें
+        update(); 
     }
 });
+  
   
  </script>
  
