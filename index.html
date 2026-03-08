@@ -177,6 +177,12 @@ function play(r) {
     if (matchOver) return;
     saveUndo();
 
+  // 1. सबसे पहले यह चेक जोड़ें (Admin Check)
+    if (localStorage.getItem("isAdmin") !== "true") {
+        alert("Access Denied: Aap sirf score dekh sakte hain, update nahi kar sakte!");
+        return; 
+    }
+ 
     runs += r; balls++;
     bowlerRunsInOver += r;
     batsmen[striker].runs += r;
@@ -192,15 +198,6 @@ function play(r) {
     endBall();
     saveMatch();
 
-let password = prompt("स्कोर अपडेट करने के लिए पासवर्ड डालें:");
-    if (password !== "1234") { // अपना गुप्त पासवर्ड यहाँ रखें
-        alert("आप स्कोर अपडेट नहीं कर सकते!");
-        return; 
-    }
-    
-    // बाकी आपका पुराना कोड यहाँ रहेगा...
-    // ...
-}
 
  
  
