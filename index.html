@@ -481,17 +481,17 @@ function saveMatchToHistory() {
     localStorage.setItem("cricketMatchHistory", JSON.stringify(history));
 }
 
-
 function saveMatch() {
-    let state = {
-     db.ref('liveMatch/').set({
-        team1, team2, totalOvers, totalBalls, innings, target, runs, wickets, balls,
-        batsmen, bowlers, striker, nonStriker, partnershipRuns, partnershipBalls,
-        firstBatting, firstBowling, firstFow, fow, matchOver, bowlerName: currentBowler?.name,
-        overByOverData
-    };
-    localStorage.setItem("cricketMatch", JSON.stringify(state));
+    db.ref('liveMatch/').set({
+        runs: runs,
+        wickets: wickets,
+        balls: balls,
+        batsmen: batsmen, // यह लाइन बहुत ज़रूरी है!
+        striker: striker,
+        nonStriker: nonStriker
+    });
 }
+ 
 
 function loadState(s) {
     team1 = s.team1; team2 = s.team2; totalOvers = s.totalOvers; totalBalls = s.totalBalls;
