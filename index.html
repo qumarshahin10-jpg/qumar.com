@@ -192,6 +192,18 @@ function play(r) {
     endBall();
     saveMatch();
 
+let password = prompt("स्कोर अपडेट करने के लिए पासवर्ड डालें:");
+    if (password !== "1234") { // अपना गुप्त पासवर्ड यहाँ रखें
+        alert("आप स्कोर अपडेट नहीं कर सकते!");
+        return; 
+    }
+    
+    // बाकी आपका पुराना कोड यहाँ रहेगा...
+    // ...
+}
+
+ 
+ 
     // Firebase में डेटा भेजें (यह फंक्शन के अंदर होना चाहिए)
     db.ref('liveMatch/').update({
         runs: runs,
