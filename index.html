@@ -43,7 +43,7 @@ Balls: <span id="balls">0</span>/<span id="totalBalls"></span>
 <b>Current Batsmen</b>  
 <div id="current"></div>  
 </div>  <div id="partnershipBox">🤝 Partnership: 0 runs (0 balls)</div>  <div style="margin-top:10px;">  
-<div id="controlPanel">
+
  <button class="run" onclick="play(0)">0</button>  
 <button class="run" onclick="play(1)">1</button>  
 <button class="run" onclick="play(2)">2</button>  
@@ -59,7 +59,7 @@ Balls: <span id="balls">0</span>/<span id="totalBalls"></span>
 <button onclick="showMemories()">📜 MATCH MEMORY</button>  
 <button onclick="manageMemories()">🗑️ MANAGE MEMORY</button>  
 <button class="reset" onclick="resetMatch()">🔄 NEW MATCH</button>  
-</div>
+
 <button onclick="localStorage.setItem('isAdmin', 'true'); alert('Ab aap Admin hain!')">Login as Admin</button>
  
 </div>  <div class="section">  
@@ -282,6 +282,11 @@ function noBall() {
 
 function wicket() {
     if (matchOver) return;
+   // 1. सबसे पहले यह चेक जोड़ें (Admin Check)
+    if (localStorage.getItem("isAdmin") !== "true") {
+        alert("Access Denied: Aap sirf score dekh sakte hain, update nahi kar sakte!");
+        return; 
+    }
  
     let type = prompt("Wicket Type:\n1 = Bowled/Caught\n2 = Run Out\n3 = LBW/Stumped");
     if (!type) return;
@@ -531,6 +536,11 @@ function manageMemories() {
         alert("कोई मैच हिस्ट्री उपलब्ध नहीं है!");
         return;
     }
+  // 1. सबसे पहले यह चेक जोड़ें (Admin Check)
+    if (localStorage.getItem("isAdmin") !== "true") {
+        alert("Access Denied: Aap sirf score dekh sakte hain, update nahi kar sakte!");
+        return; 
+    }
 
     let modal = document.getElementById("scorecardModal");
     let content = document.getElementById("modalContent");
@@ -760,17 +770,6 @@ function showFullScorecard(index) {
     }
 });
  
-window.onload = function() {
-    var controlPanel = document.getElementById("controlPanel");
-    
-    // अगर आप डेवलपर हैं (आपका टैबलेट), तो इसे 'true' मान लें
-    // या अगर localStorage में 'true' सेव है, तो बटन दिखाएं
-    if (localStorage.getItem("isAdmin") === "true") {
-      controlPanel.style.display = "block";
-    } else {
-      controlPanel.style.display = "none";
-    }
-  };  
  </script>
  
 </body> 
