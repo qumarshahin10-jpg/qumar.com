@@ -186,13 +186,11 @@ function createNewBowler() {
 function play(r) {
     if (matchOver) return;
     saveUndo();
-function checkAdmin() {
+  // 1. सबसे पहले यह चेक जोड़ें (Admin Check)
     if (localStorage.getItem("isAdmin") !== "true") {
-        alert("Access Denied!");
-        return false;
+        alert("Access Denied: Aap sirf score dekh sakte hain, update nahi kar sakte!");
+        return; 
     }
-    return true;
-}
 
  
     runs += r; balls++;
