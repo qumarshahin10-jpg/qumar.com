@@ -187,21 +187,22 @@ function play(r) {
     currentBowler.balls++;
     partnershipRuns += r;
     partnershipBalls++;
-    
+
     if (r % 2) changeStrike();
     endBall();
     saveMatch();
 
-   // play(r) के अंदर यह वाला कोड रखें
-db.ref('liveMatch/').set({
-    runs: runs,
-    wickets: wickets,
-    balls: balls,
-    striker: striker,
-    nonStriker: nonStriker,
-    batsmen: batsmen, // पूरे बैट्समैन का डेटा
-    bowlerName: currentBowler.name // बॉलर का नाम
- });
+    // Firebase में डेटा भेजें (यह फंक्शन के अंदर होना चाहिए)
+    db.ref('liveMatch/').update({
+        runs: runs,
+        wickets: wickets,
+        balls: balls,
+        overs: Math.floor(balls / 6) + "." + (balls % 6)
+    });
+}
+ 
+
+ 
  
  
 
