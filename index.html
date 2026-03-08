@@ -310,6 +310,8 @@ function wicket() {
     if (localStorage.getItem("isAdmin") !== "true") {
         alert("Access Denied: Aap sirf score dekh sakte hain, update nahi kar sakte!");
         return; 
+     endBall();
+     saveMatch();
     }
  
     let type = prompt("Wicket Type:\n1 = Bowled/Caught\n2 = Run Out\n3 = LBW/Stumped");
@@ -521,13 +523,17 @@ function saveMatchToHistory() {
 }
 
 function saveMatch() {
-    db.ref('liveMatch/').set({
+    db.ref('liveMatch/').update({
         runs: runs,
         wickets: wickets,
         balls: balls,
-        batsmen: batsmen, // यह लाइन बहुत ज़रूरी है!
-        striker: striker,
-        nonStriker: nonStriker
+        batsmen: batsmen,          // ये ज़रूरी है
+        striker: striker,          // ये ज़रूरी है
+        nonStriker: nonStriker,    // ये ज़रूरी है
+        bowlers: bowlers,
+        innings: innings,
+        target: target,
+        matchOver: matchOver
     });
 }
  
@@ -825,6 +831,7 @@ function showFullScorecard(index) {
   const db = firebase.database(); // यहाँ db तैयार हुआ
   console.log("Firebase Connected Successfully!");
   
+// यह एकमात्र लिसनर आपकी फाइल के अंत में रखें
 db.ref('liveMatch/').on('value', (snapshot) => {
     let data = snapshot.val();
     if (data) {
@@ -832,13 +839,12 @@ db.ref('liveMatch/').on('value', (snapshot) => {
         wickets = data.wickets || 0;
         balls = data.balls || 0;
         
-        // बैट्समैन और स्ट्राइकर की पोजीशन को एक साथ सिंक करें
         if (data.batsmen) {
             batsmen = data.batsmen;
-            striker = data.striker !== undefined ? data.striker : 0;
-            nonStriker = data.nonStriker !== undefined ? data.nonStriker : 1;
+            striker = data.striker;
+            nonStriker = data.nonStriker;
         }
-        update(); // एक बार अपडेट कॉल करें
+        update(); 
     }
 });
   
