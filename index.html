@@ -43,7 +43,8 @@ Balls: <span id="balls">0</span>/<span id="totalBalls"></span>
 <b>Current Batsmen</b>  
 <div id="current"></div>  
 </div>  <div id="partnershipBox">🤝 Partnership: 0 runs (0 balls)</div>  <div style="margin-top:10px;">  
-<button class="run" onclick="play(0)">0</button>  
+<div id="controlPanel">
+ <button class="run" onclick="play(0)">0</button>  
 <button class="run" onclick="play(1)">1</button>  
 <button class="run" onclick="play(2)">2</button>  
 <button class="run" onclick="play(3)">3</button>  
@@ -58,7 +59,7 @@ Balls: <span id="balls">0</span>/<span id="totalBalls"></span>
 <button onclick="showMemories()">📜 MATCH MEMORY</button>  
 <button onclick="manageMemories()">🗑️ MANAGE MEMORY</button>  
 <button class="reset" onclick="resetMatch()">🔄 NEW MATCH</button>  
- 
+</div>
 <button onclick="localStorage.setItem('isAdmin', 'true'); alert('Ab aap Admin hain!')">Login as Admin</button>
  
 </div>  <div class="section">  
@@ -758,7 +759,13 @@ function showFullScorecard(index) {
         update(); 
     }
 });
-  
+ window.onload = function() {
+    var controlPanel = document.getElementById("controlPanel");
+    // अगर एडमिन नहीं है, तो बटन गायब कर दो
+    if (localStorage.getItem("isAdmin") !== "true") {
+      controlPanel.style.display = "none";
+    }
+  }; 
   
  </script>
  
