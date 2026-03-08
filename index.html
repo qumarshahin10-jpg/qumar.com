@@ -221,6 +221,11 @@ function play(r) {
 function wideBall() {
     if(matchOver) return;
     saveUndo();
+   // 1. सबसे पहले यह चेक जोड़ें (Admin Check)
+    if (localStorage.getItem("isAdmin") !== "true") {
+        alert("Access Denied: Aap sirf score dekh sakte hain, update nahi kar sakte!");
+        return; 
+    }
 
     let extraRuns = parseInt(prompt("वाइड पर भाग कर कितने रन लिए?", "0")) || 0;
     
@@ -243,6 +248,11 @@ function wideBall() {
 function noBall() {
     if(matchOver) return;
     saveUndo();
+   // 1. सबसे पहले यह चेक जोड़ें (Admin Check)
+    if (localStorage.getItem("isAdmin") !== "true") {
+        alert("Access Denied: Aap sirf score dekh sakte hain, update nahi kar sakte!");
+        return; 
+    }
 
     let batRuns = parseInt(prompt("नो बॉल पर बल्ले से कितने रन बने?", "0")) || 0;
     let totalNBRuns = 1 + batRuns; // 1 पेनल्टी + बल्ले के रन
@@ -263,6 +273,11 @@ function noBall() {
 
 function wicket() {
     if (matchOver) return;
+   // 1. सबसे पहले यह चेक जोड़ें (Admin Check)
+    if (localStorage.getItem("isAdmin") !== "true") {
+        alert("Access Denied: Aap sirf score dekh sakte hain, update nahi kar sakte!");
+        return; 
+    }
     let type = prompt("Wicket Type:\n1 = Bowled/Caught\n2 = Run Out\n3 = LBW/Stumped");
     if (!type) return;
     saveUndo();
