@@ -760,7 +760,17 @@ function showFullScorecard(index) {
     }
 });
  
-  
+window.onload = function() {
+    var controlPanel = document.getElementById("controlPanel");
+    
+    // अगर आप डेवलपर हैं (आपका टैबलेट), तो इसे 'true' मान लें
+    // या अगर localStorage में 'true' सेव है, तो बटन दिखाएं
+    if (localStorage.getItem("isAdmin") === "true") {
+      controlPanel.style.display = "block";
+    } else {
+      controlPanel.style.display = "none";
+    }
+  };  
  </script>
  
 </body> 
