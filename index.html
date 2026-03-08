@@ -825,24 +825,20 @@ function showFullScorecard(index) {
   const db = firebase.database(); // यहाँ db तैयार हुआ
   console.log("Firebase Connected Successfully!");
   
-// इसे इस तरह बदलें:
 db.ref('liveMatch/').on('value', (snapshot) => {
     let data = snapshot.val();
     if (data) {
-        // 1. स्कोर और बैट्समैन लिस्ट अपडेट करें
         runs = data.runs || 0;
         wickets = data.wickets || 0;
         balls = data.balls || 0;
         
+        // बैट्समैन और स्ट्राइकर की पोजीशन को एक साथ सिंक करें
         if (data.batsmen) {
             batsmen = data.batsmen;
-            // 2. स्ट्राइकर और नॉन-स्ट्राइकर की पोजीशन को भी डेटाबेस से सिंक करें
             striker = data.striker !== undefined ? data.striker : 0;
             nonStriker = data.nonStriker !== undefined ? data.nonStriker : 1;
         }
-        
-        // 3. अब अपडेट करें
-        update(); 
+        update(); // एक बार अपडेट कॉल करें
     }
 });
   
