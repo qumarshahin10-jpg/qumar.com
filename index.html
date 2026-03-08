@@ -129,14 +129,21 @@ let overByOverData = {
 };
 
 window.onload = function () {
-    let saved = localStorage.getItem("cricketMatch");
-    if (saved) {
-        loadState(JSON.parse(saved));
-    } else {
-        startNewGame();
-    }
-    update();
+    // 1. Firebase से डेटा चेक करें
+    db.ref('liveMatch/').once('value', (snapshot) => {
+        let saved = snapshot.val();
+        
+        // 2. अगर डेटाबेस में डेटा है, तो उसे लोड करें
+        if (saved && saved.runs !== undefined) {
+            loadState(saved); 
+        } else {
+            // 3. अगर डेटा नहीं है, तभी नया गेम शुरू करें
+            startNewGame();
+        }
+        update();
+    });
 };
+ 
 
 function startNewGame() {
     team1 = prompt("Team 1 Name") || "Team A";
