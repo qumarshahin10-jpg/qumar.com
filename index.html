@@ -484,6 +484,7 @@ function saveMatchToHistory() {
 
 function saveMatch() {
     let state = {
+     db.ref('liveMatch/').set({
         team1, team2, totalOvers, totalBalls, innings, target, runs, wickets, balls,
         batsmen, bowlers, striker, nonStriker, partnershipRuns, partnershipBalls,
         firstBatting, firstBowling, firstFow, fow, matchOver, bowlerName: currentBowler?.name,
