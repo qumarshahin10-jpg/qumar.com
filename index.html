@@ -538,7 +538,14 @@ function loadState(s) {
 }
 
 function saveUndo() { undoStack.push(JSON.stringify(JSON.parse(localStorage.getItem("cricketMatch")))); }
-function undo() { if (!undoStack.length) return; loadState(JSON.parse(undoStack.pop())); update(); saveMatch(); }
+function undo(){
+   // 1. सबसे पहले यह चेक जोड़ें (Admin Check)
+    if (localStorage.getItem("isAdmin") !== "true") {
+        alert("Access Denied: Aap sirf score dekh sakte hain, update nahi kar sakte!");
+        return; 
+    }
+
+ if (!undoStack.length) return; loadState(JSON.parse(undoStack.pop())); update(); saveMatch(); }
 
 function saveMatchMemory(res) {
     let mem = JSON.parse(localStorage.getItem("cricketMemories")) || [];
@@ -621,6 +628,11 @@ function deleteSelected() {
 function bye() {
     if(matchOver) return;
     saveUndo();
+  // 1. सबसे पहले यह चेक जोड़ें (Admin Check)
+    if (localStorage.getItem("isAdmin") !== "true") {
+        alert("Access Denied: Aap sirf score dekh sakte hain, update nahi kar sakte!");
+        return; 
+    }
 
     let r = parseInt(prompt("Byes के कितने रन मिले?", "0")) || 0;
     runs += r;
@@ -638,6 +650,11 @@ function bye() {
 function legBye() {
     if(matchOver) return;
     saveUndo();
+  // 1. सबसे पहले यह चेक जोड़ें (Admin Check)
+    if (localStorage.getItem("isAdmin") !== "true") {
+        alert("Access Denied: Aap sirf score dekh sakte hain, update nahi kar sakte!");
+        return; 
+    }
 
     let r = parseInt(prompt("Leg Byes के कितने रन मिले?", "0")) || 0;
     runs += r;
