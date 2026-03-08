@@ -192,13 +192,17 @@ function play(r) {
     endBall();
     saveMatch();
 
-    // Firebase में डेटा भेजें
-    db.ref('liveMatch/').set({
-        runs: runs,
-        wickets: wickets,
-        balls: balls
-    });
-}
+   // play(r) के अंदर यह वाला कोड रखें
+db.ref('liveMatch/').set({
+    runs: runs,
+    wickets: wickets,
+    balls: balls,
+    striker: striker,
+    nonStriker: nonStriker,
+    batsmen: batsmen, // पूरे बैट्समैन का डेटा
+    bowlerName: currentBowler.name // बॉलर का नाम
+});
+ 
  
 
 // वाइड बॉल: पेनल्टी + भाग कर लिए रन
@@ -711,17 +715,23 @@ function showFullScorecard(index) {
   const db = firebase.database(); // यहाँ db तैयार हुआ
   console.log("Firebase Connected Successfully!");
 
-  // 2. अब जब db तैयार है, तब डेटा सिंक वाला कोड चलाएं
-  db.ref('liveMatch/').on('value', (snapshot) => {
+ db.ref('liveMatch/').on('value', (snapshot) => {
     const data = snapshot.val();
     if (data) {
         runs = data.runs;
         wickets = data.wickets;
-        // अगर balls भी सिंक करना चाहते हैं, तो:
-        // balls = data.balls; 
-        update(); 
+        balls = data.balls;
+        striker = data.striker;
+        nonStriker = data.nonStriker;
+        batsmen = data.batsmen; 
+        
+        // बॉलर को वापस सेट करें
+        currentBowler = bowlers.find(b => b.name === data.bowlerName);
+        
+        update(); // अब यह सब कुछ अपडेट कर देगा
     }
-  });
+});
+  
  </script>
  
 </body> 
