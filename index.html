@@ -450,6 +450,15 @@ function update() {
     drawGraph();
 }
 
+function updateBatsmenDisplay(batsmenData) {
+    if (batsmenData) {
+        // डेटाबेस से आए नामों को अपने लोकल वेरिएबल में अपडेट करें
+        batsmen = batsmenData;
+        // फिर स्क्रीन को रिफ्रेश करें ताकि नाम दिखें
+        update();
+    }
+}
+ 
 // बाकी के फंक्शन्स (updateRRR, drawGraph, saveMatch आदि) वैसे ही रहेंगे जैसे पहले थे
 function updateRRR() {
     if (innings === 2 && !matchOver) {
@@ -769,24 +778,23 @@ function showFullScorecard(index) {
   const db = firebase.database(); // यहाँ db तैयार हुआ
   console.log("Firebase Connected Successfully!");
 
- db.ref('liveMatch/').on('value', (snapshot) => {
+ // पुराना वाला Listener हटाकर ये लिखें
+db.ref('liveMatch/').on('value', (snapshot) => {
     const data = snapshot.val();
     if (data) {
-        // सिर्फ वही अपडेट करें जो ज़रूरी और सुरक्षित है
         runs = data.runs || 0;
         wickets = data.wickets || 0;
         balls = data.balls || 0;
         
-        // स्कोरबोर्ड को रिफ्रेश करें
+        // बैट्समैन का नाम और स्ट्राइकर की जानकारी अपडेट करें
+        if(data.batsmen) {
+            batsmen = data.batsmen;
+            striker = data.striker || 0;
+            nonStriker = data.nonStriker || 1;
+        }
+        
+        // स्क्रीन को पूरी तरह अपडेट करें
         update(); 
-    }
-});
-
-  db.ref('liveMatch/').on('value', (snapshot) => {
-    let data = snapshot.val();
-    if (data) {
-        // यहाँ से नाम अपडेट करें
-        updateBatsmenDisplay(data.batsmen); 
     }
 });
   
