@@ -186,6 +186,13 @@ function createNewBowler() {
 function play(r) {
     if (matchOver) return;
     saveUndo();
+function checkAdmin() {
+    if (localStorage.getItem("isAdmin") !== "true") {
+        alert("Access Denied!");
+        return false;
+    }
+    return true;
+}
 
  
     runs += r; balls++;
