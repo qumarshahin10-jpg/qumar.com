@@ -433,22 +433,19 @@ document.getElementById("firstBowl").innerHTML = `
 
 
 function update() {
-    teamEl.innerText = (innings === 1 ? team1 : team2);
-    totalBallsEl.innerText = totalBalls;
-    inningInfo.innerText = "Innings: " + innings + (target > 0 ? " | Target: " + target : "");
-    runsEl.innerText = runs; wicketsEl.innerText = wickets;
-    ballsEl.innerText = balls;
-    oversEl.innerText = Math.floor(balls / 6) + "." + (balls % 6);
-    let crr = balls > 0 ? ((runs / (balls / 6))).toFixed(2) : "0.00";
-    crrEl.innerText = "CRR: " + crr;
-    currentEl.innerHTML = `
-        <div class="strikeBat">${batsmen[striker].name} - ${batsmen[striker].runs}(${batsmen[striker].balls}) <span class="strikeIcon">🏏</span></div>  
-        <div>${batsmen[nonStriker].name} - ${batsmen[nonStriker].runs}(${batsmen[nonStriker].balls})</div>`;
-    pBox.innerText = `🤝 Partnership: ${partnershipRuns} runs (${partnershipBalls} balls)`;
-    renderScorecards();
-    updateRRR();
-    drawGraph();
+    // ... (बाकी कोड वैसे ही रहने दें) ...
+    
+    // यहाँ बदलाव करें:
+    // यह पक्का करें कि batsmen[striker] मौजूद है
+    if (batsmen[striker] && batsmen[nonStriker]) {
+        currentEl.innerHTML = `
+            <div class="strikeBat">${batsmen[striker].name} - ${batsmen[striker].runs}(${batsmen[striker].balls}) <span class="strikeIcon">🏏</span></div>  
+            <div>${batsmen[nonStriker].name} - ${batsmen[nonStriker].runs}(${batsmen[nonStriker].balls})</div>`;
+    }
+    
+    // ... (बाकी अपडेट फंक्शन्स) ...
 }
+ 
 
 function updateBatsmenDisplay(batsmenData) {
     if (batsmenData) {
@@ -780,23 +777,21 @@ function showFullScorecard(index) {
   const db = firebase.database(); // यहाँ db तैयार हुआ
   console.log("Firebase Connected Successfully!");
 
- // पुराना वाला Listener हटाकर ये लिखें
 db.ref('liveMatch/').on('value', (snapshot) => {
-    const data = snapshot.val();
+    let data = snapshot.val();
     if (data) {
         runs = data.runs || 0;
         wickets = data.wickets || 0;
         balls = data.balls || 0;
         
-        // बैट्समैन का नाम और स्ट्राइकर की जानकारी अपडेट करें
-        if(data.batsmen) {
+        if (data.batsmen) {
             batsmen = data.batsmen;
-            striker = data.striker || 0;
-            nonStriker = data.nonStriker || 1;
+            // यह लाइन बहुत ज़रूरी है ताकि सही स्ट्राइकर दिखे
+            striker = data.striker !== undefined ? data.striker : 0;
+            nonStriker = data.nonStriker !== undefined ? data.nonStriker : 1;
         }
         
-        // स्क्रीन को पूरी तरह अपडेट करें
-        update(); 
+        update(); // अब नाम सही आएंगे
     }
 });
   
