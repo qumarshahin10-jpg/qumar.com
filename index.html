@@ -147,13 +147,13 @@ function startNewGame() {
     saveMatch();
 }
 function resetMatch() {
-    if (confirm("New match start karein?")) {
-       // 1. सबसे पहले यह चेक जोड़ें (Admin Check)
+   // 1. सबसे पहले यह चेक जोड़ें (Admin Check)
     if (localStorage.getItem("isAdmin") !== "true") {
         alert("Access Denied: Aap sirf score dekh sakte hain, update nahi kar sakte!");
         return; 
     }
-     
+
+    if (confirm("New match start karein?")) {
         // 1. पहले डेटाबेस को 0 करें
         db.ref('liveMatch/').set({
             runs: 0,
