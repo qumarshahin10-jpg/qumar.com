@@ -33,12 +33,9 @@ canvas{width:100%; height:220px; display:block;}
 @media (max-width:767px){.box{border-radius:0;}}  
 </style> 
 
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-database-compat.js"></script>
- 
+
  
 </head>  <body>  <div class="box">  
- <h1 id="score-display">Loading...</h1>
 <h3>  
  <span id="team"></span>  
  <span id="winTag" style="display:none">🏆 WIN</span>  
@@ -142,16 +139,7 @@ Balls: <span id="balls">0</span>/<span id="totalBalls"></span>
     </div>
 </div>
 
- <script>
-  const firebaseConfig = { /* यहाँ वो कोड पेस्ट करें जो आपने स्टेप 3 में कॉपी किया था */ };
-  firebase.initializeApp(firebaseConfig);
-  const database = firebase.database();
 
-  // यह लाइन स्कोर को लाइव दिखाएगी
-  database.ref('score').on('value', (snapshot) => {
-    document.getElementById('score-display').innerText = snapshot.val();
-  });
- </script>
  
 
 
@@ -1018,24 +1006,6 @@ function completeWicketProcess(outIndex) {
     saveMatch();
     update();
 }
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyB3_Yt5cc7eXXvxKlIaovAvIZ4l5fWIC1g",
-  authDomain: "bkcclive.firebaseapp.com",
-  databaseURL: "https://bkcclive-default-rtdb.firebaseio.com",
-  projectId: "bkcclive",
-  storageBucket: "bkcclive.firebasestorage.app",
-  messagingSenderId: "1042728754418",
-  appId: "1:1042728754418:web:4385c9fb980874195e446b"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
 
 </script>  </body> 
 </html>
