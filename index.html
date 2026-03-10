@@ -251,20 +251,23 @@ function play(r) {
     partnershipRuns += r;
     partnershipBalls++;
 
-    // --- Firebase में डेटा भेजने वाला कोड ---
-    // 'db' आपके Firebase का कनेक्शन है
+    // --- यहाँ से Firebase अपडेट शुरू होता है ---
+    // यह डेटाबेस में स्कोर सेव करेगा ताकि दूसरे मोबाइल पर दिख सके
     set(ref(db, 'matches/current_score'), {
         runs: runs,
         wickets: wickets,
         overs: Math.floor(balls / 6) + "." + (balls % 6),
         lastBall: r
+    }).catch((error) => {
+        console.error("Firebase update failed: ", error);
     });
-    // ---------------------------------------
+    // --- यहाँ Firebase अपडेट खत्म हुआ ---
 
     currentOverBalls.push(r); 
     if (r % 2) changeStrike();
     endBall();
     saveMatch();
+    update(); // स्क्रीन को तुरंत अपडेट करने के लिए
 }
  
 
