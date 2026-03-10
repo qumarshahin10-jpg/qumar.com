@@ -241,18 +241,27 @@ function play(r) {
     if (matchOver) return;
     saveUndo();
     runs += r; balls++;
-    // ... (बाकी पुराना कोड)
+    bowlerRunsInOver += r;
+    batsmen[striker].runs += r;
+    batsmen[striker].balls++;
+    if (r === 4) batsmen[striker].fours++;
+    if (r === 6) batsmen[striker].sixes++;
+    currentBowler.runs += r;
+    currentBowler.balls++;
+    partnershipRuns += r;
+    partnershipBalls++;
 
-    // --- Firebase अपडेट यहाँ जोड़ें ---
-    if (window.db) {
-        window.set(window.ref(window.db, 'matches/current_score'), {
-            runs: runs,
-            wickets: wickets,
-            overs: Math.floor(balls / 6) + "." + (balls % 6)
-        });
-    }
-    // --------------------------------
+    // --- Firebase में डेटा भेजने वाला कोड ---
+    // 'db' आपके Firebase का कनेक्शन है
+    set(ref(db, 'matches/current_score'), {
+        runs: runs,
+        wickets: wickets,
+        overs: Math.floor(balls / 6) + "." + (balls % 6),
+        lastBall: r
+    });
+    // ---------------------------------------
 
+    currentOverBalls.push(r); 
     if (r % 2) changeStrike();
     endBall();
     saveMatch();
