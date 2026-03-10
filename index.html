@@ -1016,14 +1016,9 @@ function completeWicketProcess(outIndex) {
     saveMatch();
     update();
 }
- 
-
-</script> 
  <script type="module">
-
-  <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-  import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-database.js";
+  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCuPZ-m11fbOfisovvjcC6IqqvYiFDnQNY",
@@ -1038,26 +1033,29 @@ function completeWicketProcess(outIndex) {
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
-  // इसे 'window' पर डालें ताकि बाकी फंक्शन्स इसे देख सकें
+  // ग्लोबल बना रहे हैं
   window.db = db;
   window.ref = ref;
   window.set = set;
-  console.log("Firebase Connected!");
-// यह कोड अपनी <script> के अंदर सबसे नीचे जोड़ें
-import { onValue } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-database.js";
 
-const scoreRef = ref(db, 'matches/current_score');
-onValue(scoreRef, (snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-        // यह डेटाबेस से रन उठाकर स्क्रीन पर अपडेट कर देगा
-        document.getElementById("runs").innerText = data.runs;
-        document.getElementById("wickets").innerText = data.wickets;
-    }
-});
-  
-  
+  console.log("Firebase Connected Successfully!");
+
+  // रियल-टाइम लिसनर (स्कोर अपडेट करने के लिए)
+  const scoreRef = ref(db, 'matches/current_score');
+  onValue(scoreRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+          document.getElementById("runs").innerText = data.runs;
+          document.getElementById("wickets").innerText = data.wickets;
+          // अगर overs वाला ID है, तो उसे भी अपडेट करें
+          if(document.getElementById("overs")) {
+            document.getElementById("overs").innerText = data.overs;
+          }
+      }
+  });
 </script>
+ 
+
  
 </body> 
 </html>
