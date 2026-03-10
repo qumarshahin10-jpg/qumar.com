@@ -1040,6 +1040,20 @@ function completeWicketProcess(outIndex) {
   window.ref = ref;
   window.set = set;
   console.log("Firebase Connected!");
+// यह कोड अपनी <script> के अंदर सबसे नीचे जोड़ें
+import { onValue } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-database.js";
+
+const scoreRef = ref(db, 'matches/current_score');
+onValue(scoreRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+        // यह डेटाबेस से रन उठाकर स्क्रीन पर अपडेट कर देगा
+        document.getElementById("runs").innerText = data.runs;
+        document.getElementById("wickets").innerText = data.wickets;
+    }
+});
+  
+  
 </script>
  
 </body> 
