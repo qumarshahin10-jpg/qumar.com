@@ -1018,7 +1018,24 @@ function completeWicketProcess(outIndex) {
     saveMatch();
     update();
 }
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyB3_Yt5cc7eXXvxKlIaovAvIZ4l5fWIC1g",
+  authDomain: "bkcclive.firebaseapp.com",
+  databaseURL: "https://bkcclive-default-rtdb.firebaseio.com",
+  projectId: "bkcclive",
+  storageBucket: "bkcclive.firebasestorage.app",
+  messagingSenderId: "1042728754418",
+  appId: "1:1042728754418:web:4385c9fb980874195e446b"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
 
 </script>  </body> 
 </html>
