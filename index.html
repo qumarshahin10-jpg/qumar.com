@@ -1,264 +1,127 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Live Cricket Scoreboard - CricStyle</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-      color: white;
-      margin: 0;
-      padding: 0;
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    .container {
-      background: rgba(0,0,0,0.65);
-      backdrop-filter: blur(10px);
-      border-radius: 16px;
-      padding: 25px;
-      width: 95%;
-      max-width: 480px;
-      box-shadow: 0 15px 40px rgba(0,0,0,0.6);
-      text-align: center;
-    }
-    h1 {
-      margin: 0 0 15px;
-      font-size: 2.1rem;
-      color: #ffd700;
-      text-shadow: 0 0 15px #ffd70080;
-    }
-    .team-name {
-      font-size: 1.4rem;
-      margin-bottom: 10px;
-      color: #4fc3f7;
-    }
-    .score-main {
-      font-size: 4.8rem;
-      font-weight: bold;
-      margin: 10px 0;
-      letter-spacing: -2px;
-    }
-    .score-main sup {
-      font-size: 2.2rem;
-      vertical-align: super;
-    }
-    .overs {
-      font-size: 1.6rem;
-      color: #ff9800;
-      margin-bottom: 15px;
-    }
-    .crr-rrr {
-      display: flex;
-      justify-content: space-around;
-      margin: 15px 0;
-      font-size: 1.3rem;
-    }
-    .crr-rrr div {
-      background: rgba(255,255,255,0.12);
-      padding: 10px 20px;
-      border-radius: 12px;
-    }
-    .current {
-      margin: 20px 0;
-      padding: 15px;
-      background: rgba(255,255,255,0.08);
-      border-radius: 12px;
-      font-size: 1.15rem;
-    }
-    .batsman {
-      margin: 8px 0;
-    }
-    .strike {
-      color: #4caf50;
-      font-weight: bold;
-      position: relative;
-    }
-    .strike::after {
-      content: "🏏";
-      font-size: 1.1rem;
-      margin-left: 6px;
-    }
-    .buttons {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      margin: 20px 0;
-    }
-    button {
-      padding: 16px;
-      font-size: 1.3rem;
-      font-weight: bold;
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    button.run { background: #424242; color: white; }
-    button.run:hover { background: #616161; }
-    button.four { background: #1976d2; color: white; }
-    button.six { background: #43a047; color: white; }
-    button.wide { background: #ff9800; color: white; }
-    button.wicket { background: #d32f2f; color: white; }
-    button.undo { background: #757575; color: white; grid-column: span 3; }
-    button.special { background: #673ab7; color: white; }
-    .partnership {
-      font-size: 1.2rem;
-      margin: 15px 0;
-      color: #81c784;
-    }
-    footer {
-      margin-top: 25px;
-      font-size: 0.9rem;
-      opacity: 0.8;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Jharkhand District Information</title>
+<style>
+body{
+font-family:Arial;
+background:#f4f4f4;
+text-align:center;
+}
+
+h1{
+background:#2e7d32;
+color:white;
+padding:15px;
+}
+
+.container{
+display:flex;
+flex-wrap:wrap;
+justify-content:center;
+}
+
+.box{
+background:white;
+margin:10px;
+padding:15px;
+border-radius:8px;
+width:150px;
+cursor:pointer;
+box-shadow:0 2px 5px rgba(0,0,0,0.2);
+}
+
+.box:hover{
+background:#c8e6c9;
+}
+
+#info{
+margin-top:20px;
+padding:20px;
+background:white;
+border-radius:10px;
+width:80%;
+margin-left:auto;
+margin-right:auto;
+box-shadow:0 2px 5px rgba(0,0,0,0.3);
+}
+</style>
 </head>
+
 <body>
 
+<h1>Jharkhand District Information</h1>
+
 <div class="container">
-  <h1>Live Cricket Score</h1>
-  <div class="team-name" id="teamName">India vs Australia</div>
 
-  <div class="score-main">
-    <span id="runs">0</span><sup>/<span id="wickets">0</span></sup>
-  </div>
+<div class="box" onclick="showInfo('ranchi')">Ranchi</div>
+<div class="box" onclick="showInfo('dhanbad')">Dhanbad</div>
+<div class="box" onclick="showInfo('bokaro')">Bokaro</div>
+<div class="box" onclick="showInfo('deoghar')">Deoghar</div>
+<div class="box" onclick="showInfo('dumka')">Dumka</div>
+<div class="box" onclick="showInfo('hazaribagh')">Hazaribagh</div>
+<div class="box" onclick="showInfo('giridih')">Giridih</div>
+<div class="box" onclick="showInfo('godda')">Godda</div>
+<div class="box" onclick="showInfo('sahibganj')">Sahibganj</div>
+<div class="box" onclick="showInfo('pakur')">Pakur</div>
 
-  <div class="overs">
-    Overs: <span id="overs">0.0</span>
-  </div>
+</div>
 
-  <div class="crr-rrr">
-    <div>CRR: <span id="crr">0.00</span></div>
-    <div id="rrrDiv" style="display:none;">RRR: <span id="rrr">0.00</span></div>
-  </div>
-
-  <div class="current">
-    <div class="batsman strike" id="striker">Batsman 1 - 0 (0)</div>
-    <div class="batsman" id="nonStriker">Batsman 2 - 0 (0)</div>
-  </div>
-
-  <div class="partnership">
-    Partnership: <span id="partnership">0 (0)</span>
-  </div>
-
-  <div class="buttons">
-    <button class="run" onclick="addRun(0)">0</button>
-    <button class="run" onclick="addRun(1)">1</button>
-    <button class="run" onclick="addRun(2)">2</button>
-    <button class="run" onclick="addRun(3)">3</button>
-    <button class="four" onclick="addRun(4)">4</button>
-    <button class="six" onclick="addRun(6)">6</button>
-    <button class="wide" onclick="addWide()">Wide</button>
-    <button class="wide" onclick="addNoBall()">No Ball</button>
-    <button class="wicket" onclick="addWicket()">Wicket</button>
-    <button class="undo" onclick="undoLast()">Undo Last Action</button>
-  </div>
-
-  <footer>Made with ❤️ • Simple Live Scoring</footer>
+<div id="info">
+Click on any district to see information.
 </div>
 
 <script>
-  let runs = 0;
-  let wickets = 0;
-  let balls = 0;
-  let extras = 0;
-  let partnership = 0;
-  let partnershipBalls = 0;
-  let history = [];
 
-  const striker = { name: "Batsman 1", runs: 0, balls: 0 };
-  const nonStriker = { name: "Batsman 2", runs: 0, balls: 0 };
+function showInfo(d){
 
-  function updateDisplay() {
-    document.getElementById("runs").textContent = runs;
-    document.getElementById("wickets").textContent = wickets;
-    document.getElementById("overs").textContent = Math.floor(balls/6) + "." + (balls%6);
-    
-    const crr = balls > 0 ? (runs / (balls/6)).toFixed(2) : "0.00";
-    document.getElementById("crr").textContent = crr;
+let text="";
 
-    document.getElementById("striker").textContent = `${striker.name} - \( {striker.runs} ( \){striker.balls})`;
-    document.getElementById("nonStriker").textContent = `${nonStriker.name} - \( {nonStriker.runs} ( \){nonStriker.balls})`;
+if(d=="ranchi"){
+text="Ranchi is the capital of Jharkhand. It is famous for waterfalls and industries.";
+}
 
-    document.getElementById("partnership").textContent = `\( {partnership} ( \){partnershipBalls})`;
-  }
+if(d=="dhanbad"){
+text="Dhanbad is known as the Coal Capital of India because of coal mines.";
+}
 
-  function saveState() {
-    history.push({
-      runs, wickets, balls, extras, partnership, partnershipBalls,
-      striker: {...striker}, nonStriker: {...nonStriker}
-    });
-  }
+if(d=="bokaro"){
+text="Bokaro is famous for Bokaro Steel Plant.";
+}
 
-  function addRun(r) {
-    saveState();
-    runs += r;
-    balls++;
-    partnership += r;
-    partnershipBalls++;
-    striker.runs += r;
-    striker.balls++;
+if(d=="deoghar"){
+text="Deoghar is famous for Baba Baidyanath Dham temple.";
+}
 
-    if (r % 2 === 1) {
-      [striker, nonStriker] = [nonStriker, striker];
-    }
+if(d=="dumka"){
+text="Dumka is called the sub capital of Jharkhand.";
+}
 
-    updateDisplay();
-  }
+if(d=="hazaribagh"){
+text="Hazaribagh is famous for forests and wildlife.";
+}
 
-  function addWide() {
-    saveState();
-    runs += 1;
-    extras += 1;
-    partnership += 1;
-    updateDisplay();
-    // Wide पर strike नहीं बदलता
-  }
+if(d=="giridih"){
+text="Giridih is known for Parasnath Hill.";
+}
 
-  function addNoBall() {
-    saveState();
-    runs += 1;
-    extras += 1;
-    partnership += 1;
-    // No ball पर strike नहीं बदलता, बल्लेबाज को extra ball मिलती है
-    updateDisplay();
-  }
+if(d=="godda"){
+text="Godda is known for agriculture and Adani power plant.";
+}
 
-  function addWicket() {
-    saveState();
-    wickets++;
-    balls++;
-    partnership = 0;
-    partnershipBalls = 0;
+if(d=="sahibganj"){
+text="Sahibganj is located on the bank of Ganga river.";
+}
 
-    // नया batsman आता है
-    striker.runs = 0;
-    striker.balls = 0;
-    striker.name = `Batsman ${wickets + 2}`;
+if(d=="pakur"){
+text="Pakur is famous for black stone mining.";
+}
 
-    if (wickets % 2 === 1) {
-      [striker, nonStriker] = [nonStriker, striker];
-    }
+document.getElementById("info").innerHTML=text;
 
-    updateDisplay();
-  }
+}
 
-  function undoLast() {
-    if (history.length === 0) return;
-    const prev = history.pop();
-    Object.assign(window, prev);
-    Object.assign(striker, prev.striker);
-    Object.assign(nonStriker, prev.nonStriker);
-    updateDisplay();
-  }
-
-  // Initial update
-  updateDisplay();
 </script>
 
 </body>
