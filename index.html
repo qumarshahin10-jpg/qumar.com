@@ -251,24 +251,22 @@ function play(r) {
     partnershipRuns += r;
     partnershipBalls++;
 
-    // --- यहाँ से Firebase अपडेट शुरू होता है ---
-    // यह डेटाबेस में स्कोर सेव करेगा ताकि दूसरे मोबाइल पर दिख सके
-    set(ref(db, 'matches/current_score'), {
-        runs: runs,
-        wickets: wickets,
-        overs: Math.floor(balls / 6) + "." + (balls % 6),
-        lastBall: r
-    }).catch((error) => {
-        console.error("Firebase update failed: ", error);
-    });
-    // --- यहाँ Firebase अपडेट खत्म हुआ ---
+    // Firebase अपडेट
+    if (window.db && window.set) {
+        window.set(window.ref(window.db, 'matches/current_score'), {
+            runs: runs,
+            wickets: wickets,
+            overs: Math.floor(balls / 6) + "." + (balls % 6)
+        });
+    }
 
     currentOverBalls.push(r); 
     if (r % 2) changeStrike();
     endBall();
     saveMatch();
-    update(); // स्क्रीन को तुरंत अपडेट करने के लिए
+    update();
 }
+ 
  
 
 
@@ -276,51 +274,52 @@ function play(r) {
 function wideBall() {
     if(matchOver) return;
     saveUndo();
-
     let extraRuns = parseInt(prompt("वाइड पर भाग कर कितने रन लिए?", "0")) || 0;
-    
-    // 1 रन वाइड का (बॉलर के खाते में)
-    runs += 1;
+    runs += (1 + extraRuns);
     currentBowler.runs += 1; 
     currentBowler.wides += 1; 
     bowlerRunsInOver += 1;
+    
+    // Firebase अपडेट
+    if (window.db && window.set) {
+        window.set(window.ref(window.db, 'matches/current_score'), {
+            runs: runs,
+            wickets: wickets,
+            overs: Math.floor(balls / 6) + "." + (balls % 6)
+        });
+    }
 
-    // भागकर लिए गए रन (सिर्फ टीम स्कोर में, बॉलर के रन में नहीं)
-    runs += extraRuns;
-currentOverBalls.push("WD"); 
-updateOverTracker();
-
-
+    currentOverBalls.push("WD"); 
     if(extraRuns % 2 !== 0) changeStrike();
-
     update(); 
     saveMatch();
 }
 
-// नो बॉल: पेनल्टी + बैट के रन
 function noBall() {
     if(matchOver) return;
     saveUndo();
-// noBall() के अंदर जोड़ें
-currentOverBalls.push("NB");
-updateOverTracker();
-
     let batRuns = parseInt(prompt("नो बॉल पर बल्ले से कितने रन बने?", "0")) || 0;
-    let totalNBRuns = 1 + batRuns; // 1 पेनल्टी + बल्ले के रन
-
+    let totalNBRuns = 1 + batRuns;
     runs += totalNBRuns;
     currentBowler.runs += totalNBRuns;
     currentBowler.noBalls++;
-    bowlerRunsInOver += totalNBRuns;
+    batsmen[striker].runs += batRuns;
     
-    batsmen[striker].runs += batRuns; // नो बॉल पर बैट के रन बैट्समैन को मिलते हैं
+    // Firebase अपडेट
+    if (window.db && window.set) {
+        window.set(window.ref(window.db, 'matches/current_score'), {
+            runs: runs,
+            wickets: wickets,
+            overs: Math.floor(balls / 6) + "." + (balls % 6)
+        });
+    }
 
-
+    currentOverBalls.push("NB");
     if(batRuns % 2 !== 0) changeStrike();
-
     update();
     saveMatch();
 }
+ 
 
 function openWicketModal() {
     document.getElementById("wicketModal").style.display = "block";
@@ -984,17 +983,21 @@ function manualChangeStrike() {
     saveMatch(); // डेटा सुरक्षित करने के लिए
 }
 function completeWicketProcess(outIndex) {
-    // 1. सबसे पहले गेंद बढ़ाएं (ताकि आउट वाली गेंद तुरंत दर्ज हो जाए)
     balls++; 
     currentBowler.balls++; 
     
-    // 2. अब ओवर कैलकुलेट करें (यह अब सही 0.1, 3.3 आदि दिखाएगा)
-    let currentOver = Math.floor(balls / 6) + "." + (balls % 6);
+    // Firebase अपडेट
+    if (window.db && window.set) {
+        window.set(window.ref(window.db, 'matches/current_score'), {
+            runs: runs,
+            wickets: wickets,
+            overs: Math.floor(balls / 6) + "." + (balls % 6)
+        });
+    }
     
-    // 3. FOW में जानकारी जोड़ें (विकेट और ओवर सही रिकॉर्ड होंगे)
+    let currentOver = Math.floor(balls / 6) + "." + (balls % 6);
     fow.push(`${runs}/${wickets} (${batsmen[outIndex].name} - ${currentOver})`);
     
-    // 4. ग्राफ और ट्रैकर के लिए अपडेट
     let currentInning = (innings === 1) ? overByOverData.inning1 : overByOverData.inning2;
     let lastEntry = currentInning[currentInning.length - 1];
     lastEntry.wickets = wickets; 
@@ -1002,14 +1005,10 @@ function completeWicketProcess(outIndex) {
     currentOverBalls.push("W");
     updateOverTracker();
 
-    // 5. नया बैट्समैन जोड़ने और स्ट्राइक चेंज
     if (wickets < 10) {
         batsmen.push(createNewBatsman()); 
-        if (outIndex === striker) {
-            striker = batsmen.length - 1;
-        } else {
-            nonStriker = batsmen.length - 1;
-        }
+        if (outIndex === striker) striker = batsmen.length - 1;
+        else nonStriker = batsmen.length - 1;
     }
     
     document.getElementById("wicketModal").style.display = "none";
@@ -1017,6 +1016,7 @@ function completeWicketProcess(outIndex) {
     saveMatch();
     update();
 }
+ 
 
 </script> 
  <script type="module">
