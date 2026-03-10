@@ -241,24 +241,23 @@ function play(r) {
     if (matchOver) return;
     saveUndo();
     runs += r; balls++;
-    bowlerRunsInOver += r;
-    batsmen[striker].runs += r;
-    batsmen[striker].balls++;
-    if (r === 4) batsmen[striker].fours++;
-    if (r === 6) batsmen[striker].sixes++;
-    currentBowler.runs += r;
-    currentBowler.balls++;
-    partnershipRuns += r;
-    partnershipBalls++;
+    // ... (बाकी पुराना कोड)
 
-    // --- यहाँ नया कोड जोड़ें ---
-    currentOverBalls.push(r); 
-    // -----------------------
+    // --- Firebase अपडेट यहाँ जोड़ें ---
+    if (window.db) {
+        window.set(window.ref(window.db, 'matches/current_score'), {
+            runs: runs,
+            wickets: wickets,
+            overs: Math.floor(balls / 6) + "." + (balls % 6)
+        });
+    }
+    // --------------------------------
 
     if (r % 2) changeStrike();
     endBall();
     saveMatch();
 }
+ 
 
 
 // वाइड बॉल: पेनल्टी + भाग कर लिए रन
@@ -1009,13 +1008,11 @@ function completeWicketProcess(outIndex) {
 
 </script> 
  <script type="module">
-  // Import the functions you need from the SDKs you need
+
+  <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
   import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-database.js";
-  // TODO: Add SDKs for Firebase products that you want to use
-  // https://firebase.google.com/docs/web/setup#available-libraries
 
-  // Your web app's Firebase configuration
   const firebaseConfig = {
     apiKey: "AIzaSyCuPZ-m11fbOfisovvjcC6IqqvYiFDnQNY",
     authDomain: "bkccsocre.firebaseapp.com",
@@ -1026,14 +1023,15 @@ function completeWicketProcess(outIndex) {
     appId: "1:852922311265:web:592e561c6a4307f3f8c020"
   };
 
-  // Initialize Firebase
   const app = initializeApp(firebaseConfig);
-    // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  
-  // यह लाइन जोड़ें ताकि डेटाबेस से बात हो सके
-  const db = getDatabase(app); 
-  
- </script>
+  const db = getDatabase(app);
+
+  // इसे 'window' पर डालें ताकि बाकी फंक्शन्स इसे देख सकें
+  window.db = db;
+  window.ref = ref;
+  window.set = set;
+  console.log("Firebase Connected!");
+</script>
+ 
 </body> 
 </html>
