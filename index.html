@@ -251,13 +251,16 @@ function play(r) {
     partnershipRuns += r;
     partnershipBalls++;
 
-    // Firebase अपडेट
-    if (window.db && window.set) {
-        window.set(window.ref(window.db, 'matches/current_score'), {
+    // Firebase अपडेट - सुधारा हुआ
+    if (window.db && window.ref && window.set) {
+        const scoreRef = window.ref(window.db, 'matches/current_score');
+        window.set(scoreRef, {
             runs: runs,
             wickets: wickets,
             overs: Math.floor(balls / 6) + "." + (balls % 6)
-        });
+        })
+        .then(() => console.log("Play: Score saved to Firebase"))
+        .catch(err => console.error("Play Firebase error:", err));
     }
 
     currentOverBalls.push(r); 
@@ -267,11 +270,7 @@ function play(r) {
     update();
 }
  
- 
-
-
-// वाइड बॉल: पेनल्टी + भाग कर लिए रन
-function wideBall() {
+ function wideBall() {
     if(matchOver) return;
     saveUndo();
     let extraRuns = parseInt(prompt("वाइड पर भाग कर कितने रन लिए?", "0")) || 0;
@@ -281,19 +280,23 @@ function wideBall() {
     bowlerRunsInOver += 1;
     
     // Firebase अपडेट
-    if (window.db && window.set) {
-        window.set(window.ref(window.db, 'matches/current_score'), {
+    if (window.db && window.ref && window.set) {
+        const scoreRef = window.ref(window.db, 'matches/current_score');
+        window.set(scoreRef, {
             runs: runs,
             wickets: wickets,
             overs: Math.floor(balls / 6) + "." + (balls % 6)
-        });
+        })
+        .then(() => console.log("Wide: Score saved"))
+        .catch(err => console.error("Wide Firebase error:", err));
     }
 
     currentOverBalls.push("WD"); 
     if(extraRuns % 2 !== 0) changeStrike();
     update(); 
     saveMatch();
-}
+ }
+
 
 function noBall() {
     if(matchOver) return;
@@ -306,12 +309,15 @@ function noBall() {
     batsmen[striker].runs += batRuns;
     
     // Firebase अपडेट
-    if (window.db && window.set) {
-        window.set(window.ref(window.db, 'matches/current_score'), {
+    if (window.db && window.ref && window.set) {
+        const scoreRef = window.ref(window.db, 'matches/current_score');
+        window.set(scoreRef, {
             runs: runs,
             wickets: wickets,
             overs: Math.floor(balls / 6) + "." + (balls % 6)
-        });
+        })
+        .then(() => console.log("No Ball: Score saved"))
+        .catch(err => console.error("No Ball Firebase error:", err));
     }
 
     currentOverBalls.push("NB");
@@ -319,7 +325,7 @@ function noBall() {
     update();
     saveMatch();
 }
- 
+
 
 function openWicketModal() {
     document.getElementById("wicketModal").style.display = "block";
@@ -986,17 +992,20 @@ function completeWicketProcess(outIndex) {
     balls++; 
     currentBowler.balls++; 
     
-    // Firebase अपडेट
-    if (window.db && window.set) {
-        window.set(window.ref(window.db, 'matches/current_score'), {
+    // Firebase अपडेट - सुधारा हुआ
+    if (window.db && window.ref && window.set) {
+        const scoreRef = window.ref(window.db, 'matches/current_score');
+        window.set(scoreRef, {
             runs: runs,
             wickets: wickets,
             overs: Math.floor(balls / 6) + "." + (balls % 6)
-        });
+        })
+        .then(() => console.log("Wicket: Score saved to Firebase"))
+        .catch(err => console.error("Wicket Firebase error:", err));
     }
     
     let currentOver = Math.floor(balls / 6) + "." + (balls % 6);
-    fow.push(`${runs}/${wickets} (${batsmen[outIndex].name} - ${currentOver})`);
+    fow.push(`\( {runs}/ \){wickets} (${batsmen[outIndex].name} - ${currentOver})`);
     
     let currentInning = (innings === 1) ? overByOverData.inning1 : overByOverData.inning2;
     let lastEntry = currentInning[currentInning.length - 1];
@@ -1016,9 +1025,10 @@ function completeWicketProcess(outIndex) {
     saveMatch();
     update();
 }
+ 
  <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-database.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyCuPZ-m11fbOfisovvjcC6IqqvYiFDnQNY",
@@ -1033,25 +1043,29 @@ function completeWicketProcess(outIndex) {
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
-  // ग्लोबल बना रहे हैं
+  // ग्लोबल बना दो ताकि बाकी फंक्शन इस्तेमाल कर सकें
   window.db = db;
   window.ref = ref;
   window.set = set;
 
-  console.log("Firebase Connected Successfully!");
+  console.log("Firebase Initialized!");
 
-  // रियल-टाइम लिसनर (स्कोर अपडेट करने के लिए)
+  // Real-time listener (स्कोर अपडेट दिखाने के लिए)
   const scoreRef = ref(db, 'matches/current_score');
   onValue(scoreRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-          document.getElementById("runs").innerText = data.runs;
-          document.getElementById("wickets").innerText = data.wickets;
-          // अगर overs वाला ID है, तो उसे भी अपडेट करें
-          if(document.getElementById("overs")) {
-            document.getElementById("overs").innerText = data.overs;
-          }
+    const data = snapshot.val();
+    if (data) {
+      document.getElementById("runs").innerText = data.runs || 0;
+      document.getElementById("wickets").innerText = data.wickets || 0;
+      if (document.getElementById("overs")) {
+        document.getElementById("overs").innerText = data.overs || "0.0";
       }
+      console.log("Data received from Firebase:", data);
+    } else {
+      console.log("No data at matches/current_score yet");
+    }
+  }, (error) => {
+    console.error("Firebase listener error:", error);
   });
 </script>
  
