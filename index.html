@@ -1,128 +1,77 @@
 <!DOCTYPE html>
-<html>
+<html lang="hi">
 <head>
-<meta charset="UTF-8">
-<title>Jharkhand District Information</title>
-<style>
-body{
-font-family:Arial;
-background:#f4f4f4;
-text-align:center;
-}
-
-h1{
-background:#2e7d32;
-color:white;
-padding:15px;
-}
-
-.container{
-display:flex;
-flex-wrap:wrap;
-justify-content:center;
-}
-
-.box{
-background:white;
-margin:10px;
-padding:15px;
-border-radius:8px;
-width:150px;
-cursor:pointer;
-box-shadow:0 2px 5px rgba(0,0,0,0.2);
-}
-
-.box:hover{
-background:#c8e6c9;
-}
-
-#info{
-margin-top:20px;
-padding:20px;
-background:white;
-border-radius:10px;
-width:80%;
-margin-left:auto;
-margin-right:auto;
-box-shadow:0 2px 5px rgba(0,0,0,0.3);
-}
-</style>
+    <meta charset="UTF-8">
+    <title>लाइव क्रिकेट स्कोरबोर्ड</title>
+    <style>
+        body { font-family: sans-serif; background: #0e4f1f; color: white; text-align: center; padding: 20px; }
+        .scoreboard { background: #000; padding: 30px; border-radius: 15px; display: inline-block; }
+        .score { font-size: 50px; font-weight: bold; }
+        .admin-panel { margin-top: 30px; padding: 20px; background: #fff; color: #000; border-radius: 10px; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; border: none; background: #ff5722; color: white; font-weight: bold; }
+    </style>
 </head>
-
 <body>
 
-<h1>Jharkhand District Information</h1>
+    <div class="scoreboard">
+        <h3>लाइव स्कोर</h3>
+        <div id="score-display" class="score">0/0</div>
+    </div>
 
-<div class="container">
+    <div class="admin-panel">
+        <h4>एडमिन कंट्रोल</h4>
+        <button onclick="updateScore(1)">+1 रन</button>
+        <button onclick="updateScore(4)">+4 रन</button>
+        <button onclick="updateScore(6)">+6 रन</button>
+        <button onclick="addWicket()">विकेट गिरा!</button>
+        <button onclick="resetScore()">रिसेट</button>
+    </div>
 
-<div class="box" onclick="showInfo('ranchi')">Ranchi</div>
-<div class="box" onclick="showInfo('dhanbad')">Dhanbad</div>
-<div class="box" onclick="showInfo('bokaro')">Bokaro</div>
-<div class="box" onclick="showInfo('deoghar')">Deoghar</div>
-<div class="box" onclick="showInfo('dumka')">Dumka</div>
-<div class="box" onclick="showInfo('hazaribagh')">Hazaribagh</div>
-<div class="box" onclick="showInfo('giridih')">Giridih</div>
-<div class="box" onclick="showInfo('godda')">Godda</div>
-<div class="box" onclick="showInfo('sahibganj')">Sahibganj</div>
-<div class="box" onclick="showInfo('pakur')">Pakur</div>
+    <script type="module">
+        // Firebase मॉड्यूलर SDK इम्पोर्ट करें
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
+        import { getDatabase, ref, onValue, update, set, runTransaction } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-database.js";
 
-</div>
+        const firebaseConfig = {
+            apiKey: "AIzaSyB3_Yt5cc7eXXvxKlIaovAvIZ4l5fWIC1g",
+            authDomain: "bkcclive.firebaseapp.com",
+            databaseURL: "https://bkcclive-default-rtdb.firebaseio.com",
+            projectId: "bkcclive",
+            storageBucket: "bkcclive.firebasestorage.app",
+            messagingSenderId: "1042728754418",
+            appId: "1:1042728754418:web:656f154250b9c4e95e446b"
+        };
 
-<div id="info">
-Click on any district to see information.
-</div>
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const scoreRef = ref(db, 'match');
 
-<script>
+        // स्कोर अपडेट करने के फ़ंक्शन्स
+        window.updateScore = (r) => {
+            runTransaction(scoreRef, (m) => {
+                if (m) { m.runs = (m.runs || 0) + r; }
+                else { m = { runs: r, wickets: 0 }; }
+                return m;
+            });
+        };
 
-function showInfo(d){
+        window.addWicket = () => {
+            runTransaction(scoreRef, (m) => {
+                if (m) { m.wickets = (m.wickets || 0) + 1; }
+                else { m = { runs: 0, wickets: 1 }; }
+                return m;
+            });
+        };
 
-let text="";
+        window.resetScore = () => { set(scoreRef, {runs: 0, wickets: 0}); };
 
-if(d=="ranchi"){
-text="Ranchi is the capital of Jharkhand. It is famous for waterfalls and industries.";
-}
-
-if(d=="dhanbad"){
-text="Dhanbad is known as the Coal Capital of India because of coal mines.";
-}
-
-if(d=="bokaro"){
-text="Bokaro is famous for Bokaro Steel Plant.";
-}
-
-if(d=="deoghar"){
-text="Deoghar is famous for Baba Baidyanath Dham temple.";
-}
-
-if(d=="dumka"){
-text="Dumka is called the sub capital of Jharkhand.";
-}
-
-if(d=="hazaribagh"){
-text="Hazaribagh is famous for forests and wildlife.";
-}
-
-if(d=="giridih"){
-text="Giridih is known for Parasnath Hill.";
-}
-
-if(d=="godda"){
-text="Godda is known for agriculture and Adani power plant.";
-}
-
-if(d=="sahibganj"){
-text="Sahibganj is located on the bank of Ganga river.";
-}
-
-if(d=="pakur"){
-text="Pakur is famous for black stone mining.";
-}
-
-document.getElementById("info").innerHTML=text;
-
-}
-
-</script>
-
+        // लाइव डेटा सुनने के लिए
+        onValue(scoreRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                document.getElementById('score-display').innerText = `${data.runs || 0}/${data.wickets || 0}`;
+            }
+        });
+    </script>
 </body>
 </html>
