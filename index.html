@@ -622,19 +622,43 @@ function saveNewBowler() {
     }
 }
 
-
 function loadState(s) {
-    team1 = s.team1; team2 = s.team2; totalOvers = s.totalOvers; totalBalls = s.totalBalls;
-    innings = s.innings; target = s.target; runs = s.runs; wickets = s.wickets; balls = s.balls;
-    batsmen = s.batsmen; bowlers = s.bowlers; striker = s.striker; nonStriker = s.nonStriker;
-    partnershipRuns = s.partnershipRuns; partnershipBalls = s.partnershipBalls;
-    firstBatting = s.firstBatting; firstBowling = s.firstBowling;
-    firstFow = s.firstFow || []; fow = s.fow || [];
-    currentOverBalls = s.currentOverBalls || []; // यह लाइन जोड़ें
-    matchOver = s.matchOver;
-    overByOverData = s.overByOverData;
-    currentBowler = bowlers.find(b => b.name === s.bowlerName);
+    if (!s) return; // अगर स्टेट खाली है तो रुक जाएं
+
+    team1 = s.team1 || "Team A";
+    team2 = s.team2 || "Team B";
+    totalOvers = s.totalOvers || 6;
+    totalBalls = s.totalBalls || 36;
+    innings = s.innings || 1;
+    target = s.target || 0;
+    runs = s.runs || 0;
+    wickets = s.wickets || 0;
+    balls = s.balls || 0;
+    
+    // सुरक्षित रूप से एरे लोड करें
+    batsmen = s.batsmen || [];
+    bowlers = s.bowlers || [];
+    
+    striker = s.striker || 0;
+    nonStriker = s.nonStriker || 1;
+    partnershipRuns = s.partnershipRuns || 0;
+    partnershipBalls = s.partnershipBalls || 0;
+    
+    firstBatting = s.firstBatting || [];
+    firstBowling = s.firstBowling || [];
+    firstFow = s.firstFow || [];
+    fow = s.fow || [];
+    currentOverBalls = s.currentOverBalls || [];
+    matchOver = s.matchOver || false;
+    
+    // bowlerName चेक करें ताकि 'find' एरर न दे
+    if (s.bowlerName && bowlers.length > 0) {
+        currentBowler = bowlers.find(b => b.name === s.bowlerName);
+    } else {
+        currentBowler = bowlers[0] || null;
+    }
 }
+  
 
 function saveUndo() { undoStack.push(JSON.stringify(JSON.parse(localStorage.getItem("cricketMatch")))); }
 
