@@ -50,7 +50,21 @@ canvas{width:100%; height:220px; display:block;}
   window.db = getDatabase(app);
   window.ref = ref;
   window.set = set;
-  window.onValue = onValue;
+  // यह कोड आपकी Firebase वाली स्क्रिप्ट के अंदर सबसे नीचे डालें
+// यह कोड आपके Firebase डेटाबेस को हमेशा "सुनता" रहता है
+window.onValue(window.ref(window.db, 'liveMatch/'), (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+        // यहाँ स्कोर अपडेट हो रहा है
+        document.getElementById("runs").innerText = data.runs;
+        document.getElementById("wickets").innerText = data.wickets;
+        document.getElementById("overs").innerText = data.overs;
+        
+        // स्कोरबोर्ड के डेटा को अपडेट करें
+        update(); 
+    }
+});
+  
  </script>
     
 </head>  <body>  <div class="box">  
