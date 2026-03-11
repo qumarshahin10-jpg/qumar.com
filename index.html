@@ -103,13 +103,19 @@ Balls: <span id="balls">0</span>/<span id="totalBalls"></span>
 <button class="wicket" onclick="openWicketModal()">WICKET</button>
  
 <button class="undo" onclick="undo()">UNDO</button><br>  
-<button onclick="showMemories()">📜 MATCH MEMORY</button>  
+
 <button onclick="manageMemories()">🗑️ MANAGE MEMORY</button>  
 <button class="reset" onclick="resetMatch()">🔄 NEW MATCH</button>  
-</div>
 <button onclick="manualChangeBowler()" style="background:#ff9800; color:white; border:none; padding:8px; border-radius:5px; cursor:pointer;">
     CHANGE BOWLER
 </button>
+<button onclick="manualChangeStrike()" style="background:#8e44ad; color:white; border-radius:50%; width:40px; height:40px; border:none; cursor:pointer;">
+    🔄
+</button>
+
+</div>
+<button onclick="showMemories()">📜 MATCH MEMORY</button>  
+
 
 <div id="bowlerModal" style="display:none; position:fixed; top:20%; left:10%; background:white; padding:20px; border:1px solid #ccc; z-index:1000;">
     <h3>नये बॉलर का नाम लिखें:</h3>
@@ -148,9 +154,7 @@ Balls: <span id="balls">0</span>/<span id="totalBalls"></span>
         <span><span style="color:black">●</span> Wicket</span>  
     </div>  
 </div>  </div>  <div class="scorer">Scorer : Shahin Qumar
-<button onclick="manualChangeStrike()" style="background:#8e44ad; color:white; border-radius:50%; width:40px; height:40px; border:none; cursor:pointer;">
-    🔄
-</button>
+
 
 </div> 
 
@@ -509,8 +513,6 @@ document.getElementById("firstBowl").innerHTML = `
     fowEl.innerHTML = (fow && fow.length > 0) ? fow.join(" , ") : "No wickets yet";
     firstFowEl.innerHTML = (firstFow && firstFow.length > 0) ? firstFow.join(" , ") : "N/A";
 }
-
-
 
 
 
@@ -1089,7 +1091,7 @@ window.onload = function () {
 };
 
 
-
-
 </script>  </body> 
 </html>
+                                                                                       
+
