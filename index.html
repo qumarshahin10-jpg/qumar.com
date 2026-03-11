@@ -34,7 +34,6 @@ canvas{width:100%; height:220px; display:block;}
 </style>  
 </head> 
 <script type="module">
-  // "firebase/app" की जगह ये पूरे लिंक (CDN) होने चाहिए
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
   import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-database.js";
 
@@ -51,13 +50,14 @@ canvas{width:100%; height:220px; display:block;}
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
   
-  // ये लाइनें सबसे जरूरी हैं ताकि आपके play() और saveMatch() फंक्शन काम करें
+  // ये 3 लाइनें जादू की तरह काम करेंगी
   window.db = db;
   window.ref = ref;
   window.set = set;
 
-  console.log("Firebase अब पूरी तरह से कनेक्टेड है!");
+  console.log("Firebase Connected!");
 </script>
+  
   
 <body>  <div class="box">  
 <h3>  
@@ -274,7 +274,6 @@ function createNewBowler() {
     updateOverTracker();
 }
 
-
 function play(r) {
     if (matchOver) return;
     saveUndo();
@@ -294,21 +293,18 @@ function play(r) {
     
     if (r % 2) changeStrike();
     endBall();
-    saveMatch();
+    saveMatch(); // इसके अंदर भी Firebase अपडेट होना चाहिए
     
-    // --- यहाँ बदलाव है ---
+    // --- यहाँ से लाइव अपडेट शुरू ---
     if (window.db && window.set) {
-        const liveMatchData = {
+        window.set(window.ref(window.db, 'liveMatch/'), {
             runs: runs,
             wickets: wickets,
             balls: balls,
             overs: Math.floor(balls / 6) + "." + (balls % 6),
-            strikerName: batsmen[striker].name,
             teamName: (innings === 1 ? team1 : team2),
-            timestamp: Date.now()
-        };
-        // window.set और window.ref का इस्तेमाल करें
-        window.set(window.ref(window.db, 'liveMatch/'), liveMatchData);
+            strikerName: batsmen[striker].name
+        });
     }
 }
   
