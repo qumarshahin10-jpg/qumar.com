@@ -53,8 +53,11 @@ canvas{width:100%; height:220px; display:block;}
   // ये फंक्शन्स बाहर की स्क्रिप्ट्स के लिए उपलब्ध कराएं
   window.db = db;
   window.dbRef = ref;
-  window.dbSet = set;
-
+  window.dbSet = set
+// अपनी मॉड्यूल स्क्रिप्ट के अंदर ये लाइनें जोड़ें:
+window.set = set;
+window.ref = ref;
+  
   // लाइव लिसनर (दोस्तों के फोन के लिए)
   onValue(ref(db, 'liveMatch/'), (snapshot) => {
     const data = snapshot.val();
@@ -285,7 +288,6 @@ function createNewBowler() {
 }
 
 
-
 function play(r) {
     if (matchOver) return;
     saveUndo();
@@ -307,19 +309,22 @@ function play(r) {
     endBall();
     saveMatch();
     
-    // यहाँ Firebase पर लाइव स्कोर भेज रहे हैं
-    if (window.db) {
+    // --- यहाँ बदलाव है ---
+    if (window.db && window.set) {
         const liveMatchData = {
             runs: runs,
             wickets: wickets,
             balls: balls,
+            overs: Math.floor(balls / 6) + "." + (balls % 6),
             strikerName: batsmen[striker].name,
             teamName: (innings === 1 ? team1 : team2),
             timestamp: Date.now()
         };
-        set(ref(window.db, 'liveMatch/'), liveMatchData);
+        // window.set और window.ref का इस्तेमाल करें
+        window.set(window.ref(window.db, 'liveMatch/'), liveMatchData);
     }
 }
+  
 
 
 
@@ -579,23 +584,27 @@ function saveMatchToHistory() {
     localStorage.setItem("cricketMatchHistory", JSON.stringify(history));
 }
 
-
 function saveMatch() {
     let state = {
         team1, team2, totalOvers, totalBalls, innings, target, runs, wickets, balls,
         batsmen, bowlers, striker, nonStriker, partnershipRuns, partnershipBalls,
         firstBatting, firstBowling, firstFow, fow,
-currentOverBalls: currentOverBalls, // यह लाइन जोड़ें
-        matchOver, bowlerName: currentBowler?.name,
-        overByOverData
+        currentOverBalls: currentOverBalls,
+        matchOver, bowlerName: currentBowler?.name
     };
     localStorage.setItem("cricketMatch", JSON.stringify(state));
-}
 
-function manualChangeBowler() {
-    // prompt की जगह अपना बनाया हुआ Modal दिखाएं
-    document.getElementById("bowlerModal").style.display = "block";
+    // लाइव अपडेट ताकि दोस्त को दिखे
+    if (window.db && window.set) {
+        window.set(window.ref(window.db, 'liveMatch/'), {
+            runs: runs,
+            wickets: wickets,
+            balls: balls,
+            overs: Math.floor(balls / 6) + "." + (balls % 6)
+        });
+    }
 }
+  
 
 function saveNewBowler() {
     let newBowlerName = document.getElementById("newBowlerInput").value;
