@@ -31,28 +31,45 @@ button{padding:10px;margin:4px;font-size:15px;font-weight:bold;border-radius:4px
 canvas{width:100%; height:220px; display:block;}  
 #crrBox{font-size: 18px; color: #d32f2f; font-weight: bold; margin: 5px 0;}  
 @media (max-width:767px){.box{border-radius:0;}}  
-</style> 
+</style>  
+</head> 
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
+  import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-database.js";
 
-    const firebaseConfig = {
-        apiKey: "YOUR_API_KEY",
-        authDomain: "bkcclive.firebaseapp.com",
-        databaseURL: "https://bkcclive-default-rtdb.firebaseio.com",
-        projectId: "bkcclive",
-        storageBucket: "bkcclive.firebasestorage.app",
-        messagingSenderId: "1042728754418",
-        appId: "1:1042728754418:web:656f154250b9c4e95e446b"
-    };
+  const firebaseConfig = {
+    apiKey: "AIzaSyB3_Yt5cc7eXXvxKlIaovAvIZ4l5fWIC1g",
+    authDomain: "bkcclive.firebaseapp.com",
+    databaseURL: "https://bkcclive-default-rtdb.firebaseio.com",
+    projectId: "bkcclive",
+    storageBucket: "bkcclive.firebasestorage.app",
+    messagingSenderId: "1042728754418",
+    appId: "1:1042728754418:web:7bed9c4bf9b6e5f15e446b"
+  };
 
-    const app = initializeApp(firebaseConfig);
-    const db = getDatabase(app);
-    window.db = db; // ताकि इसे नीचे के कोड में इस्तेमाकर सकें
-    
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  
+  // ये फंक्शन्स बाहर की स्क्रिप्ट्स के लिए उपलब्ध कराएं
+  window.db = db;
+  window.dbRef = ref;
+  window.dbSet = set;
+
+  // लाइव लिसनर (दोस्तों के फोन के लिए)
+  onValue(ref(db, 'liveMatch/'), (snapshot) => {
+    const data = snapshot.val();
+    if (data && typeof update === "function") {
+        // डेटा मिलने पर स्कोर अपडेट करें
+        document.getElementById("runs").innerText = data.runs;
+        document.getElementById("wickets").innerText = data.wickets;
+        // अगर मैच का डेटा अलग है तो यहाँ से भी सिंक कर सकते हैं
+        update(); 
+    }
+  });
 </script>
 
-</head>  <body>  <div class="box">  
+
+<body>  <div class="box">  
 <h3>  
  <span id="team"></span>  
  <span id="winTag" style="display:none">🏆 WIN</span>  
@@ -69,18 +86,17 @@ Balls: <span id="balls">0</span>/<span id="totalBalls"></span>
     <div id="overTracker" style="margin-top: 5px; font-size: 16px; letter-spacing: 5px; font-weight: bold;"></div>
 </div>
 
-<button class="run" onclick="window.play(0)">0</button>
-<button class="run" onclick="window.play(1)">1</button>
-<button class="run" onclick="window.play(2)">2</button>
-<button class="run" onclick="window.play(3)">3</button>
-<button class="run four" onclick="window.play(4)">4</button>
-<button class="run six" onclick="window.play(6)">6</button>
-<button class="wide" onclick="window.wideBall()">WIDE</button>
-<button class="wide" onclick="window.noBall()">NO BALL</button>  
-<button onclick="window.bye()">BYE</button>  
-<button onclick="window.legBye()">LEG BYE</button>  
-<button class="wicket" onclick="window.openWicketModal()">WICKET</button>
-
+<button class="run" onclick="play(0)">0</button>  
+<button class="run" onclick="play(1)">1</button>  
+<button class="run" onclick="play(2)">2</button>  
+<button class="run" onclick="play(3)">3</button>  
+<button class="run four" onclick="play(4)">4</button>  
+<button class="run six" onclick="play(6)">6</button><br>  
+<button class="wide" onclick="wideBall()">WIDE</button>
+<button class="wide" onclick="noBall()">NO BALL</button>  
+<button onclick="bye()">BYE</button>  
+<button onclick="legBye()">LEG BYE</button>  
+<button class="wicket" onclick="openWicketModal()">WICKET</button>
  
 <button class="undo" onclick="undo()">UNDO</button><br>  
 <button onclick="showMemories()">📜 MATCH MEMORY</button>  
@@ -208,36 +224,14 @@ let overByOverData = {
 };
 
 window.onload = function () {
-    // 1. Firebase से लाइव डेटा सुनना
-    if (window.db) {
-        import("https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js").then((dbModule) => {
-            const { ref, onValue } = dbModule;
-            onValue(ref(window.db, 'match'), (snapshot) => {
-                if (snapshot.exists()) {
-                    loadState(snapshot.val()); // Firebase का डेटा लोड करें
-                    update();
-                }
-            });
-        });
-    }
-
-    // 2. LocalStorage से डेटा लोड करना
     let saved = localStorage.getItem("cricketMatch");
     if (saved) {
-        try {
-            loadState(JSON.parse(saved));
-        } catch (e) {
-            console.error("LocalStorage parsing error", e);
-            startNewGame();
-        }
+        loadState(JSON.parse(saved));
     } else {
         startNewGame();
     }
-    
-    // 3. फाइनल अपडेट
     update();
 };
-
 
 function startNewGame() {
     team1 = prompt("Team 1 Name") || "Team A";
@@ -290,9 +284,12 @@ function createNewBowler() {
     updateOverTracker();
 }
 
+
+
 function play(r) {
     if (matchOver) return;
     saveUndo();
+    
     runs += r; balls++;
     bowlerRunsInOver += r;
     batsmen[striker].runs += r;
@@ -304,14 +301,26 @@ function play(r) {
     partnershipRuns += r;
     partnershipBalls++;
 
-    // --- यहाँ नया कोड जोड़ें ---
     currentOverBalls.push(r); 
-    // -----------------------
-
+    
     if (r % 2) changeStrike();
     endBall();
     saveMatch();
+    
+    // यहाँ Firebase पर लाइव स्कोर भेज रहे हैं
+    if (window.db) {
+        const liveMatchData = {
+            runs: runs,
+            wickets: wickets,
+            balls: balls,
+            strikerName: batsmen[striker].name,
+            teamName: (innings === 1 ? team1 : team2),
+            timestamp: Date.now()
+        };
+        set(ref(window.db, 'liveMatch/'), liveMatchData);
+    }
 }
+
 
 
 // वाइड बॉल: पेनल्टी + भाग कर लिए रन
@@ -511,12 +520,13 @@ document.getElementById("firstBowl").innerHTML = `
     </table>`;
 
 
-    // FOW section
+      // FOW section
     fowEl.innerHTML = fow.length > 0 ? fow.join(" , ") : "No wickets yet";
     firstFowEl.innerHTML = firstFow.length > 0 ? firstFow.join(" , ") : "N/A";
 }
 
-    function update() {
+
+function update() {
     teamEl.innerText = (innings === 1 ? team1 : team2);
     totalBallsEl.innerText = totalBalls;
     inningInfo.innerText = "Innings: " + innings + (target > 0 ? " | Target: " + target : "");
@@ -545,11 +555,13 @@ function updateRRR() {
         rrrEl.innerText = bl > 0 ? `Need ${rl} from ${bl} balls (RRR: ${((rl / bl) * 6).toFixed(2)})` : "";
     } else { rrrEl.innerText = ""; }
 }
+
 function showWin(winner) {
     winTag.style.display = "inline";
     let msg = (innings === 2) ? `${winner} won by ${10 - wickets} wickets!` : `${winner} won by ${target - 1 - runs} runs!`;
     
-     // यह फंक्शन हिस्ट्री में डेटा डालता है
+    
+    // यह फंक्शन हिस्ट्री में डेटा डालता है
     saveMatchToHistory(); 
     
     saveMatchMemory(msg);
@@ -567,42 +579,18 @@ function saveMatchToHistory() {
     localStorage.setItem("cricketMatchHistory", JSON.stringify(history));
 }
 
+
 function saveMatch() {
-    // 1. डेटा का ऑब्जेक्ट तैयार करें
     let state = {
         team1, team2, totalOvers, totalBalls, innings, target, runs, wickets, balls,
         batsmen, bowlers, striker, nonStriker, partnershipRuns, partnershipBalls,
         firstBatting, firstBowling, firstFow, fow,
-        currentOverBalls: currentOverBalls, 
-        matchOver, 
-        bowlerName: currentBowler ? currentBowler.name : null, // सुरक्षित 'Optional Chaining'
+currentOverBalls: currentOverBalls, // यह लाइन जोड़ें
+        matchOver, bowlerName: currentBowler?.name,
         overByOverData
     };
-
-    // 2. LocalStorage में सेव करें (यह हमेशा काम करेगा)
-    try {
-        localStorage.setItem("cricketMatch", JSON.stringify(state));
-    } catch (e) {
-        console.error("LocalStorage में डेटा सेव नहीं हो पाया:", e);
-    }
-
-    // 3. Firebase में सेव करें (सुरक्षित तरीके से)
-    if (typeof window !== 'undefined' && window.db) {
-        // यहाँ हमने Firebase की set और ref को window से लिया है
-        // अगर आपने हेड में इन्हें इम्पॉर्ट किया है, तो ये सीधे इस्तेमाल हो सकते हैं
-        try {
-            // नोट: अगर आप मॉड्यूल स्क्रिप्ट इस्तेमाल कर रहे हैं, तो 'set' और 'ref' 
-            // को आपको ग्लोबल बनाना होगा या यहाँ इम्पॉर्ट करना होगा।
-            // सुरक्षित तरीका:
-            import("https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js").then((dbModule) => {
-                dbModule.set(dbModule.ref(window.db, 'match'), state);
-            });
-        } catch (err) {
-            console.error("Firebase डेटा अपडेट फेल हो गया:", err);
-        }
-    }
+    localStorage.setItem("cricketMatch", JSON.stringify(state));
 }
-
 
 function manualChangeBowler() {
     // prompt की जगह अपना बनाया हुआ Modal दिखाएं
@@ -1056,8 +1044,7 @@ function completeWicketProcess(outIndex) {
     currentOverBalls.push("W");
     updateOverTracker();
 
-
-       // 5. नया बैट्समैन जोड़ने और स्ट्राइक चेंज
+    // 5. नया बैट्समैन जोड़ने और स्ट्राइक चेंज
     if (wickets < 10) {
         batsmen.push(createNewBatsman()); 
         if (outIndex === striker) {
@@ -1073,24 +1060,6 @@ function completeWicketProcess(outIndex) {
     update();
 }
 
-// बटन्स को फंक्शन्स से जोड़ने के लिए
-window.play = play;
-window.wideBall = wideBall;
-window.noBall = noBall;
-window.bye = bye;
-window.legBye = legBye;
-window.undo = undo;
-window.resetMatch = resetMatch;
-window.manualChangeBowler = manualChangeBowler;
-window.saveNewBowler = saveNewBowler;
-window.openWicketModal = openWicketModal;
-window.manualChangeStrike = manualChangeStrike;
-window.manualStartSecondInnings = manualStartSecondInnings;
-window.recordWicket = recordWicket;
-window.showRunOutOptions = showRunOutOptions;
-window.confirmRunOut = confirmRunOut;
-window.showMemories = showMemories;
-window.manageMemories = manageMemories;
 
 </script>  </body> 
 </html>
