@@ -52,21 +52,31 @@ canvas{width:100%; height:220px; display:block;}
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // इन्हें विंडो ऑब्जेक्ट पर सेट करें ताकि बटन इन्हें पहचान सकें
+    // लूप से बचने के लिए एक फ्लैग
+    window.isIncomingData = false;
+
     window.db = db;
     window.ref = ref;
     window.set = set;
     window.onValue = onValue;
 
-    // ये लिसनर जो स्कोर को ऑटो-अपडेट करेगा
+    // लिसनर को सुधारा गया
     onValue(ref(db, 'liveMatch/'), (snapshot) => {
         const data = snapshot.val();
+        
+        // अगर डेटा है, तो उसे लोड करें लेकिन एक फ्लैग के साथ
         if (data && typeof loadState === 'function') {
+            window.isIncomingData = true; // बताने के लिए कि डेटा सर्वर से आ रहा है
             loadState(data);
             update();
+            console.log("Firebase Update received");
+            
+            // थोड़े समय बाद फ्लैग को हटा दें
+            setTimeout(() => { window.isIncomingData = false; }, 500);
         }
     });
 </script>
+
 
 
 
@@ -569,21 +579,55 @@ function saveMatchToHistory() {
 
 
 function saveMatch() {
+    // अगर डेटा अभी Firebase/Server से अपडेट हो रहा है, तो नया 'Write' न करें
+    // यह लूप को रोकने के लिए सबसे जरूरी है
+    if (window.isIncomingData) {
+        console.log("Syncing: Skipping save to prevent loop.");
+        return;
+    }
+
+    // मैच की पूरी स्थिति (State) तैयार करें
     let state = {
-        team1, team2, totalOvers, totalBalls, innings, target, runs, wickets, balls,
-        batsmen, bowlers, striker, nonStriker, partnershipRuns, partnershipBalls,
-        firstBatting, firstBowling, firstFow, fow,
+        team1: team1,
+        team2: team2,
+        totalOvers: totalOvers,
+        totalBalls: totalBalls,
+        innings: innings,
+        target: target,
+        runs: runs,
+        wickets: wickets,
+        balls: balls,
+        batsmen: batsmen,
+        bowlers: bowlers,
+        striker: striker,
+        nonStriker: nonStriker,
+        partnershipRuns: partnershipRuns,
+        partnershipBalls: partnershipBalls,
+        firstBatting: firstBatting,
+        firstBowling: firstBowling,
+        firstFow: firstFow,
+        fow: fow,
         currentOverBalls: currentOverBalls,
-        matchOver, bowlerName: currentBowler?.name,
-        overByOverData
+        matchOver: matchOver,
+        bowlerName: currentBowler ? currentBowler.name : "N/A",
+        overByOverData: overByOverData
     };
     
-    // 1. फोन की मेमोरी में सेव करें
+    // 1. फोन की लोकल मेमोरी में सेव करें
     localStorage.setItem("cricketMatch", JSON.stringify(state));
     
-    // 2. Firebase में सेव करें (चेक करें कि window.db मौजूद है)
-    if (window.db && window.set) {
-        window.set(window.ref(window.db, 'liveMatch/'), state);
+    // 2. Firebase में सेव करें
+    if (window.db && window.set && window.ref) {
+        window.set(window.ref(window.db, 'liveMatch/'), state)
+        .then(() => {
+            console.log("Firebase Update Success!");
+        })
+        .catch((error) => {
+            console.error("Firebase Save Error:", error);
+            alert("Firebase Error: " + error.message);
+        });
+    } else {
+        console.error("Firebase db or set methods are not initialized!");
     }
 }
 
@@ -630,19 +674,39 @@ function saveNewBowler() {
     }
 }
 
-
 function loadState(s) {
-    team1 = s.team1; team2 = s.team2; totalOvers = s.totalOvers; totalBalls = s.totalBalls;
-    innings = s.innings; target = s.target; runs = s.runs; wickets = s.wickets; balls = s.balls;
-    batsmen = s.batsmen; bowlers = s.bowlers; striker = s.striker; nonStriker = s.nonStriker;
-    partnershipRuns = s.partnershipRuns; partnershipBalls = s.partnershipBalls;
-    firstBatting = s.firstBatting; firstBowling = s.firstBowling;
-    firstFow = s.firstFow || []; fow = s.fow || [];
-    currentOverBalls = s.currentOverBalls || []; // यह लाइन जोड़ें
+    console.log("Loading state for innings:", s.innings);
+    
+    // सभी बुनियादी डेटा लोड करें
+    team1 = s.team1; team2 = s.team2; 
+    totalOvers = s.totalOvers; totalBalls = s.totalBalls;
+    innings = s.innings; 
+    target = s.target; 
+    runs = s.runs; 
+    wickets = s.wickets; 
+    balls = s.balls;
+    batsmen = s.batsmen || []; 
+    bowlers = s.bowlers || []; 
+    striker = s.striker; 
+    nonStriker = s.nonStriker;
+    
+    // पारी का डेटा लोड करें
+    firstBatting = s.firstBatting || []; 
+    firstBowling = s.firstBowling || [];
+    firstFow = s.firstFow || []; 
+    fow = s.fow || [];
+    currentOverBalls = s.currentOverBalls || [];
     matchOver = s.matchOver;
     overByOverData = s.overByOverData;
+    
+    // बॉलर ढूंढें
     currentBowler = bowlers.find(b => b.name === s.bowlerName);
+
+    // सबसे जरूरी: अपडेट कॉल करें ताकि स्क्रीन बदल जाए
+    update();
 }
+
+
 
 function saveUndo() { undoStack.push(JSON.stringify(JSON.parse(localStorage.getItem("cricketMatch")))); }
 
@@ -782,7 +846,6 @@ function legBye() {
     endBall();
     saveMatch();
 }
-
 function drawGraph() {
     const canvas = document.getElementById("matchGraph");
     const ctx = canvas.getContext("2d");
@@ -1089,9 +1152,11 @@ window.onload = function () {
     update();
     setupUI(); 
 };
+    
 
 
 </script>  </body> 
 </html>
                                                                                        
 
+    
