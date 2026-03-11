@@ -34,6 +34,7 @@ canvas{width:100%; height:220px; display:block;}
 </style>  
 </head> 
 <script type="module">
+  // "firebase/app" की जगह ये पूरे लिंक (CDN) होने चाहिए
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
   import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-database.js";
 
@@ -50,28 +51,14 @@ canvas{width:100%; height:220px; display:block;}
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
   
-  // ये फंक्शन्स बाहर की स्क्रिप्ट्स के लिए उपलब्ध कराएं
+  // ये लाइनें सबसे जरूरी हैं ताकि आपके play() और saveMatch() फंक्शन काम करें
   window.db = db;
-  window.dbRef = ref;
-  window.dbSet = set
-// अपनी मॉड्यूल स्क्रिप्ट के अंदर ये लाइनें जोड़ें:
-window.set = set;
-window.ref = ref;
-  
-  // लाइव लिसनर (दोस्तों के फोन के लिए)
-  onValue(ref(db, 'liveMatch/'), (snapshot) => {
-    const data = snapshot.val();
-    if (data && typeof update === "function") {
-        // डेटा मिलने पर स्कोर अपडेट करें
-        document.getElementById("runs").innerText = data.runs;
-        document.getElementById("wickets").innerText = data.wickets;
-        // अगर मैच का डेटा अलग है तो यहाँ से भी सिंक कर सकते हैं
-        update(); 
-    }
-  });
+  window.ref = ref;
+  window.set = set;
+
+  console.log("Firebase अब पूरी तरह से कनेक्टेड है!");
 </script>
-
-
+  
 <body>  <div class="box">  
 <h3>  
  <span id="team"></span>  
