@@ -89,6 +89,7 @@ Balls: <span id="balls">0</span>/<span id="totalBalls"></span>
     <div id="overTracker" style="margin-top: 5px; font-size: 16px; letter-spacing: 5px; font-weight: bold;"></div>
 </div>
 
+<div id="scoringButtons">
 <button class="run" onclick="play(0)">0</button>  
 <button class="run" onclick="play(1)">1</button>  
 <button class="run" onclick="play(2)">2</button>  
@@ -105,7 +106,7 @@ Balls: <span id="balls">0</span>/<span id="totalBalls"></span>
 <button onclick="showMemories()">📜 MATCH MEMORY</button>  
 <button onclick="manageMemories()">🗑️ MANAGE MEMORY</button>  
 <button class="reset" onclick="resetMatch()">🔄 NEW MATCH</button>  
-
+</div>
 <button onclick="manualChangeBowler()" style="background:#ff9800; color:white; border:none; padding:8px; border-radius:5px; cursor:pointer;">
     CHANGE BOWLER
 </button>
@@ -1056,6 +1057,38 @@ function completeWicketProcess(outIndex) {
     saveMatch();
     update();
 }
+
+// यह रहा आपका पूरा कोड जो आपको अपनी स्क्रिप्ट फाइल में पेस्ट करना है
+function setupUI() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const isScorer = urlParams.get('scorer') === 'true';
+    const buttonsDiv = document.getElementById("scoringButtons");
+
+    // अगर बटन वाला डिब्बा मौजूद है, तभी ये लॉजिक चलाएं
+    if (buttonsDiv) {
+        if (!isScorer) {
+            buttonsDiv.style.display = "none";
+        } else {
+            buttonsDiv.style.display = "block";
+        }
+    }
+}
+
+// यह सुनिश्चित करेगा कि जैसे ही पेज खुले, सब कुछ लोड हो जाए
+window.onload = function () {
+    let saved = localStorage.getItem("cricketMatch");
+    if (saved) {
+        loadState(JSON.parse(saved));
+    } else {
+        startNewGame();
+    }
+    
+    // अब अपडेट और UI सेटअप चलाएं
+    update();
+    setupUI(); 
+};
+
+
 
 
 </script>  </body> 
