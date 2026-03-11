@@ -1,8 +1,27 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
     <title>Live Cricket Scorer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body { font-family: Arial; text-align: center; padding: 20px; }
+        .score { font-size: 50px; font-weight: bold; margin: 20px; }
+        button { padding: 15px; margin: 5px; font-size: 18px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <div class="score">Score: <span id="runs">0</span>/<span id="wickets">0</span></div>
+    <div>Overs: <span id="overs">0.0</span></div>
+    <br>
+
+    <button onclick="window.play(0)">0</button>
+    <button onclick="window.play(1)">1</button>
+    <button onclick="window.play(4)">4</button>
+    <button onclick="window.play(6)">6</button>
+    <button onclick="window.wicket()" style="color:red">WICKET</button>
+    <button onclick="window.undo()">UNDO</button>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
         import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-database.js";
@@ -18,60 +37,47 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        window.db = getDatabase(app);
-        window.ref = ref;
-        window.set = set;
-        window.onValue = onValue;
+        const db = getDatabase(app);
+        const dbRef = ref(db, 'liveMatch/');
 
-        // Firebase से लाइव डेटा सुनने वाला सिस्टम
-        window.onValue(window.ref(window.db, 'liveMatch/'), (snapshot) => {
+        // Local Variables
+        let runs = 0, wickets = 0, balls = 0;
+
+        // Firebase Listener (Live Update)
+        onValue(dbRef, (snapshot) => {
             const data = snapshot.val();
             if (data) {
-                document.getElementById("runs").innerText = data.runs;
-                document.getElementById("wickets").innerText = data.wickets;
-                document.getElementById("overs").innerText = data.overs;
-                if(typeof update === 'function') update();
+                runs = data.runs;
+                wickets = data.wickets;
+                balls = data.balls;
+                document.getElementById("runs").innerText = runs;
+                document.getElementById("wickets").innerText = wickets;
+                document.getElementById("overs").innerText = Math.floor(balls/6) + "." + (balls%6);
             }
         });
-    </script>
-</head>
-<body>
-    <div class="score">Score: <span id="runs">0</span>/<span id="wickets">0</span></div>
-    <div>Overs: <span id="overs">0.0</span></div>
 
-    <button onclick="window.play(0)">0</button>
-    <button onclick="window.play(1)">1</button>
-    <button onclick="window.play(2)">2</button>
-    <button onclick="window.play(3)">3</button>
-    <button onclick="window.play(4)">4</button>
-    <button onclick="window.play(6)">6</button>
-    <button onclick="window.openWicketModal()" style="color:red">WICKET</button>
-    <button onclick="window.undo()">UNDO</button>
-
-    <script>
-        // सभी फंक्शन को window पर रजिस्टर करें ताकि HTML उन्हें देख सके
-        window.play = play;
-        window.undo = undo;
-        window.openWicketModal = openWicketModal;
-
-        // फायरबेस अपडेट फंक्शन
+        // Firebase Update Function
         function updateFirebase() {
-            if (window.db && window.set) {
-                window.set(window.ref(window.db, 'liveMatch/'), {
-                    runs: runs,
-                    wickets: wickets,
-                    overs: Math.floor(balls / 6) + "." + (balls % 6)
-                });
-            }
+            set(dbRef, { runs, wickets, balls });
         }
-        
-        // अपने पुराने 'play' फंक्शन के अंदर सबसे नीचे 'updateFirebase()' जोड़ें
-        function play(r) {
-            // ... आपका कोड ...
-            saveMatch();
-            updateFirebase(); // यह लाइन जोड़ दी
-            update();
-        }
+
+        // Global Window Functions
+        window.play = (r) => { 
+            runs += r; 
+            balls++; 
+            updateFirebase(); 
+        };
+
+        window.wicket = () => { 
+            wickets++; 
+            balls++; 
+            updateFirebase(); 
+        };
+
+        window.undo = () => {
+            // यहाँ आप अपनी Undo लॉजिक जोड़ सकते हैं
+            alert("Undo clicked!");
+        };
     </script>
 </body>
 </html>
