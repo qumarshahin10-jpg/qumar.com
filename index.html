@@ -1,39 +1,324 @@
-<!DOCTYPE html>  <html>  
-<head>  
-<meta charset="UTF-8">  
-<title>Cricket Scorer </title>  
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Cricket Scorer (Cricbuzz Style)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
-<style>  
-.scorer{color:#00796b;font-size:14px;margin-top:10px;font-weight:bold}  
-body{background:#ffffff;color:#000;font-family:Arial;text-align:center;}  
-.box{width:100vw;max-width:100vw;margin:0;padding:16px;border:3px solid #c62828;box-sizing:border-box;}  
-.score{font-size:48px;color:#f9a825;font-weight:bold;}  
-.section{background:#f5f5f5;padding:8px;margin-top:8px;text-align:left;font-size:14px;border:1px solid #ddd;}  
-.section b{color:#c62828;}  
-button{padding:10px;margin:4px;font-size:15px;font-weight:bold;border-radius:4px;border:1px solid #999;cursor:pointer;}  
-.run{background:#eeeeee}  
-.wide{background:#ffb300}  
-.wicket{background:#d32f2f;color:white}  
-.undo{background:#9e9e9e;color:white}  
-.four{background:#1976d2;color:white}  
-.six{background:#43a047;color:white}  
-.reset{background:#000;color:white}  
-#partnershipBox{margin-top:8px;padding:6px;background:#f5f5f5;border-radius:6px;font-weight:bold;color:#333;}  
-.strikeBat{color: green;font-weight:bold;}  
-.strikeIcon{color:#f9a825;}  
-.outBat{color:#ff7f7f;font-weight:bold;}  
-.outBat::after{content:" ✖";}  
-.currentBowler{color:green;font-weight:bold;}  
-.fow-list { font-size: 13px; color: #555; line-height: 1.4; }  
-/* Graph position style */  
-#graphContainer{background:#fff; padding:10px; margin-top:15px; border:3px solid #00796b; border-radius:8px;}  
-canvas{width:100%; height:220px; display:block;}  
-#crrBox{font-size: 18px; color: #d32f2f; font-weight: bold; margin: 5px 0;}  
-@media (max-width:767px){.box{border-radius:0;}}  
-</style> 
+<style>
+
+.tabs { display: flex; background: #00796b; padding: 5px; }
+.tabs button { flex: 1; padding: 10px; border: none; background: none; color: white; cursor: pointer; }
+.tab-content { display: none; padding: 15px; }
+.active-tab { display: block; } /* जो टैब एक्टिव हो उसे दिखाएँ */
 
 
+    /* Global Styles */
+    body {
+        background: #f0f2f5; /* Light grey background */
+        color: #333;
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; /* Modern font */
+        text-align: center;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* Main Container for the Scorer */
+    .app-container {
+        max-width: 480px; /* Mobile-first approach */
+        margin: 10px auto;
+        padding: 10px;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+    }
+
+    /* Match Header (Team Names) */
+    .match-header {
+        background: #004d40; /* Dark teal */
+        color: white;
+        padding: 12px 15px;
+        border-radius: 8px;
+        font-size: 1.2em;
+        font-weight: bold;
+        margin-bottom: 15px;
+        text-align: left;
+    }
+
+    /* Score Display (Runs/Wickets) */
+    .score-display {
+        font-size: 3.5em; /* Large score font */
+        font-weight: 800;
+        color: #263238; /* Dark grey */
+        line-height: 1;
+        margin-bottom: 5px;
+    }
+
+    /* CRR Box */
+    #crrbox {
+        font-size: 1em;
+        color: #666;
+        margin-bottom: 15px;
+    }
+
+    /* Overs and Balls */
+    .overs-balls-info {
+        font-size: 0.9em;
+        color: #555;
+        margin-bottom: 15px;
+    }
+
+    /* Section Cards (Current Batsmen, Bowler, FOW, Scorecards) */
+    .section-card {
+        background: #fdfdfd;
+        border: 1px solid #eee;
+        border-radius: 10px;
+        padding: 15px;
+        margin-top: 15px;
+        text-align: left;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .section-card b {
+        color: #00796b; /* Teal heading */
+        font-size: 1.1em;
+        display: block; /* Makes bold text take full width */
+        margin-bottom: 10px;
+        border-bottom: 1px solid #e0e0e0;
+        padding-bottom: 8px;
+    }
+
+    /* Current Batsmen Display */
+    #current {
+        display: flex;
+        flex-direction: column; /* Stacks batsmen vertically */
+        gap: 8px;
+    }
+    .batsman-line {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.95em;
+    }
+    .batsman-name {
+        font-weight: bold;
+        color: #333;
+    }
+    .batsman-score {
+        color: #555;
+    }
+    .strikebat { color: green; font-weight: bold; }
+    .strikeicon { color: #f9a825; }
+    .outbat { color: #ff7f7f; font-weight: bold; }
+    .outbat::after { content: " ✖"; }
+
+    /* Partnership Box */
+    #partnershipbox {
+        margin-top: 15px;
+        padding: 10px;
+        background: #e0f2f7; /* Light blue background */
+        border-radius: 8px;
+        font-weight: bold;
+        color: #01579b;
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+        text-align: center;
+    }
+
+    /* Current Bowler Display */
+    #bowlername { color: #2e7d32; font-weight: bold; }
+    #overtracker {
+        margin-top: 8px;
+        font-size: 1.1em;
+        letter-spacing: 3px;
+        font-weight: bold;
+        color: #444;
+    }
+    .over-ball-run {
+        display: inline-block;
+        width: 24px;
+        height: 24px;
+        line-height: 24px;
+        text-align: center;
+        border-radius: 50%;
+        background-color: #eee;
+        color: #333;
+        font-size: 0.8em;
+        margin: 2px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .over-ball-run.w { background-color: #d32f2f; color: white; }
+    .over-ball-run.nb { background-color: #ffb300; color: white; }
+    .over-ball-run.wd { background-color: #1976d2; color: white; }
+
+
+    /* Scoring Buttons */
+    #scoringbuttons {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr); /* 3 buttons per row by default */
+        gap: 10px;
+        margin-top: 20px;
+        padding: 10px;
+        background: #f8f8f8;
+        border-radius: 10px;
+        box-shadow: inset 0 1px 5px rgba(0,0,0,0.1);
+    }
+
+    #scoringbuttons button {
+        padding: 12px 0;
+        font-size: 1.1em;
+        font-weight: bold;
+        border-radius: 8px;
+        border: none; /* No default border */
+        cursor: pointer;
+        transition: background-color 0.2s, box-shadow 0.2s;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    #scoringbuttons button:active {
+        box-shadow: 0 1px 3px rgba(0,0,0,0.2) inset;
+    }
+
+    /* Button Colors */
+    .run { background: #e0e0e0; color: #333; }
+    .four { background: #1976d2; color: white; }
+    .six { background: #43a047; color: white; }
+    .wide { background: #ffb300; color: white; }
+    .wicket { background: #d32f2f; color: white; }
+    .undo { background: #9e9e9e; color: white; }
+    .reset { background: #546e7a; color: white; } /* Darker for new match */
+
+    /* Special Buttons below scoring */
+    .action-buttons {
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* Two columns for action buttons */
+        gap: 10px;
+        margin-top: 15px;
+        padding: 10px;
+    }
+    .action-buttons button {
+        padding: 12px 10px;
+        font-size: 1em;
+        font-weight: bold;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        transition: background-color 0.2s;
+    }
+    .action-buttons .reset { background: #c62828; color: white; }
+    .action-buttons .change-bowler { background: #ff9800; color: white; }
+    .action-buttons .manual-strike { background: #8e44ad; color: white; }
+    .action-buttons .match-memory { background: #00897b; color: white; }
+
+    /* Scorecard Tables */
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        font-size: 0.85em;
+    }
+    th, td {
+        padding: 8px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+    }
+    th {
+        background: #f5f5f5;
+        color: #555;
+        font-weight: bold;
+    }
+    tr:last-child td { border-bottom: none; } /* No border on last row */
+    .fow-list { font-size: 0.85em; color: #555; line-height: 1.5; margin-top: 5px;}
+
+    /* Modals */
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0,0,0,0.6);
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+    .modal-content {
+        background: white;
+        padding: 25px;
+        border-radius: 10px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        max-width: 90%;
+        text-align: center;
+        position: relative;
+    }
+    .modal-close-btn {
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        font-size: 1.5em;
+        cursor: pointer;
+        color: #888;
+    }
+    .modal h3 {
+        color: #00796b;
+        margin-top: 0;
+        margin-bottom: 15px;
+    }
+    .modal button {
+        padding: 10px 15px;
+        margin: 5px;
+        border-radius: 5px;
+        border: none;
+        background: #00796b;
+        color: white;
+        cursor: pointer;
+    }
+    .modal input[type="text"] {
+        width: calc(100% - 20px);
+        padding: 10px;
+        margin-bottom: 15px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+
+    /* Graph Container */
+    #graphcontainer {
+        background: #fff;
+        padding: 15px;
+        margin-top: 20px;
+        border: 1px solid #00796b;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+    #graphcontainer b {
+        color: #00796b;
+        font-size: 1.1em;
+        display: block;
+        margin-bottom: 10px;
+    }
+    canvas {
+        width: 100%;
+        height: 200px;
+        display: block;
+        margin-top: 10px;
+    }
+
+
+    /* Responsive Adjustments */
+    @media (min-width: 768px) {
+        .app-container {
+            max-width: 700px; /* Wider for tablets */
+        }
+        #scoringbuttons {
+            grid-template-columns: repeat(6, 1fr); /* More buttons on one row */
+        }
+        .action-buttons {
+            grid-template-columns: 1fr 1fr 1fr; /* 3 columns for actions */
+        }
+    }
+
+    .scorer {color:#00796b;font-size:14px;margin-top:10px;font-weight:bold}
+</style>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.3.1/firebase-app.js";
@@ -52,162 +337,194 @@ canvas{width:100%; height:220px; display:block;}
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    // लूप से बचने के लिए एक फ्लैग
-    window.isIncomingData = false;
-
     window.db = db;
     window.ref = ref;
     window.set = set;
     window.onValue = onValue;
 
-    // लिसनर को सुधारा गया
+    // Flag to prevent infinite loop during sync
+    window.isIncomingData = false; 
+
+    // Firebase Realtime Listener
     onValue(ref(db, 'liveMatch/'), (snapshot) => {
         const data = snapshot.val();
-        
-        // अगर डेटा है, तो उसे लोड करें लेकिन एक फ्लैग के साथ
         if (data && typeof loadState === 'function') {
-            window.isIncomingData = true; // बताने के लिए कि डेटा सर्वर से आ रहा है
-            loadState(data);
-            update();
-            console.log("Firebase Update received");
-            
-            // थोड़े समय बाद फ्लैग को हटा दें
-            setTimeout(() => { window.isIncomingData = false; }, 500);
+            window.isIncomingData = true; // Set flag when data is coming in
+            loadState(data); // Load the state from Firebase
+            update(); // Update the UI
+            setTimeout(() => { window.isIncomingData = false; }, 500); // Reset flag after a short delay
+            console.log("Firebase Update received and processed.");
         }
     });
 </script>
 
+</head>
+<body>
 
-
-
-
-
-</head>  <body>  <div class="box">  
-<h3>  
- <span id="team"></span>  
- <span id="winTag" style="display:none">🏆 WIN</span>  
-</h3>  <div id="inningInfo"></div>  
-<div class="score"><span id="runs">0</span>/<span id="wickets">0</span></div>  <div id="crrBox">CRR: 0.00</div>  <div>  
-Overs: <span id="overs">0.0</span> |  
-Balls: <span id="balls">0</span>/<span id="totalBalls"></span>  
-</div>  <div id="rrr" style="color:blue; font-weight:bold; margin:5px;"></div>  <div class="section">  
-<b>Current Batsmen</b>  
-<div id="current"></div>  
-</div>  <div id="partnershipBox">🤝 Partnership: 0 runs (0 balls)</div>  <div style="margin-top:10px;">  
-<div class="section" style="background: #e8f5e9; border-left: 5px solid #2e7d32;">
-    <b>Current Bowler:</b> <span id="bowlerName" style="color: green; font-weight: bold;"></span>
-    <div id="overTracker" style="margin-top: 5px; font-size: 16px; letter-spacing: 5px; font-weight: bold;"></div>
+<div class="tabs">
+    <button onclick="showTab('info')">Info</button>
+    <button onclick="showTab('live')">Live</button>
+    <button onclick="showTab('scorecard')">Scorecard</button>
+    <button onclick="showTab('overs')">Overs</button>
 </div>
 
-<div id="scoringButtons">
-<button class="run" onclick="play(0)">0</button>  
-<button class="run" onclick="play(1)">1</button>  
-<button class="run" onclick="play(2)">2</button>  
-<button class="run" onclick="play(3)">3</button>  
-<button class="run four" onclick="play(4)">4</button>  
-<button class="run six" onclick="play(6)">6</button><br>  
-<button class="wide" onclick="wideBall()">WIDE</button>
-<button class="wide" onclick="noBall()">NO BALL</button>  
-<button onclick="bye()">BYE</button>  
-<button onclick="legBye()">LEG BYE</button>  
-<button class="wicket" onclick="openWicketModal()">WICKET</button>
- 
-<button class="undo" onclick="undo()">UNDO</button><br>  
-
-<button onclick="manageMemories()">🗑️ MANAGE MEMORY</button>  
-<button class="reset" onclick="resetMatch()">🔄 NEW MATCH</button>  
-<button onclick="manualChangeBowler()" style="background:#ff9800; color:white; border:none; padding:8px; border-radius:5px; cursor:pointer;">
-    CHANGE BOWLER
-</button>
-<button onclick="manualChangeStrike()" style="background:#8e44ad; color:white; border-radius:50%; width:40px; height:40px; border:none; cursor:pointer;">
-    🔄
-</button>
-
-</div>
-<button onclick="showMemories()">📜 MATCH MEMORY</button>  
-
-
-<div id="bowlerModal" style="display:none; position:fixed; top:20%; left:10%; background:white; padding:20px; border:1px solid #ccc; z-index:1000;">
-    <h3>नये बॉलर का नाम लिखें:</h3>
-    <input type="text" id="newBowlerInput">
-    <button onclick="saveNewBowler()">OK</button>
-    <button onclick="document.getElementById('bowlerModal').style.display='none'">Cancel</button>
-</div>
-
-<div id="playerDetailModal" style="display:none; position:fixed; top:20%; left:10%; width:80%; background:white; padding:20px; border:2px solid #333; z-index:1000; border-radius:10px;">
-    <h3 id="playerName">खिलाड़ी का नाम</h3>
-    <div id="playerStats">
-        </div>
-    <br>
-    <button onclick="document.getElementById('playerDetailModal').style.display='none'">बंद करें</button>
-</div>
-
-
-
-
-</div>  <div class="section">  
-<b>Fall of Wickets</b>  
-<div id="fow" class="fow-list"></div>  
-</div>  <div class="section"><b>Batting Scorecard</b><div id="scorecard"></div></div>  
-<div class="section"><b>Bowling Scorecard</b><div id="bowling"></div></div>  <div class="section">  
-<b>Previous Inning Batting</b>  
-<div id="firstBat"></div>  
-<br><b>FOW (Prev):</b>  
-<div id="firstFow" class="fow-list"></div>  
-</div>  
-<div class="section"><b>Previous Inning Bowling</b><div id="firstBowl"></div></div>  <div id="graphContainer">  
-    <b>📈 Match Progress Graph</b>  
-    <canvas id="matchGraph"></canvas>  
-    <div style="font-size:10px; display:flex; justify-content:center; gap:10px; margin-top:5px;">  
-        <span><span style="color:blue">━</span> Team 1</span>  
-        <span><span style="color:red">━</span> Team 2</span>  
-        <span><span style="color:black">●</span> Wicket</span>  
-    </div>  
-</div>  </div>  <div class="scorer">Scorer : Shahin Qumar
-
-
-</div> 
-
-<button id="startSecondBtn" style="display:none; background:green; color:white;" onclick="manualStartSecondInnings()">START SECOND INNINGS</button>
-
-<script>
-function manualStartSecondInnings() {
-    innings = 2;
-    matchOver = false;
-    // यहाँ अपनी पिछली पारी का डेटा सेव/सेट करें
-    resetInnings();
-    document.getElementById("startSecondBtn").style.display = "none";
-    update();
-}
-</script>
-
-
-
-<div id="scorecardModal" style="display:none; position:fixed; top:10%; left:5%; width:90%; height:80%; background:white; padding:20px; border:2px solid #333; z-index:1000; overflow-y:auto; border-radius:10px;">
-    <button onclick="document.getElementById('scorecardModal').style.display='none'" style="float:right; padding:5px 10px; background:#d32f2f; color:white; border:none;">❌ बंद करें</button>
-    <div id="modalContent"></div>
-</div>
-
-<div id="wicketModal" style="display:none; position:fixed; top:20%; left:10%; width:80%; background:#fff; padding:20px; border:2px solid #333; z-index:1000; border-radius:10px;">
-    <h3>विकेट गिरा!</h3>
-    <button onclick="document.getElementById('wicketModal').style.display='none'" style="background:#666; color:white; border:none; padding:5px 10px;">❌ बंद करें</button>
-    <br><br>
-    <button onclick="recordWicket('Caught')">Caught</button>
-    <button onclick="recordWicket('Bowled')">Bowled</button>
-    <button onclick="showRunOutOptions()">Run Out</button>
+<div id="live-tab" class="tab-content" style="display: block;">
+    <div class="app-container">
+        
+       
     
-    <div id="runOutOptions" style="display:none; margin-top:10px;">
-        <p>कौन आउट हुआ?</p>
-        <button onclick="confirmRunOut('striker')">स्ट्राइकर: <span id="sName"></span></button>
-        <button onclick="confirmRunOut('non-striker')">नॉन-स्ट्राइकर: <span id="nsName"></span></button>
+        <div class="match-header" id="match-header" style="text-align: center; font-size: 1.2em;">
+            <span id="team1name">Team 1</span> 
+            <span style="color: #ffcc80; font-size: 0.8em; margin: 0 10px;">vs</span> 
+            <span id="team2name">Team 2</span>
+        </div>
+
+        <div id="inninginfo" style="font-size:0.9em; color:#666; margin-bottom:10px;">Innings: 1</div>
+
+        <div class="score-display">
+            <span id="runs">0</span>/<span id="wickets">0</span>
+        </div>
+        <div id="crrbox">CRR: 0.00</div>
+        <div class="overs-balls-info">
+            Overs: <span id="overs">0.0</span> | Balls: <span id="balls">0</span>
+        </div>
+        <div id="rrr" style="color:blue; font-weight:bold; margin:5px;"></div>
+
+        <div class="section-card">
+            <b>CURRENT BATSMEN</b>
+            <div id="current"></div>
+        </div>
+
+        <div id="partnershipbox">🤝 PARTNERSHIP: 0 runs (0 balls)</div>
+
+        <div class="section-card" style="background: #e8f5e9; border-left: 5px solid #2e7d32;">
+            <b>CURRENT BOWLER:</b> <span id="bowlername"></span>
+            <div id="overtracker"></div>
+        </div>
+
+        <div id="scoringbuttons">
+            <button class="run" onclick="play(0)">0</button>
+            <button class="run" onclick="play(1)">1</button>
+            <button class="run" onclick="play(2)">2</button>
+            <button class="run" onclick="play(3)">3</button>
+            <button class="run four" onclick="play(4)">4</button>
+            <button class="run six" onclick="play(6)">6</button>
+            <button class="wide" onclick="wideBall()">WIDE</button>
+            <button class="wide" onclick="noBall()">NO BALL</button>
+            <button class="run" onclick="bye()">BYE</button>
+            <button class="run" onclick="legBye()">LEG BYE</button>
+            <button class="wicket" onclick="openWicketModal()">WICKET</button>
+            <button class="undo" onclick="undo()">UNDO</button>
+        </div>
+
+        <div class="action-buttons">
+            <button class="reset" onclick="resetMatch()">🔄 NEW MATCH</button>
+            <button class="change-bowler" onclick="manualChangeBowler()">CHANGE BOWLER</button>
+            <button class="manual-strike" onclick="manualChangeStrike()">🔄 STRIKE</button>
+            <button id="startsecondbtn" style="display:none; background:green; color:white;" onclick="manualStartSecondInnings()">START 2ND INNINGS</button>
+        </div>
+    </div>
+ </div>
+
+<div id="scorecard-tab" class="tab-content">
+    <div class="section-card">
+        <b id="batting-team-title">BATTING SCORECARD</b>
+        <div id="scorecard"></div>
+    </div>
+    <div class="section-card">
+        <b id="bowling-team-title">BOWLING SCORECARD</b>
+        <div id="bowling"></div>
+ 
+ 
+    </div>
+</div>
+ 
+    <div id="info-tab" class="tab-content">
+    <div class="section-card">
+        <b>SQUADS</b>
+        <button onclick="openSquadModal()">Edit Squads</button>
+        <div id="squad-list"></div>
     </div>
 </div>
 
 
 
+<div id="info-tab" class="tab-content">
+    <div class="section-card">
+        <b>SQUADS</b>
+        <button onclick="openSquadModal()">Edit Squads</button>
+   
+    
+      
+      
+
+        
+    
 
 
-<script>  
+
+   
+<div class="scorer">scorer : shahin qumar</div>
+
+<div id="bowlermodal" class="modal">
+    <div class="modal-content">
+        <span class="modal-close-btn" onclick="document.getElementById('bowlermodal').style.display='none'">×</span>
+        <h3>नये बॉलर का नाम लिखें:</h3>
+        <input type="text" id="newbowlerinput">
+        <button onclick="saveNewBowler()">OK</button>
+        <button onclick="document.getElementById('bowlermodal').style.display='none'">CANCEL</button>
+    </div>
+</div>
+
+<div id="playerdetailmodal" class="modal">
+    <div class="modal-content">
+        <span class="modal-close-btn" onclick="document.getElementById('playerdetailmodal').style.display='none'">×</span>
+        <h3 id="playername">खिलाड़ी का नाम</h3>
+        <div id="playerstats"></div>
+        <button onclick="document.getElementById('playerdetailmodal').style.display='none'">बंद करें</button>
+    </div>
+</div>
+
+<div id="scorecardmodal" class="modal">
+    <div class="modal-content">
+        <span class="modal-close-btn" onclick="document.getElementById('scorecardmodal').style.display='none'">×</span>
+        <div id="modalcontent"></div>
+        <button onclick="document.getElementById('scorecardmodal').style.display='none'">बंद करें</button>
+    </div>
+</div>
+
+<div id="wicketmodal" class="modal">
+    <div class="modal-content">
+        <span class="modal-close-btn" onclick="document.getElementById('wicketmodal').style.display='none'">×</span>
+        <h3>विकेट गिरा!</h3>
+        <button onclick="recordWicket('caught')">CAUGHT</button>
+        <button onclick="recordWicket('bowled')">BOWLED</button>
+        <button onclick="showRunOutOptions()">RUN OUT</button>
+        
+        <div id="runoutoptions" style="display:none; margin-top:10px;">
+            <p>कौन आउट हुआ?</p>
+            <button onclick="confirmRunOut('striker')">स्ट्राइकर: <span id="sname"></span></button>
+            <button onclick="confirmRunOut('non-striker')">नॉन-स्ट्राइकर: <span id="nsname"></span></button>
+        </div>
+    </div>
+</div>
+
+<script>
+// --- GLOBAL VARIABLES (Make sure these are declared at the top level of your script) ---
+let team1, team2, totalOvers, totalBalls;
+let currentOverBalls = [];
+let innings = 1, target = 0, runs = 0, wickets = 0, balls = 0;
+let batsmen = [], bowlers = [], striker = 0, nonStriker = 0, currentBowler = null;
+let partnershipRuns = 0, partnershipBalls = 0, undoStack = [], firstBatting = [], firstBowling = [], firstFow = [], matchOver = false;
+let fow = [];
+let bowlerRunsInOver = 0;
+
+let overByOverData = {
+    inning1: [{ runs: 0, wickets: 0, over: 0 }],
+    inning2: [{ runs: 0, wickets: 0, over: 0 }]
+};
+
+// --- DOM ELEMENTS ---
 const teamEl = document.getElementById("team"),
     runsEl = document.getElementById("runs"),
     wicketsEl = document.getElementById("wickets"),
@@ -217,51 +534,51 @@ const teamEl = document.getElementById("team"),
     scorecardEl = document.getElementById("scorecard"),
     bowlingEl = document.getElementById("bowling"),
     rrrEl = document.getElementById("rrr"),
-    inningInfo = document.getElementById("inningInfo"),
-    totalBallsEl = document.getElementById("totalBalls"),
-    winTag = document.getElementById("winTag"),
-    pBox = document.getElementById("partnershipBox"),
+    inningInfo = document.getElementById("inninginfo"),
+    totalBallsEl = document.getElementById("totalballs"),
+    winTag = document.getElementById("wintag"),
+    pBox = document.getElementById("partnershipbox"),
     fowEl = document.getElementById("fow"),
-    firstFowEl = document.getElementById("firstFow"),
-    crrEl = document.getElementById("crrBox");
+    firstFowEl = document.getElementById("firstfow"),
+    crrEl = document.getElementById("crrbox"),
+    bowlerNameEl = document.getElementById("bowlername"),
+    overTrackerEl = document.getElementById("overtracker");
 
-let team1, team2, totalOvers, totalBalls;
-let currentOverBalls = []; // यह गेंदों को ट्रैक करेगा
-
-let innings = 1, target = 0, runs = 0, wickets = 0, balls = 0;
-let batsmen = [], bowlers = [], striker = 0, nonStriker = 0, currentBowler = null;
-let partnershipRuns = 0, partnershipBalls = 0, undoStack = [], firstBatting = [], firstBowling = [], firstFow = [], matchOver = false;
-let fow = [];
-
-// Maiden ट्रैक करने के लिए एक्स्ट्रा वेरिएबल
-let bowlerRunsInOver = 0;
-
-let overByOverData = {
-    inning1: [{ runs: 0, wickets: 0, over: 0 }],
-    inning2: [{ runs: 0, wickets: 0, over: 0 }]
-};
-
+// --- INITIALIZATION ---
 window.onload = function () {
+    const urlParams = new URLSearchParams(window.location.search);
+    const isScorer = urlParams.get('scorer') === 'true'; // Check if this is the scorer's view
+
+    // If it's not the scorer, hide the buttons
+    const buttonsDiv = document.getElementById("scoringbuttons");
+    if (buttonsDiv) {
+        buttonsDiv.style.display = isScorer ? "grid" : "none";
+        document.querySelector('.action-buttons').style.display = isScorer ? "grid" : "none";
+    }
+
+    // Try to load state from localStorage or start a new game
     let saved = localStorage.getItem("cricketMatch");
     if (saved) {
         loadState(JSON.parse(saved));
     } else {
         startNewGame();
     }
-    update();
+    update(); // Initial UI update
 };
 
+// --- CORE GAME LOGIC ---
+
 function startNewGame() {
-    team1 = prompt("Team 1 Name") || "Team A";
-    team2 = prompt("Team 2 Name") || "Team B";
-    totalOvers = parseInt(prompt("Overs?")) || 6;
+    team1 = prompt("Team 1 name:") || "Team A";
+    team2 = prompt("Team 2 name:") || "Team B";
+    totalOvers = parseInt(prompt("Total Overs?")) || 6;
     totalBalls = totalOvers * 6;
     resetInnings();
-    saveMatch();
+    saveMatch(); // Save initial state to Firebase
 }
 
 function resetMatch() {
-    if (confirm("New match start karein?")) {
+    if (confirm("Are you sure you want to start a new match?")) {
         localStorage.removeItem("cricketMatch");
         location.reload();
     }
@@ -275,20 +592,21 @@ function resetInnings() {
     matchOver = false;
     winTag.style.display = "none";
     batsmen.push(createNewBatsman(), createNewBatsman());
-    createNewBowler();
+    createNewBowler(); // Ensures a bowler is always present
+    currentOverBalls = []; // Reset over tracker
+    overByOverData = { inning1: [{ runs: 0, wickets: 0, over: 0 }], inning2: [{ runs: 0, wickets: 0, over: 0 }] };
 }
 
 function createNewBatsman() {
-    let name = prompt("Batsman Name:");
-    // अगर यूजर कैंसिल (null) करता है, तो 'Unknown' नाम दें ताकि कोड न अटके
+    let name = prompt("Enter Batsman name:");
     return {
-        name: name || "Unknown", 
-        runs: 0, balls: 0, fours: 0, sixes: 0, out: false, bTag: ""
+        name: name || "Unknown",
+        runs: 0, balls: 0, fours: 0, sixes: 0, out: false, btag: ""
     };
 }
 
 function createNewBowler() {
-    let name = prompt("Bowler Name") || "Bowler";
+    let name = prompt("Enter Bowler name:") || "Bowler";
     let exist = bowlers.find(b => b.name === name);
     if (exist) {
         currentBowler = exist;
@@ -297,8 +615,8 @@ function createNewBowler() {
         bowlers.push(b);
         currentBowler = b;
     }
-    bowlerRunsInOver = 0; // नए ओवर के लिए रन रीसेट
-    currentOverBalls = []; 
+    bowlerRunsInOver = 0; // Reset for new over/bowler
+    currentOverBalls = []; // Reset over tracker
     updateOverTracker();
 }
 
@@ -314,758 +632,96 @@ function play(r) {
     currentBowler.runs += r;
     currentBowler.balls++;
     partnershipRuns += r;
-    partnershipBalls++;
+    partnershipBalls += 1; // Increment partnership balls only on valid deliveries
 
-    // --- यहाँ नया कोड जोड़ें ---
-    currentOverBalls.push(r); 
-    // -----------------------
+    currentOverBalls.push(r); // Add run to over tracker
 
-    if (r % 2) changeStrike();
-    endBall();
-    saveMatch();
+    if (r % 2 !== 0) changeStrike();
+    endBall(); // This also calls update() and saveMatch()
 }
-
-
-// वाइड बॉल: पेनल्टी + भाग कर लिए रन
 function wideBall() {
-    if(matchOver) return;
+    if (matchOver) return;
     saveUndo();
 
-    let extraRuns = parseInt(prompt("वाइड पर भाग कर कितने रन लिए?", "0")) || 0;
-    
-    // 1 रन वाइड का (बॉलर के खाते में)
-    runs += 1;
-    currentBowler.runs += 1; 
-    currentBowler.wides += 1; 
+    let extraRuns = parseInt(prompt("Extra runs on wide (excluding penalty)?", "0")) || 0;
+
+    runs += 1; // 1 for wide penalty
+    currentBowler.runs += 1;
+    currentBowler.wides += 1;
     bowlerRunsInOver += 1;
 
-    // भागकर लिए गए रन (सिर्फ टीम स्कोर में, बॉलर के रन में नहीं)
-    runs += extraRuns;
-currentOverBalls.push("WD"); 
-updateOverTracker();
+    runs += extraRuns; // Add extra runs (if any)
+    if (extraRuns % 2 !== 0) changeStrike();
 
-
-    if(extraRuns % 2 !== 0) changeStrike();
-
-    update(); 
-    saveMatch();
+    currentOverBalls.push("wd");
+    updateOverTracker();
+    endBall(); // This also calls update() and saveMatch()
 }
 
-// नो बॉल: पेनल्टी + बैट के रन
 function noBall() {
-    if(matchOver) return;
-    saveUndo();
-// noBall() के अंदर जोड़ें
-currentOverBalls.push("NB");
-updateOverTracker();
-
-    let batRuns = parseInt(prompt("नो बॉल पर बल्ले से कितने रन बने?", "0")) || 0;
-    let totalNBRuns = 1 + batRuns; // 1 पेनल्टी + बल्ले के रन
-
-    runs += totalNBRuns;
-    currentBowler.runs += totalNBRuns;
-    currentBowler.noBalls++;
-    bowlerRunsInOver += totalNBRuns;
-    
-    batsmen[striker].runs += batRuns; // नो बॉल पर बैट के रन बैट्समैन को मिलते हैं
-
-
-    if(batRuns % 2 !== 0) changeStrike();
-
-    update();
-    saveMatch();
-}
-
-function openWicketModal() {
-    document.getElementById("wicketModal").style.display = "block";
-}
-
-function confirmWicket() {
-    let type = document.querySelector('input[name="wType"]:checked').value;
-    let wicketModal = document.getElementById("wicketModal");
-    
-    // पुराने लॉजिक के अनुसार विकेट प्रोसेस करें
-    saveUndo();
-    let outIdx;
-    
-    if (type === "2") {
-        let who = document.querySelector('input[name="outPlayer"]:checked').value;
-        outIdx = (who === "nonStriker") ? nonStriker : striker;
-        batsmen[outIdx].bTag = "Run Out";
-    } else {
-        outIdx = striker;
-        batsmen[outIdx].bTag = (type === "1" ? "Caught/Bowled" : "LBW/Stumped") + " b " + currentBowler.name;
-        currentBowler.wickets++;
-    }
-    
-    // विकेट वाली बाकी प्रक्रिया
-    batsmen[outIdx].out = true;
-    wickets++;
-currentOverBalls.push("W");
-updateOverTracker();
-
-    fow.push(runs + "/" + wickets + " (" + batsmen[outIdx].name + ")");
-    balls++;
-    currentBowler.balls++;
-    partnershipRuns = 0; partnershipBalls = 0;
-    
-    if (wickets < 10) {
-        batsmen.push(createNewBatsman());
-        if (outIdx === striker) striker = batsmen.length - 1;
-        else nonStriker = batsmen.length - 1;
-    }
-    
-    wicketModal.style.display = "none";
-    endBall();
-    saveMatch();
-    update();
-}
-
-function changeStrike() { [striker, nonStriker] = [nonStriker, striker]; }
-
-// endBall() फंक्शन में यह बदलाव करें
-function endBall() {
     if (matchOver) return;
+    saveUndo();
 
-    if (balls === totalBalls || wickets === 10) {
-        if (innings === 1) {
-            let startSecond = confirm("Innings Over! Second Innings start karein?");
-            if (startSecond) {
-                // दूसरी पारी शुरू करने का लॉजिक
-                firstBatting = JSON.parse(JSON.stringify(batsmen));
-                firstBowling = JSON.parse(JSON.stringify(bowlers));
-                firstFow = [...fow];
-                target = runs + 1;
-                innings = 2;
-                resetInnings();
-            } else {
-                // यहाँ सिर्फ पारी खत्म मानी जाएगी, मैच ओवर नहीं होगा
-                alert("First Innings Completed. Aap baad mein Second Innings shuru kar sakte hain.");
-                matchOver = true; // यहाँ मैच को सिर्फ 'पारी खत्म' मोड में डाल दें
-            }
-        } else if (!matchOver) {
-            matchOver = true;
-            showWin(runs >= target ? team2 : team1);
-        }
-    }
-    update();
-}
+    let batRuns = parseInt(prompt("Runs scored off bat on no ball?", "0")) || 0;
+    let totalNbRuns = 1 + batRuns; // 1 penalty + bat runs
 
+    runs += totalNbRuns;
+    currentBowler.runs += totalNbRuns;
+    currentBowler.noBalls += 1;
+    bowlerRunsInOver += totalNbRuns;
 
-function renderScorecards() {
-    // 1. Current Batting Table
-    scorecardEl.innerHTML = `
-    <table style="width:100%; border-collapse:collapse; font-size:13px;">
-        <tr style="background:#e0e0e0;"><th align="left">Batter</th><th>R</th><th>B</th><th>4s</th><th>6s</th><th>SR</th></tr>
-        ${(batsmen || []).map((b, index) => {
-            let sr = b.balls ? ((b.runs / b.balls) * 100).toFixed(2) : "0.00";
-            let isCurrent = (index === striker || index === nonStriker) && !b.out;
-            let rowStyle = isCurrent ? "color: green; font-weight: bold;" : "";
-            return `<tr onclick="showPlayerDetail('${b.name}')" style="border-bottom:1px solid #ddd; ${rowStyle}; cursor:pointer;">
-                <td align="left">
-                    ${b.name} ${isCurrent ? " 🏏" : ""} 🖱️
-                    <br><span style="font-size:11px; ${isCurrent ? 'color: green;' : 'color: #666;'}">
-                    ${b.out ? b.bTag : "not out"}</span>
-                </td>
-                <td>${b.runs}</td>
-                <td>${b.balls}</td>
-                <td>${b.fours || 0}</td>
-                <td>${b.sixes || 0}</td>
-                <td>${sr}</td>
-            </tr>`;
-        }).join("")}
-    </table>`;
+    batsmen[striker].runs += batRuns;
+    batsmen[striker].balls += 1; // No-ball counts as a ball for batsman stats
 
-    // 2. Current Bowling Table
-    bowlingEl.innerHTML = `
-    <table style="width:100%; border-collapse:collapse; font-size:13px; margin-top:10px;">
-        <tr style="background:#f2f2f2; border-bottom:2px solid #ccc;"><th>Bowler</th><th>O</th><th>M</th><th>R</th><th>W</th><th>NB</th><th>WD</th><th>ECO</th></tr>
-        ${(bowlers || []).map(b => {
-            let overs = Math.floor(b.balls / 6) + "." + (b.balls % 6);
-            let eco = b.balls > 0 ? ((b.runs / b.balls) * 6).toFixed(2) : "0.00";
-            let isCurrent = (currentBowler && b.name === currentBowler.name) ? "color:green; font-weight:bold;" : "";
-            return `<tr style="border-bottom:1px solid #ddd; ${isCurrent}">
-                <td align="left">${b.name}</td>
-                <td>${overs}</td><td>${b.maidens || 0}</td><td>${b.runs}</td><td>${b.wickets}</td>
-                <td>${b.noBalls || 0}</td><td>${b.wides || 0}</td><td>${eco}</td>
-            </tr>`;
-        }).join("")}
-    </table>`;
+    if (batRuns % 2 !== 0) changeStrike();
 
-   // 3. Previous Inning Batting
-document.getElementById("firstBat").innerHTML = `
-    <table style="width:100%; border-collapse:collapse; font-size:12px;">
-        <tr style="background:#f2f2f2;"><th>Batter</th><th>R</th><th>B</th><th>4s</th><th>6s</th><th>SR</th></tr>
-        ${(firstBatting || []).map(b => {
-            let sr = b.balls ? ((b.runs / b.balls) * 100).toFixed(2) : "0.00";
-            return `<tr style="border-bottom:1px solid #eee;">
-                <td align="left">${b.name}<br><small style="color:#666">${b.out ? b.bTag : "NOT OUT"}</small></td>
-                <td>${b.runs}</td><td>${b.balls}</td><td>${b.fours || 0}</td><td>${b.sixes || 0}</td><td>${sr}</td>
-            </tr>`;
-        }).join("")}
-    </table>`;
-
-// 4. Previous Inning Bowling
-document.getElementById("firstBowl").innerHTML = `
-    <table style="width:100%; border-collapse:collapse; font-size:12px; margin-top:10px;">
-        <tr style="background:#f2f2f2;"><th>Bowler</th><th>O</th><th>M</th><th>R</th><th>W</th><th>NB</th><th>WD</th><th>ECO</th></tr>
-        ${(firstBowling || []).map(b => {
-            let overs = Math.floor(b.balls / 6) + "." + (b.balls % 6);
-            let eco = b.balls > 0 ? ((b.runs / b.balls) * 6).toFixed(2) : "0.00";
-            return `<tr style="border-bottom:1px solid #eee;">
-                <td>${b.name}</td>
-                <td>${overs}</td><td>${b.maidens || 0}</td><td>${b.runs}</td><td>${b.wickets}</td>
-                <td>${b.noBalls || 0}</td><td>${b.wides || 0}</td><td>${eco}</td>
-            </tr>`;
-        }).join("")}
-    </table>`;
-
-    fowEl.innerHTML = (fow && fow.length > 0) ? fow.join(" , ") : "No wickets yet";
-    firstFowEl.innerHTML = (firstFow && firstFow.length > 0) ? firstFow.join(" , ") : "N/A";
-}
-
-
-
-function update() {
-    teamEl.innerText = (innings === 1 ? team1 : team2);
-    totalBallsEl.innerText = totalBalls;
-    inningInfo.innerText = "Innings: " + innings + (target > 0 ? " | Target: " + target : "");
-    runsEl.innerText = runs; wicketsEl.innerText = wickets;
-    ballsEl.innerText = balls;
-    oversEl.innerText = Math.floor(balls / 6) + "." + (balls % 6);
-    let crr = balls > 0 ? ((runs / (balls / 6))).toFixed(2) : "0.00";
-    crrEl.innerText = "CRR: " + crr;
-    currentEl.innerHTML = `
-        <div class="strikeBat">${batsmen[striker].name} - ${batsmen[striker].runs}(${batsmen[striker].balls}) <span class="strikeIcon">🏏</span></div>  
-        <div>${batsmen[nonStriker].name} - ${batsmen[nonStriker].runs}(${batsmen[nonStriker].balls})</div>`;
-    pBox.innerText = `🤝 Partnership: ${partnershipRuns} runs (${partnershipBalls} balls)`;
-    renderScorecards();
-    updateRRR();
-    drawGraph();
+    currentOverBalls.push("nb");
     updateOverTracker();
-
-
+    endBall(); // This also calls update() and saveMatch()
 }
 
-// बाकी के फंक्शन्स (updateRRR, drawGraph, saveMatch आदि) वैसे ही रहेंगे जैसे पहले थे
-function updateRRR() {
-    if (innings === 2 && !matchOver) {
-        let bl = totalBalls - balls;
-        let rl = target - runs;
-        rrrEl.innerText = bl > 0 ? `Need ${rl} from ${bl} balls (RRR: ${((rl / bl) * 6).toFixed(2)})` : "";
-    } else { rrrEl.innerText = ""; }
-}
-
-function showWin(winner) {
-    winTag.style.display = "inline";
-    let msg = (innings === 2) ? `${winner} won by ${10 - wickets} wickets!` : `${winner} won by ${target - 1 - runs} runs!`;
-    // यह फंक्शन हिस्ट्री में डेटा डालता है
-    saveMatchToHistory(); 
-    
-    saveMatchMemory(msg);
-    alert("🏆 " + msg);
-}
-
-// यह नया फंक्शन स्क्रिप्ट में जोड़ें
-function saveMatchToHistory() {
-    saveMatch(); 
-    let matchData = JSON.parse(localStorage.getItem("cricketMatch"));
-    let history = JSON.parse(localStorage.getItem("cricketMatchHistory") || "[]");
-
-    matchData.timestamp = new Date().toLocaleString();
-    history.push(matchData);
-    localStorage.setItem("cricketMatchHistory", JSON.stringify(history));
-}
-
-
-function saveMatch() {
-    // अगर डेटा अभी Firebase/Server से अपडेट हो रहा है, तो नया 'Write' न करें
-    // यह लूप को रोकने के लिए सबसे जरूरी है
-    if (window.isIncomingData) {
-        console.log("Syncing: Skipping save to prevent loop.");
-        return;
-    }
-
-    // मैच की पूरी स्थिति (State) तैयार करें
-    let state = {
-        team1: team1,
-        team2: team2,
-        totalOvers: totalOvers,
-        totalBalls: totalBalls,
-        innings: innings,
-        target: target,
-        runs: runs,
-        wickets: wickets,
-        balls: balls,
-        batsmen: batsmen,
-        bowlers: bowlers,
-        striker: striker,
-        nonStriker: nonStriker,
-        partnershipRuns: partnershipRuns,
-        partnershipBalls: partnershipBalls,
-        firstBatting: firstBatting,
-        firstBowling: firstBowling,
-        firstFow: firstFow,
-        fow: fow,
-        currentOverBalls: currentOverBalls,
-        matchOver: matchOver,
-        bowlerName: currentBowler ? currentBowler.name : "N/A",
-        overByOverData: overByOverData
-    };
-    
-    // 1. फोन की लोकल मेमोरी में सेव करें
-    localStorage.setItem("cricketMatch", JSON.stringify(state));
-    
-    // 2. Firebase में सेव करें
-    if (window.db && window.set && window.ref) {
-        window.set(window.ref(window.db, 'liveMatch/'), state)
-        .then(() => {
-            console.log("Firebase Update Success!");
-        })
-        .catch((error) => {
-            console.error("Firebase Save Error:", error);
-            alert("Firebase Error: " + error.message);
-        });
-    } else {
-        console.error("Firebase db or set methods are not initialized!");
-    }
-}
-
-
-
-
-
-
-function manualChangeBowler() {
-    // prompt की जगह अपना बनाया हुआ Modal दिखाएं
-    document.getElementById("bowlerModal").style.display = "block";
-}
-
-function saveNewBowler() {
-    let newBowlerName = document.getElementById("newBowlerInput").value;
-    
-    if (newBowlerName) {
-        // 1. देखें क्या बॉलर पहले से लिस्ट में है
-        let existingBowler = bowlers.find(b => b.name === newBowlerName);
-        
-        if (existingBowler) {
-            currentBowler = existingBowler; // पुराने बॉलर को ही सेट करें
-        } else {
-            // 2. अगर नया है, तो लिस्ट में जोड़ें
-            let newBowler = { 
-                name: newBowlerName, balls: 0, maidens: 0, 
-                runs: 0, wickets: 0, noBalls: 0, wides: 0 
-            };
-            bowlers.push(newBowler);
-            currentBowler = newBowler; // नया ऑब्जेक्ट currentBowler में सेट करें
-        }
-        
-        // 3. ट्रैकर साफ़ करें
-        currentOverBalls = []; 
-        updateOverTracker();
-        
-        // 4. UI को पूरी तरह अपडेट करें
-        update(); 
-        saveMatch();
-        
-        // 5. Modal बंद करें
-        document.getElementById('bowlerModal').style.display = 'none';
-        document.getElementById('newBowlerInput').value = "";
-    }
-}
-
-function loadState(s) {
-    console.log("Loading state for innings:", s.innings);
-    
-    // सभी बुनियादी डेटा लोड करें
-    team1 = s.team1; team2 = s.team2; 
-    totalOvers = s.totalOvers; totalBalls = s.totalBalls;
-    innings = s.innings; 
-    target = s.target; 
-    runs = s.runs; 
-    wickets = s.wickets; 
-    balls = s.balls;
-    batsmen = s.batsmen || []; 
-    bowlers = s.bowlers || []; 
-    striker = s.striker; 
-    nonStriker = s.nonStriker;
-    
-    // पारी का डेटा लोड करें
-    firstBatting = s.firstBatting || []; 
-    firstBowling = s.firstBowling || [];
-    firstFow = s.firstFow || []; 
-    fow = s.fow || [];
-    currentOverBalls = s.currentOverBalls || [];
-    matchOver = s.matchOver;
-    overByOverData = s.overByOverData;
-    
-    // बॉलर ढूंढें
-    currentBowler = bowlers.find(b => b.name === s.bowlerName);
-
-    // सबसे जरूरी: अपडेट कॉल करें ताकि स्क्रीन बदल जाए
-    update();
-}
-
-
-
-function saveUndo() { undoStack.push(JSON.stringify(JSON.parse(localStorage.getItem("cricketMatch")))); }
-
-function undo() { 
-    if (!undoStack.length) return; 
-    
-    // 1. पुरानी स्टेट निकालें
-    let previousState = JSON.parse(undoStack.pop());
-    
-    // 2. स्टेट लोड करें (बिना saveMatch कॉल किए)
-    loadState(previousState); 
-    
-    // 3. ट्रैकर को मैन्युअल रिफ्रेश करें
-    updateOverTracker(); 
-    
-    // 4. अब एक बार अपडेट करें
-    update(); 
-    
-    // 5. saveMatch() को यहाँ से हटा दें! 
-    // क्योंकि अगर आप फिर से सेव करेंगे, तो वही स्टेट वापस 'undoStack' में जा सकती है।
-}
-
-
-function saveMatchMemory(res) {
-    let mem = JSON.parse(localStorage.getItem("cricketMemories")) || [];
-    let matchDetail = { date: new Date().toLocaleString(), summary: `${team1} vs ${team2}`, result: res };
-    mem.push(matchDetail); localStorage.setItem("cricketMemories", JSON.stringify(mem));
-}
-
-function showMemories() {
-    let history = JSON.parse(localStorage.getItem("cricketMatchHistory")) || [];
-    
-    if (history.length === 0) {
-        alert("कोई पुराना मैच डेटा उपलब्ध नहीं है!");
-        return;
-    }
-
-    let modal = document.getElementById("scorecardModal");
-    let content = document.getElementById("modalContent");
-
-    // लिस्ट तैयार करें
-    let listHTML = `<h3>मैच का इतिहास (क्लिक करें)</h3>`;
-    history.forEach((m, index) => {
-        listHTML += `
-            <div onclick="showFullScorecard(${index})" style="padding:10px; border-bottom:1px solid #ccc; cursor:pointer;">
-                <b>${m.team1} vs ${m.team2}</b><br>
-                <small>${m.timestamp} - ${m.runs}/${m.wickets}</small>
-            </div>`;
-    });
-
-    content.innerHTML = listHTML;
-    modal.style.display = "block"; // Modal खोलें
-}
-
-
-
-function manageMemories() {
-    let history = JSON.parse(localStorage.getItem("cricketMatchHistory") || "[]");
-    
-    if (history.length === 0) {
-        alert("कोई मैच हिस्ट्री उपलब्ध नहीं है!");
-        return;
-    }
-
-    let modal = document.getElementById("scorecardModal");
-    let content = document.getElementById("modalContent");
-
-    // चेकबॉक्स लिस्ट बनाना
-    let listHTML = `<h3>मैच डिलीट करें</h3>`;
-    history.forEach((m, i) => {
-        listHTML += `<div><input type="checkbox" class="match-check" value="${i}"> 
-                ${m.timestamp} | ${m.team1} vs ${m.team2}</div>`;
-    });
-    
-    listHTML += `<br><button onclick="deleteSelected()">✅ चुनिंदा डिलीट करें</button>`;
-    content.innerHTML = listHTML;
-    modal.style.display = "block";
-}
-
-// चुनिंदा मैचों को डिलीट करने का फंक्शन
-function deleteSelected() {
-    let history = JSON.parse(localStorage.getItem("cricketMatchHistory") || "[]");
-    let checkboxes = document.querySelectorAll('.match-check:checked');
-    
-    if (checkboxes.length === 0) { alert("कोई मैच नहीं चुना!"); return; }
-
-    let indices = Array.from(checkboxes).map(cb => parseInt(cb.value)).sort((a, b) => b - a);
-    
-    indices.forEach(idx => history.splice(idx, 1));
-    
-    localStorage.setItem("cricketMatchHistory", JSON.stringify(history));
-    alert("चुनिंदा मैच डिलीट कर दिए गए!");
-    document.getElementById('scorecardModal').style.display = 'none';
-}
-
-// बाय (Bye) का सही कोड
 function bye() {
-    if(matchOver) return;
+    if (matchOver) return;
     saveUndo();
-
-    let r = parseInt(prompt("Byes ke kitne run mile?", "0")) || 0;
-    runs += r; // टीम रन
-    balls++;   // पारी की गेंद
-    currentBowler.balls++; // बॉलर की गेंद
-    
-    // --- यहाँ यह लाइन जोड़ें ---
-    batsmen[striker].balls++; 
-    // -------------------------
-    
-    currentOverBalls.push(r + "B"); 
-    updateOverTracker();
-    
-    if(r % 2 !== 0) changeStrike();
-    endBall(); 
-    saveMatch();
-}
-
-// लेग बाय (Leg Bye) का सही कोड
-function legBye() {
-    if(matchOver) return;
-    saveUndo();
-
-    let r = parseInt(prompt("Leg Byes ke kitne run mile?", "0")) || 0;
-    runs += r; // टीम रन
-    balls++; 
+    let byeRuns = parseInt(prompt("Bye runs?", "1")) || 1;
+    runs += byeRuns;
+    balls++; // Counts as a ball
     currentBowler.balls++;
-
-    // --- यहाँ यह लाइन जोड़ें ---
-    batsmen[striker].balls++; 
-    // -------------------------
-
-    currentOverBalls.push(r + "LB");
+    currentOverBalls.push("b");
     updateOverTracker();
-
-    if(r % 2 !== 0) changeStrike();
-    
+    if (byeRuns % 2 !== 0) changeStrike();
     endBall();
-    saveMatch();
-}
-function drawGraph() {
-    const canvas = document.getElementById("matchGraph");
-    const ctx = canvas.getContext("2d");
-    const w = canvas.width = canvas.offsetWidth;
-    const h = canvas.height = canvas.offsetHeight;
-    ctx.clearRect(0, 0, w, h);
-    
-    // पैडिंग थोड़ी बढ़ाई ताकि नंबर किनारे से कटें नहीं
-    const margin = 50; 
-    const chartW = w - margin - 20;
-    const chartH = h - margin - 40;
-    
-    let maxR = Math.max(target > 0 ? target : 0, 50);
-    
-    const getX = (o) => margin + (o / totalOvers) * chartW;
-    const getY = (r) => (h - margin) - (r / maxR) * chartH;
-
-    // 1. Grid Lines - थोड़ी और हल्की ग्रे
-    ctx.strokeStyle = "#e0e0e0";
-    ctx.lineWidth = 1;
-
-    // Y-Axis (Runs) - हर 10 रन पर एक गहरी ग्रिड लाइन
-    ctx.fillStyle = "#333";
-    ctx.font = "bold 12px Arial"; // फोंट साइज बढ़ाया
-    for (let i = 0; i <= maxR; i += 10) {
-        let y = getY(i);
-        ctx.beginPath();
-        ctx.moveTo(margin, y);
-        ctx.lineTo(w - 10, y);
-        ctx.stroke();
-        // रन नंबर को और क्लियर लिखा
-        ctx.fillText(i, 10, y + 4);
-    }
-
-    // X-Axis (Overs)
-    for (let i = 0; i <= totalOvers; i += (totalOvers > 20 ? 5 : 1)) {
-        let x = getX(i);
-        ctx.fillStyle = "#333";
-        ctx.fillText(i, x - 5, h - 20); // ओवर नंबर थोड़ा नीचे खिसकाया
-    }
-
-    // 2. Axis लाइन्स (Bold)
-    ctx.strokeStyle = "#000";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(margin, margin/2); ctx.lineTo(margin, h - margin);
-    ctx.lineTo(w - 10, h - margin);
-    ctx.stroke();
-
-    // 3. डेटा लाइनें ड्रा करें
-    drawInningLine(ctx, overByOverData.inning1, "#1976d2", getX, getY);
-    if (overByOverData.inning2.length > 1) {
-        drawInningLine(ctx, overByOverData.inning2, "#d32f2f", getX, getY);
-    }
 }
 
-
-
-function updateOverTracker() {
-    document.getElementById("bowlerName").innerText = currentBowler ? currentBowler.name : "N/A";
-    
-    let trackerHtml = currentOverBalls.map(ball => {
-        let color = "#555"; // डिफॉल्ट ग्रे
-        if (ball === "W") color = "red";
-        if (ball === "WD" || ball === "NB") color = "#ffb300"; // ऑरेंज/येलो
-        if (ball === 4 || ball === 6) color = "green";
-
-        return `<span style="border:1px solid #ccc; padding:2px 8px; border-radius:50%; margin:0 3px; color:${color}; font-weight:bold;">${ball}</span>`;
-    }).join("");
-    
-    document.getElementById("overTracker").innerHTML = "This Over: " + (trackerHtml || "");
-}
-
-
-function drawInningLine(ctx, data, color, getX, getY) {
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 3;
-    ctx.beginPath();
-    
-    // लाइन ड्रा करना
-    data.forEach((p, i) => {
-        let x = getX(p.over);
-        let y = getY(p.runs);
-        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
-
-    // विकेट के लिए रेड डॉट्स ड्रा करना
-    data.forEach(p => {
-        if (p.wickets > 0) {
-            // यदि विकेट्स 1 से ज्यादा हैं तो थोड़ा खिसका दें (offset)
-            let offset = (p.wickets > 1) ? 8 : 0; 
-            
-            ctx.fillStyle = "red";
-            ctx.beginPath();
-            ctx.arc(getX(p.over) + offset, getY(p.runs), 6, 0, Math.PI * 2);
-            ctx.fill();
-            
-            // डॉट के ऊपर विकेट की संख्या लिखना
-            ctx.fillStyle = "black";
-            ctx.font = "10px Arial";
-            ctx.fillText(p.wickets, getX(p.over) + offset - 2, getY(p.runs) - 8);
-        }
-    });
-}
-
-
-
-function showFullScorecard(index) {
-    let history = JSON.parse(localStorage.getItem("cricketMatchHistory") || "[]");
-    let m = history[index];
-    let modal = document.getElementById("scorecardModal");
-    let content = document.getElementById("modalContent");
-
-    let resultMsg = m.runs >= m.target ? `${m.team2} won by ${10 - m.wickets} wickets!` : `${m.team1} won by ${m.target - 1 - m.runs} runs!`;
-
-    content.innerHTML = `
-        <h2 style="text-align:center; color:#c62828;">🏆 ${m.runs >= m.target ? m.team2 : m.team1} WON</h2>
-        <p style="text-align:center"><b>${resultMsg}</b></p>
-        
-        <div style="background:#fff3e0; padding:10px; border-radius:5px; margin-bottom:10px; border:1px solid #ffcc80;">
-            <b>${m.team1}:</b> ${m.target - 1} runs<br>
-            <b>${m.team2}:</b> ${m.runs}/${m.wickets} (${Math.floor(m.balls/6)}.${m.balls%6} overs)
-        </div>
-        <hr>
-        
-        <h4 style="margin:5px 0;">Innings 2: ${m.team2}</h4>
-        <b>Batting:</b>
-        <table width="100%" border="1" style="font-size:12px; border-collapse:collapse;">
-            <tr style="background:#eee;"><th>Batter</th><th>R</th><th>B</th><th>4s</th><th>6s</th></tr>
-            ${m.batsmen.map(b => `<tr><td>${b.name}</td><td>${b.runs}</td><td>${b.balls}</td><td>${b.fours}</td><td>${b.sixes}</td></tr>`).join("")}
-        </table>
-        <b>Bowling:</b>
-        <table width="100%" border="1" style="font-size:12px; border-collapse:collapse; margin-bottom:10px;">
-            <tr style="background:#eee;"><th>Bowler</th><th>O</th><th>M</th><th>R</th><th>W</th><th>NB</th><th>WD</th></tr>
-            ${m.bowlers.map(b => `<tr><td>${b.name}</td><td>${Math.floor(b.balls/6)}.${b.balls%6}</td><td>${b.maidens}</td><td>${b.runs}</td><td>${b.wickets}</td><td>${b.noBalls}</td><td>${b.wides}</td></tr>`).join("")}
-        </table>
-
-        <h4 style="margin:5px 0;">Innings 1: ${m.team1}</h4>
-        <b>Batting:</b>
-        <table width="100%" border="1" style="font-size:12px; border-collapse:collapse;">
-            <tr style="background:#eee;"><th>Batter</th><th>R</th><th>B</th><th>4s</th><th>6s</th></tr>
-            ${m.firstBatting.map(b => `<tr><td>${b.name}</td><td>${b.runs}</td><td>${b.balls}</td><td>${b.fours || 0}</td><td>${b.sixes || 0}</td></tr>`).join("")}
-        </table>
-        <b>Bowling:</b>
-        <table width="100%" border="1" style="font-size:12px; border-collapse:collapse;">
-            <tr style="background:#eee;"><th>Bowler</th><th>O</th><th>M</th><th>R</th><th>W</th><th>NB</th><th>WD</th></tr>
-            ${m.firstBowling.map(b => `<tr><td>${b.name}</td><td>${Math.floor(b.balls/6)}.${b.balls%6}</td><td>${b.maidens || 0}</td><td>${b.runs}</td><td>${b.wickets}</td><td>${b.noBalls || 0}</td><td>${b.wides || 0}</td></tr>`).join("")}
-        </table>
-    `;
-    modal.style.display = "block";
-}
-
-function showPlayerDetail(name) {
-    let stats = getPlayerCareerStats(name);
-    
-    document.getElementById("playerName").innerText = name;
-    document.getElementById("playerStats").innerHTML = `
-        <p><b>आज के रन:</b> ${stats.currentRuns} | <b>आज के विकेट:</b> ${stats.currentWickets}</p>
-        <hr>
-        <p><b>करियर कुल रन:</b> ${stats.careerRuns}</p>
-        <p><b>करियर कुल विकेट:</b> ${stats.careerWickets}</p>
-        <p><b>कुल मैच खेले:</b> ${stats.matchesPlayed}</p>
-    `;
-    document.getElementById("playerDetailModal").style.display = "block";
-}
-
-
-function getPlayerCareerStats(playerName) {
-    // 1. पुरानी हिस्ट्री से डेटा निकालें
-    let history = JSON.parse(localStorage.getItem("cricketMatchHistory") || "[]");
-    let totalHistoryRuns = 0;
-    let totalHistoryWickets = 0;
-    let matchesPlayed = 0;
-
-    history.forEach(match => {
-        let batStats = [...match.batsmen, ...match.firstBatting].find(b => b.name === playerName);
-        if (batStats) {
-            totalHistoryRuns += batStats.runs;
-            matchesPlayed++; 
-        }
-        let bowlStats = [...match.bowlers, ...match.firstBowling].find(b => b.name === playerName);
-        if (bowlStats) {
-            totalHistoryWickets += bowlStats.wickets;
-        }
-    });
-
-    // 2. वर्तमान मैच का डेटा निकालें
-    let currentMatchPlayer = batsmen.find(b => b.name === playerName) || bowlers.find(b => b.name === playerName);
-    let currentRuns = currentMatchPlayer ? currentMatchPlayer.runs : 0;
-    let currentWickets = currentMatchPlayer ? (currentMatchPlayer.wickets || 0) : 0;
-
-    // 3. सब जोड़ें
-    return {
-        careerRuns: totalHistoryRuns + currentRuns, // कुल करियर रन (पुराने + आज के)
-        currentRuns: currentRuns,                   // आज के मैच के रन
-        careerWickets: totalHistoryWickets + currentWickets,
-        currentWickets: currentWickets,
-        matchesPlayed: matchesPlayed + 1            // +1 आज का मैच भी जोड़ लिया
-    };
+function legBye() {
+    if (matchOver) return;
+    saveUndo();
+    let lbRuns = parseInt(prompt("Leg Bye runs?", "1")) || 1;
+    runs += lbRuns;
+    balls++; // Counts as a ball
+    currentBowler.balls++;
+    currentOverBalls.push("lb");
+    updateOverTracker();
+    if (lbRuns % 2 !== 0) changeStrike();
+    endBall();
 }
 
 function openWicketModal() {
-    // बटन दबाते ही नाम अपडेट करें
-    document.getElementById("sName").innerText = batsmen[striker].name;
-    document.getElementById("nsName").innerText = batsmen[nonStriker].name;
-    document.getElementById("wicketModal").style.display = "block";
-    document.getElementById("runOutOptions").style.display = "none"; // रिसेट
+    document.getElementById("sname").innerText = batsmen[striker].name;
+    document.getElementById("nsname").innerText = batsmen[nonStriker].name;
+    document.getElementById("wicketmodal").style.display = "flex"; // Use flex for centering
+    document.getElementById("runoutoptions").style.display = "none";
 }
 
 function showRunOutOptions() {
-    document.getElementById("runOutOptions").style.display = "block";
+    document.getElementById("runoutoptions").style.display = "block";
 }
 
 function recordWicket(type) {
     saveUndo();
     batsmen[striker].out = true;
-    batsmen[striker].bTag = type + " b " + currentBowler.name;
+    batsmen[striker].btag = type + " b " + currentBowler.name;
     currentBowler.wickets++;
-   // currentBowler.balls++; // <--- यह लाइन जोड़ें
     wickets++;
     completeWicketProcess(striker);
 }
@@ -1074,89 +730,389 @@ function confirmRunOut(who) {
     saveUndo();
     let index = (who === 'striker') ? striker : nonStriker;
     batsmen[index].out = true;
-    batsmen[index].bTag = "Run Out";
-   // currentBowler.balls++; // <--- यह लाइन जोड़ें
+    batsmen[index].btag = "run out";
     wickets++;
     completeWicketProcess(index);
 }
 
-
-
-function manualChangeStrike() {
-    saveUndo(); // ताकि गलती होने पर वापस ठीक कर सकें
-    changeStrike();
-    update(); // स्क्रीन को तुरंत अपडेट करने के लिए
-    saveMatch(); // डेटा सुरक्षित करने के लिए
-}
 function completeWicketProcess(outIndex) {
-    // 1. सबसे पहले गेंद बढ़ाएं (ताकि आउट वाली गेंद तुरंत दर्ज हो जाए)
-    balls++; 
-    currentBowler.balls++; 
-    
-    // 2. अब ओवर कैलकुलेट करें (यह अब सही 0.1, 3.3 आदि दिखाएगा)
+    balls++; // Wicket delivery counts as a ball
+    currentBowler.balls++;
+
     let currentOver = Math.floor(balls / 6) + "." + (balls % 6);
-    
-    // 3. FOW में जानकारी जोड़ें (विकेट और ओवर सही रिकॉर्ड होंगे)
     fow.push(`${runs}/${wickets} (${batsmen[outIndex].name} - ${currentOver})`);
-    
-    // 4. ग्राफ और ट्रैकर के लिए अपडेट
-    let currentInning = (innings === 1) ? overByOverData.inning1 : overByOverData.inning2;
-    let lastEntry = currentInning[currentInning.length - 1];
-    lastEntry.wickets = wickets; 
-    
-    currentOverBalls.push("W");
+
+    let currentInningData = (innings === 1) ? overByOverData.inning1 : overByOverData.inning2;
+    let lastEntry = currentInningData[currentInningData.length - 1];
+    lastEntry.wickets = wickets;
+
+    currentOverBalls.push("w");
     updateOverTracker();
 
-    // 5. नया बैट्समैन जोड़ने और स्ट्राइक चेंज
+    partnershipRuns = 0; partnershipBalls = 0; // Reset partnership
+
     if (wickets < 10) {
-        batsmen.push(createNewBatsman()); 
-        if (outIndex === striker) {
-            striker = batsmen.length - 1;
-        } else {
-            nonStriker = batsmen.length - 1;
-        }
+        batsmen.push(createNewBatsman());
+        if (outIndex === striker) striker = batsmen.length - 1;
+        else nonStriker = batsmen.length - 1;
     }
-    
-    document.getElementById("wicketModal").style.display = "none";
-    endBall();
-    saveMatch();
-    update();
+    document.getElementById("wicketmodal").style.display = "none";
+    endBall(); // This calls update() and saveMatch()
 }
 
-// यह रहा आपका पूरा कोड जो आपको अपनी स्क्रिप्ट फाइल में पेस्ट करना है
-function setupUI() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const isScorer = urlParams.get('scorer') === 'true';
-    const buttonsDiv = document.getElementById("scoringButtons");
-
-    // अगर बटन वाला डिब्बा मौजूद है, तभी ये लॉजिक चलाएं
-    if (buttonsDiv) {
-        if (!isScorer) {
-            buttonsDiv.style.display = "none";
-        } else {
-            buttonsDiv.style.display = "block";
-        }
-    }
+function changeStrike() {
+    [striker, nonStriker] = [nonStriker, striker];
 }
 
-// यह सुनिश्चित करेगा कि जैसे ही पेज खुले, सब कुछ लोड हो जाए
-window.onload = function () {
-    let saved = localStorage.getItem("cricketMatch");
-    if (saved) {
-        loadState(JSON.parse(saved));
+function manualChangeBowler() {
+    document.getElementById('newbowlerinput').value = ""; // Clear previous input
+    document.getElementById('bowlermodal').style.display = 'flex';
+}
+
+function saveNewBowler() {
+    let newBowlerName = document.getElementById('newbowlerinput').value.trim();
+    if (newBowlerName) {
+        createNewBowler(newBowlerName); // Pass name to createNewBowler
+        document.getElementById('bowlermodal').style.display = 'none';
+        update();
+        saveMatch(); // Save after changing bowler
     } else {
-        startNewGame();
+        alert("Please enter a bowler name.");
     }
-    
-    // अब अपडेट और UI सेटअप चलाएं
+}
+
+function manualChangeStrike() {
+    saveUndo();
+    changeStrike();
     update();
-    setupUI(); 
-};
+    saveMatch();
+}
+
+// --- [पिछले हिस्से के आगे का कोड] ---
+
+function manualStartSecondInnings() {
+    if (confirm("Are you sure you want to start the second innings?")) {
+        firstBatting = JSON.parse(JSON.stringify(batsmen));
+        firstBowling = JSON.parse(JSON.stringify(bowlers));
+        firstFow = [...fow];
+        target = runs + 1;
+        innings = 2;
+        resetInnings();
+        document.getElementById("startsecondbtn").style.display = "none";
+        update();
+        saveMatch();
+    }
+}
+
+function endBall() {
+    if (balls >= totalBalls || wickets >= 10) {
+        if (innings === 1) {
+            matchOver = true;
+            document.getElementById("startsecondbtn").style.display = "block";
+            alert("First Innings Completed!");
+        } else {
+            matchOver = true;
+            showWin(runs >= target ? team2 : team1);
+        }
+    }
+    update();
+    saveMatch();
+}
+
+function showWin(winner) {
+    winTag.style.display = "block";
+    winTag.innerText = "🏆 " + winner + " WINS!";
+    alert(winner + " has won the match!");
+}
+
+
+function updateOverTracker() {
+    overTrackerEl.innerHTML = "";
+    currentOverBalls.forEach(b => {
+        let span = document.createElement("span");
+        span.className = "over-ball-run " + (typeof b === 'string' ? b : "");
+        span.innerText = b;
+        overTrackerEl.appendChild(span);
+    });
+}
+
+// --- 1. स्ट्राइकर पर स्टार लगाने के लिए यह फंक्शन बदलें ---
+function renderScorecards() {
+    let scorecardDiv = document.getElementById("scorecard");
+    if (!scorecardDiv) return;
+
+    let headerStyle = "background: #00796b; color: white;";
+
+    scorecardDiv.innerHTML = `
+    <table style="width:100%; border-collapse: collapse; margin-top: 10px;">
+        <thead>
+            <tr style="${headerStyle}">
+                <th style="padding: 8px;">Batter</th>
+                <th>R</th><th>B</th><th>4s</th><th>6s</th><th>SR</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${batsmen.map((b, index) => {
+                let isStriker = (index === striker);
+                // यहाँ बदलाव किया गया है: 
+                // अगर बल्लेबाज आउट नहीं है (नॉट आउट), तो उसे ग्रीन दिखाओ (चाहे वो स्ट्राइकर हो या नॉन-स्ट्राइकर)
+                let textStyle = (!b.out) ? 'color: #2e7d32; font-weight: bold;' : 'color: #333;';
+                
+                return `
+                <tr>
+                    <td style="padding: 8px; border-bottom: 1px solid #eee; ${textStyle}">
+                        ${b.name} ${isStriker ? '⭐' : ''}
+                        <br><small style="color:red; font-weight: normal;">${b.out ? 'out: ' + (b.btag || 'Out') : ''}</small>
+                    </td>
+                    <td style="border-bottom: 1px solid #eee; ${textStyle}">${b.runs}</td>
+                    <td style="border-bottom: 1px solid #eee; ${textStyle}">${b.balls}</td>
+                    <td style="border-bottom: 1px solid #eee; ${textStyle}">${b.fours || 0}</td>
+                    <td style="border-bottom: 1px solid #eee; ${textStyle}">${b.sixes || 0}</td>
+                    <td style="border-bottom: 1px solid #eee; ${textStyle}">${b.balls > 0 ? ((b.runs / b.balls) * 100).toFixed(1) : "0.0"}</td>
+                </tr>`;
+            }).join('')}
+        </tbody>
+    </table>`;
+}
+
+function renderBowlingScorecard() {
+    let bowlingDiv = document.getElementById("bowling");
+    if (!bowlingDiv) return;
+
+    // हेडर के लिए ग्रीन बैकग्राउंड का स्टाइल
+    let headerStyle = "background: #00796b; color: white;";
+
+    bowlingDiv.innerHTML = `
+    <table style="width:100%; border-collapse: collapse; margin-top: 15px;">
+        <thead>
+            <tr style="${headerStyle}">
+                <th style="padding: 5px;">Bowler</th>
+                <th>O</th><th>R</th><th>W</th><th>Wd</th><th>Nb</th><th>Econ</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${bowlers.map(bo => {
+                let isCurrent = (currentBowler && bo.name === currentBowler.name);
+                let overs = Math.floor(bo.balls / 6) + "." + (bo.balls % 6);
+                let econ = (bo.balls / 6 > 0) ? (bo.runs / (bo.balls / 6)).toFixed(1) : "0.0";
+                
+                // अगर करंट बॉलर है, तो टेक्स्ट का कलर डार्क ग्रीन (#2e7d32) और बोल्ड कर दें.
+                let textStyle = isCurrent ? 'color: #2e7d32; font-weight: bold;' : 'color: #333;';
+
+                return `
+                <tr>
+                    <td style="padding: 5px; border-bottom: 1px solid #eee; ${textStyle}">
+                        ${bo.name} ${isCurrent ? '' : ''}
+                    </td>
+                    <td style="border-bottom: 1px solid #eee; ${textStyle}">${overs}</td>
+                    <td style="border-bottom: 1px solid #eee; ${textStyle}">${bo.runs || 0}</td>
+                    <td style="border-bottom: 1px solid #eee; ${textStyle}">${bo.wickets || 0}</td>
+                    <td style="border-bottom: 1px solid #eee; ${textStyle}">${bo.wides || 0}</td>
+                    <td style="border-bottom: 1px solid #eee; ${textStyle}">${bo.noBalls || 0}</td>
+                    <td style="border-bottom: 1px solid #eee; ${textStyle}">${econ}</td>
+                </tr>`;
+            }).join('')}
+        </tbody>
+    </table>`;
+}
+
+function saveMatch() {
+    if (window.isIncomingData) return;
+    let state = {
+        team1, team2, totalOvers, totalBalls, innings, target, runs, wickets, balls,
+        batsmen, bowlers, striker, nonStriker, partnershipRuns, partnershipBalls,
+        firstBatting, firstBowling, firstFow, fow, currentOverBalls, matchOver,
+        bowlerName: currentBowler ? currentBowler.name : "N/A", overByOverData
+    };
+    localStorage.setItem("cricketMatch", JSON.stringify(state));
+    if (window.db && window.set) {
+        window.set(window.ref(window.db, 'liveMatch/'), state);
+    }
+}
+
+function loadState(s) {
+    team1 = s.team1; team2 = s.team2; totalOvers = s.totalOvers; totalBalls = s.totalBalls;
+    innings = s.innings; target = s.target; runs = s.runs; wickets = s.wickets; balls = s.balls;
+    batsmen = s.batsmen || []; bowlers = s.bowlers || []; striker = s.striker; nonStriker = s.nonStriker;
+    partnershipRuns = s.partnershipRuns; partnershipBalls = s.partnershipBalls;
+    firstBatting = s.firstBatting || []; firstBowling = s.firstBowling || [];
+    firstFow = s.firstFow || []; fow = s.fow || [];
+    currentOverBalls = s.currentOverBalls || []; matchOver = s.matchOver;
+    currentBowler = bowlers.find(b => b.name === s.bowlerName);
+    update();
+}
+
+function saveUndo() { undoStack.push(JSON.stringify({runs, wickets, balls, batsmen, bowlers, striker, nonStriker})); }
+function undo() {
+    if (undoStack.length === 0) return;
+    let s = JSON.parse(undoStack.pop());
+    runs = s.runs; wickets = s.wickets; balls = s.balls; batsmen = s.batsmen; 
+    bowlers = s.bowlers; striker = s.striker; nonStriker = s.nonStriker;
+    update(); saveMatch();
+}
+// --- छूटे हुए फंक्शन्स (इसे पुराने script टैग के अंत में जोड़ें) ---
+
+function showMemories() {
+    let mem = localStorage.getItem("matchMemory");
+    if (!mem) { alert("कोई मैच मेमोरी नहीं है!"); return; }
+    document.getElementById("modalcontent").innerHTML = "<h3>पिछला स्कोर</h3>" + mem;
+    document.getElementById("scorecardmodal").style.display = "flex";
+}
+
+function manageMemories() {
+    if (confirm("क्या आप पुरानी सारी मेमोरी डिलीट करना चाहते हैं?")) {
+        localStorage.removeItem("matchMemory");
+        alert("मेमोरी साफ हो गई।");
+    }
+}
+
+
     
+   
+   function update() {
+    // ... (आपका पुराना कोड जो टीम के नाम और स्कोर अपडेट करता है) ...
+
+    // 1. नाम वाले एलिमेंट्स को अपडेट करें (जो आप पहले से कर रहे हैं)
+    const t1El = document.getElementById("team1name");
+    const t2El = document.getElementById("team2name");
+
+    // 2. स्कोरकार्ड की हेडिंग को अपडेट करें
+    const battingTitle = document.getElementById("batting-team-title");
+    const bowlingTitle = document.getElementById("bowling-team-title");
+
+    // 3. इनिंग के हिसाब से नाम सेट करें
+    if (innings === 1) {
+        // इनिंग 1: टीम 1 बैटिंग, टीम 2 बॉलिंग
+        t1El.innerHTML = team1 + " 🏏";
+        t2El.innerHTML = " ⚾ " + team2;
+        
+        // स्कोरकार्ड हेडिंग बदलें
+        if(battingTitle) battingTitle.innerText = team1 + " 🏏";
+        if(bowlingTitle) bowlingTitle.innerText = team2 + "🥎 ";
+
+    } else {
+        // इनिंग 2: टीम 2 बैटिंग, टीम 1 बॉलिंग
+        t1El.innerHTML = " ⚾ " + team1;
+        t2El.innerHTML = team2 + " 🏏";
+        
+        // स्कोरकार्ड हेडिंग बदलें
+        if(battingTitle) battingTitle.innerText = team2 + " 🏏";
+        if(bowlingTitle) bowlingTitle.innerText = team1 + " 🥎";
+    }
 
 
-</script>  </body> 
+
+   
+   
+   
+   
+   
+   
+    // बाकी स्कोर अपडेट...
+    runsEl.innerText = runs;
+    wicketsEl.innerText = wickets;
+    if (document.getElementById("runs")) document.getElementById("runs").innerText = runs;
+    if (document.getElementById("wickets")) document.getElementById("wickets").innerText = wickets;
+    if (document.getElementById("balls")) document.getElementById("balls").innerText = balls;
+    if (document.getElementById("overs")) document.getElementById("overs").innerText = Math.floor(balls / 6) + "." + (balls % 6);
+    if (document.getElementById("team")) document.getElementById("team").innerText = (innings === 1) ? team1 : team2;
+    if (document.getElementById("bowlername")) document.getElementById("bowlername").innerText = currentBowler ? currentBowler.name : "N/A";
+    if (document.getElementById("inninginfo")) document.getElementById("inninginfo").innerText = "Innings: " + innings;
+
+    // 2. CRR कैलकुलेशन
+    let crr = (balls > 0) ? (runs / (balls / 6)).toFixed(2) : "0.00";
+    if (document.getElementById("crrbox")) document.getElementById("crrbox").innerText = "CRR: " + crr;
+
+    // 3. RRR कैलकुलेशन (सिर्फ दूसरी पारी में)
+    const rrrElement = document.getElementById("rrr");
+    if (rrrElement) {
+        if (innings === 2) {
+            let ballsRemaining = (totalOvers * 6) - balls;
+            let runsNeeded = target - runs;
+            if (ballsRemaining > 0 && runsNeeded > 0) {
+                let rrr = (runsNeeded / (ballsRemaining / 6)).toFixed(2);
+                rrrElement.innerText = "Need " + runsNeeded + " from " + ballsRemaining + " balls (RRR: " + rrr + ")";
+                rrrElement.style.display = "block";
+            } else {
+                rrrElement.innerText = runs >= target ? "Target Reached!" : "Match Over";
+                rrrElement.style.display = "block";
+            }
+        } else {
+            rrrElement.innerText = "";
+            rrrElement.style.display = "none";
+        }
+    }
+
+    // 4. बैट्समैन के नाम दिखाना
+    let batHtml = "";
+    if (batsmen && batsmen.length > 0) {
+        [striker, nonStriker].forEach((idx) => {
+            let b = batsmen[idx];
+            if (b) {
+                let isStrike = (idx === striker) ? " <span style='color:#f9a825;'>🏏</span>" : "";
+                let style = (idx === striker) ? "font-weight:bold; color:#000;" : "color:#666;";
+                batHtml += `
+                    <div style="display:flex; justify-content:space-between; padding:5px 0; ${style}">
+                        <span>${b.name}${isStrike}</span>
+                        <span>${b.runs}(${b.balls})</span>
+                    </div>`;
+            }
+        });
+    }
+    if (document.getElementById("current")) document.getElementById("current").innerHTML = batHtml;
+
+    // 5. पार्टनरशिप अपडेट
+    if (document.getElementById("partnershipbox")) {
+        document.getElementById("partnershipbox").innerHTML = `🤝 PARTNERSHIP: ${partnershipRuns} runs (${partnershipBalls} balls)`;
+    }
+
+    // 6. बाकी फंक्शन्स कॉल करें
+    renderScorecards();
+    updateOverTracker();
+    renderBowlingScorecard();
+    
+    // 7. इनिंग खत्म होने पर बटन
+    if (matchOver && innings === 1 && document.getElementById("startsecondbtn")) {
+        document.getElementById("startsecondbtn").style.display = "block";
+    }
+}
+
+
+function saveNewBowler() {
+    let name = document.getElementById('newbowlerinput').value.trim();
+    if (name) {
+        // नया बॉलर बनाएं और उसे 'currentBowler' सेट करें
+        let b = { name: name, balls: 0, runs: 0, wickets: 0, wides: 0, noBalls: 0 };
+        bowlers.push(b);
+        currentBowler = b; // <--- यह सबसे जरूरी लाइन है
+        
+        document.getElementById('bowlermodal').style.display = 'none';
+        update();
+        saveMatch();
+    }
+}
+function resetMatch() {
+    if (confirm("क्या आप वाकई नया मैच शुरू करना चाहते हैं?")) {
+        localStorage.clear(); // लोकल स्टोरेज पूरी तरह खाली कर दें
+        location.reload(); // पेज को पूरी तरह रिफ्रेश करें
+    }
+}
+
+function showTab(tabName) {
+    // सारे टैब्स को छुपा दें
+    document.querySelectorAll('.tab-content').forEach(tab => tab.style.display = 'none');
+    // चुनी हुई टैब को दिखाएँ
+    document.getElementById(tabName + '-tab').style.display = 'block';
+}
+
+// डिफ़ॉल्ट रूप से 'Live' टैब दिखाएं
+window.onload = () => showTab('live');
+
+
+
+
+
+</script>
+</body>
 </html>
-                                                                                       
-
-    
+        
