@@ -499,14 +499,15 @@ textarea.setup-input {
     background: #f4f4f4;
     z-index: 10000;
     transition: 0.3s;
-    
-    /* स्क्रॉलिंग फिक्स करने के लिए ये लाइनें जरूरी हैं */
+        /* स्क्रॉलिंग फिक्स करने के लिए ये लाइनें जरूरी हैं */
     display: block;          /* flex की जगह block इस्तेमाल करें ताकि स्क्रॉलिंग आसान हो */
     overflow-y: auto;        /* ऊपर-नीचे स्क्रॉल करने के लिए */
     overflow-x: hidden;      /* दाएं-बाएं फालतू स्क्रॉल रोकने के लिए */
     padding-bottom: 100px;   /* सबसे नीचे वाले बटन के बाद थोड़ी खाली जगह */
     box-sizing: border-box;  /* पैडिंग को हाइट के अंदर रखने के लिए */
 }
+
+
 /* जब यह खुलेगा तब यह क्लास काम करेगी */
 .advanced-overlay.open {
     left: 0;
@@ -908,8 +909,9 @@ body {
     font-weight: bold;
     color: #d32f2f;
     margin-bottom: 10px;
-    }
-    .live-dot {
+}
+
+.live-dot {
     margin-right: 5px;
     animation: blink 1s infinite; /* चमकने वाला इफेक्ट */
 }
@@ -927,7 +929,6 @@ body {
     border-radius: 10px;
     margin-left: 10px;
 }
-
 .team-row {
     display: flex;
     justify-content: space-between;
@@ -1121,13 +1122,12 @@ body {
 }
 
     </style>
-</head>  
- <script type="module">
-  // 1. Firebase की जरूरी फाइलें लोड करना
+    
+</head>
+<script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+  import { getDatabase, ref, onValue, set, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-  // 2. आपका अपना Firebase एड्रेस (Config)
   const firebaseConfig = {
     apiKey: "AIzaSyB3_Yt5cc7eXXvxKlIaovAvIZ4l5fWIC1g",
     authDomain: "bkcclive.firebaseapp.com",
@@ -1138,29 +1138,39 @@ body {
     appId: "1:1042728754418:web:7bed9c4bf9b6e5f15e446b"
   };
 
-  // 3. Firebase को चालू करना
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
-  // --- यहाँ से नया कोड शुरू होता है ---
+  // --- सुधार: इसे Global बनाना ताकि आपके पुराने JS फंक्शन्स इसे एक्सेस कर सकें ---
+  window.db = db;
+  window.dbRef = ref;
+  window.dbSet = set;
+  window.dbUpdate = update;
+  window.dbOnValue = onValue;
 
-  // 4. डेटाबेस से 'match_status' नाम की जानकारी मांगना
+  // 1. DATA RECEIVE (देखने वालों के लिए)
   const statusRef = ref(db, 'match_status'); 
-
-  // 5. जैसे ही डेटाबेस में स्कोर बदलेगा, यह अपने आप आपकी साइट पर अपडेट कर देगा
   onValue(statusRef, (snapshot) => {
-    const statusValue = snapshot.val(); // डेटाबेस से वैल्यू उठाना
-    
+    const statusValue = snapshot.val();
     if (statusValue) {
-      // आपकी HTML वाली ID 'home-match-status' में नया स्कोर डालना
       let element = document.getElementById('home-match-status');
-      if(element) {
-        element.innerText = statusValue;
-      }
+      if(element) element.innerText = statusValue;
     }
   });
- </script>   
- <body>
+
+      // 2. LIVE SCORECARD SYNC (पूरा डेटा एक साथ)
+  const liveRef = ref(db, 'live_match_data');
+  onValue(liveRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data && typeof updateUI === "function") {
+      // यह फंक्शन हम नीचे बनाएंगे जो दूसरों की स्क्रीन अपडेट करेगा
+      updateUI(data); 
+    }
+  });
+</script>
+
+
+<body>
 
 <div id="home-section" class="tab-content"> 
     <div id="match-carousel" style="display: flex; overflow-x: auto; gap: 12px; padding: 10px; scrollbar-width: none; -webkit-overflow-scrolling: touch;">
@@ -1486,7 +1496,6 @@ body {
     </div>
 </div>
 
-
 <div id="live-tab" class="tab-content" style="display: block; padding: 10px;">
     
     <div style="background: #fff; border-radius: 0px; border: 1px solid #eee; box-shadow: 0 2px 8px rgba(0,0,0,0.08); overflow: hidden; margin-bottom: 15px;">
@@ -1508,8 +1517,9 @@ body {
             </span>
         </div>
             </div>
-        </div>   
-                <div style="padding: 25px 15px;">
+        </div>
+
+        <div style="padding: 25px 15px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <span style="font-size: 20px; font-weight: 600; color: #1b1b1b;">
                     <span id="d-t1-name">Team 1</span> <span id="t1-bat-icon" style="display:none;">🏏</span>
@@ -1772,8 +1782,7 @@ body {
     
 <span class="setup-title" style="text-align: center; display: block; width: 100%; font-size: 18px; font-weight: bold; margin-bottom: 5px;  ">Player List of This Match</span>
 
-
-<div style="display: flex; justify-content: space-around; background:  #F0FFF0; padding: 0px; border-bottom ;">
+ <div style="display: flex; justify-content: space-around; background:  #F0FFF0; padding: 0px; border-bottom ;">
   <p style="font-weight: bold; color: maroon; word-wrap: break-word; width: 45%; text-align: center;">
      <span id="display-team1-name" style="color: black; font-weight: bold;">Team A</span>
 </p>
@@ -1820,10 +1829,6 @@ body {
         <div class="p-row" style="display:flex; align-items:center; margin-bottom:5px;"><span>11</span><input type="checkbox" id="check-A-10" onclick="handleLiveSelection(10, 'A')" class="pick-check"><input type="text" class="p-input ta" style="flex:1;"></div>
         <div class="p-row" style="display:flex; align-items:center; margin-bottom:5px;"><span>12</span><input type="checkbox" id="check-A-11" onclick="handleLiveSelection(11, 'A')" class="pick-check"><input type="text" class="p-input ta" style="flex:1;"></div>
     </div>
-              <div class="p-row" style="display:flex; align-items:center; margin-bottom:5px;"><span>10</span><input type="checkbox" id="check-A-9" onclick="handleLiveSelection(9, 'A')" class="pick-check"><input type="text" class="p-input ta" style="flex:1;"></div>
-        <div class="p-row" style="display:flex; align-items:center; margin-bottom:5px;"><span>11</span><input type="checkbox" id="check-A-10" onclick="handleLiveSelection(10, 'A')" class="pick-check"><input type="text" class="p-input ta" style="flex:1;"></div>
-        <div class="p-row" style="display:flex; align-items:center; margin-bottom:5px;"><span>12</span><input type="checkbox" id="check-A-11" onclick="handleLiveSelection(11, 'A')" class="pick-check"><input type="text" class="p-input ta" style="flex:1;"></div>
-    </div>
 
     <div style="border-left: 1px solid #ccc;"></div>
 
@@ -1838,7 +1843,7 @@ body {
             <input type="checkbox" id="check-B-1" onclick="handleLiveSelection(1, 'B')" class="pick-check">
             <input type="text" class="p-input tb" style="flex:1;">
         </div>
-        <div class="p-row" style="display:flex; align-items:center; margin-bottom:5px;"><span>3</span><input type="checkbox" id="check-B-2" onclick="handleLiveSelection(2, 'B')" class="pick-check"><input type="text" class="p-input tb" style="flex:1;"></div>
+          <div class="p-row" style="display:flex; align-items:center; margin-bottom:5px;"><span>3</span><input type="checkbox" id="check-B-2" onclick="handleLiveSelection(2, 'B')" class="pick-check"><input type="text" class="p-input tb" style="flex:1;"></div>
         <div class="p-row" style="display:flex; align-items:center; margin-bottom:5px;"><span>4</span><input type="checkbox" id="check-B-3" onclick="handleLiveSelection(3, 'B')" class="pick-check"><input type="text" class="p-input tb" style="flex:1;"></div>
         <div class="p-row" style="display:flex; align-items:center; margin-bottom:5px;"><span>5</span><input type="checkbox" id="check-B-4" onclick="handleLiveSelection(4, 'B')" class="pick-check"><input type="text" class="p-input tb" style="flex:1;"></div>
         <div class="p-row" style="display:flex; align-items:center; margin-bottom:5px;"><span>6</span><input type="checkbox" id="check-B-5" onclick="handleLiveSelection(5, 'B')" class="pick-check"><input type="text" class="p-input tb" style="flex:1;"></div>
@@ -2011,6 +2016,9 @@ body {
         <button onclick="recordWicket('Run Out')" style="width:100%; padding:12px; margin-bottom:8px; background:#f44336; color:white; border:none; border-radius:4px;">RUN OUT</button>
     </div>
 </div>
+
+
+
 <script>
 /* --- JAVASCRIPT LOGIC (GLOBAL VARIABLES) --- */
 let fowListArray = []; 
@@ -2111,7 +2119,6 @@ function update() {
     try {
         let schedule = JSON.parse(localStorage.getItem('bkcc_schedule')) || [];
         let scheduleUpdated = false;
-
         // 1. सही टीम नामों को सुनिश्चित करना (ताकि "Team A" न दिखे)
         let finalTopName = (currentBattingSide === "A") ? team1Name : team2Name;
         let finalBottomName = (currentBattingSide === "A") ? team2Name : team1Name;
@@ -2268,6 +2275,7 @@ function update() {
     if(typeof renderOverTracker === "function") renderOverTracker();
     if(typeof renderScorecard === "function") renderScorecard();
     if(typeof syncLiveCheckboxes === "function") syncLiveCheckboxes();
+    syncEverythingToFirebase();
 }
 
 // Bye रन के लिए फंक्शन
@@ -2476,6 +2484,9 @@ function renderOverTracker() {
         return `<span class="${className}">${b}</span>`;
     }).join('');
 }
+
+
+    
     
 function out() {
     if (matchOver || !currentBowler) {
@@ -2531,9 +2542,8 @@ function manualChangeBowler() {
         currentBowler = newBowler;
     }
     update();
-}
-
-    function saveUndo() {
+    }
+        function saveUndo() {
     // JSON.stringify के साथ अब बल्लेबाजों और बॉलर्स की स्थिति भी सेव होगी
     undoStack.push(JSON.stringify({
         runs, wickets, balls, striker, nonStriker, 
@@ -2667,8 +2677,6 @@ function undo() {
         }
     }, 400);
 }
-
-
 
 function renderScorecard() {
     // --- ✅ 1. नामों का फिक्स्ड सेटअप (Header Fix) ---
@@ -3012,7 +3020,7 @@ if(document.getElementById("toss-result-text")) {
         if(setupSec) setupSec.style.display = 'none';
         if(controlSec) controlSec.style.display = 'block';
         
-               // स्कोरकार्ड और UI अपडेट
+        // स्कोरकार्ड और UI अपडेट
         if(typeof update === "function") update();
         if(typeof showTab === "function") showTab('live');
 
@@ -3020,9 +3028,8 @@ if(document.getElementById("toss-result-text")) {
         console.error("Setup Error Details:", err);
         alert("कोड में गड़बड़ी: " + err.message);
     }
-}
-
-// नामों को हर जगह अपडेट करने का छोटा फंक्शन
+    }
+    // नामों को हर जगह अपडेट करने का छोटा फंक्शन
 function updateTeamNamesUI(t1, t2) {
     // जहाँ भी टीम के नाम दिखाने हैं (जैसे स्कोरकार्ड में)
     const t1Displays = document.querySelectorAll('.t1-name-display');
@@ -3353,8 +3360,9 @@ function addMatchToSchedule() {
     document.getElementById('sched-time').value = "";
     populateTeamDropdowns(); 
     renderScheduleManagerList(); 
-    }
-    // 1. शेड्यूल पैनल खोलने का फंक्शन
+}
+
+// 1. शेड्यूल पैनल खोलने का फंक्शन
 function showSchedule() {
     // साइड मेनू बंद करें
     if (typeof toggleMenu === "function") toggleMenu(); 
@@ -3457,8 +3465,8 @@ function renderScheduleInPanel() {
         `;
     });
     displayList.innerHTML = html || '<p style="text-align:center; padding:20px;">कोई मैच नहीं मिला।</p>';
-}
-
+    }
+    
 function endMatch() {
     // ... आपका पुराना कोड (जैसे विनर डिक्लेअर करना, कन्फर्मेशन लेना आदि) ...
 
@@ -3796,6 +3804,7 @@ function renderScheduleManagerList() {
     
     managerList.innerHTML = html || '<p style="text-align:center; color:#999;">कोई मैच शेड्यूल नहीं है।</p>';
     }
+    
     // 2. एडमिन एरिया से मैच डिलीट करने का लॉजिक
 function deleteMatch(index) {
     let schedule = JSON.parse(localStorage.getItem('bkcc_schedule')) || [];
@@ -4129,9 +4138,8 @@ function renderAdminGallery() {
         `;
         adminList.appendChild(row);
     });
-}
-
-function toggleGallerySection() {
+    }
+    function toggleGallerySection() {
     const content = document.getElementById('gallery-content-area');
     const arrow = document.getElementById('gallery-arrow');
     
@@ -4253,7 +4261,6 @@ if(runsNeededElem) runsNeededElem.innerText = target;
                 cb.nextElementSibling.style.fontWeight = "normal";
             }
         });
-
         // --- 7. Firebase Update ---
         if (typeof database !== 'undefined') {
             database.ref('match/').update({
@@ -4302,8 +4309,8 @@ function switchScorecard(inn) {
     
     // डेटा रिफ्रेश करना
     renderScorecard();
-    }
-    function endFirstInnings() {
+}
+function endFirstInnings() {
     // 1. पहली पारी के एक्स्ट्रा रन सुरक्षित करें
     innings1Wides = extraWides;
     innings1NoBalls = extraNoBalls;
@@ -4489,9 +4496,40 @@ function displayUpcomingOnHome() {
     }
 }
 
+// ... आपका पुराना सारा कोड ...
+
+// JavaScript के सबसे अंत में इसे जोड़ें
+function syncEverythingToFirebase() {
+    if (!window.db || !window.dbRef) return;
+
+    try {
+        const matchData = {
+            runs: runs,
+            wickets: wickets,
+            balls: balls,
+            innings: innings,
+            target: target,
+            battingSide: currentBattingSide,
+            striker: (striker !== null) ? batsmen[striker] : null,
+            nonStriker: (nonStriker !== null) ? batsmen[nonStriker] : null,
+            bowler: currentBowler || null,
+            timestamp: Date.now()
+        };
+
+        let shortScore = `${runs}/${wickets} (${Math.floor(balls/6)}.${balls%6} Ov)`;
+        
+        window.dbSet(window.dbRef(window.db, 'match_status'), shortScore);
+        window.dbSet(window.dbRef(window.db, 'live_match_data'), matchData);
+        
+        console.log("Firebase Synced ✅");
+    } catch (err) {
+        console.error("Firebase Sync Error:", err);
+    }
+}
+
+
 </script>
 
 </body>
 </html>
-
-     
+        
