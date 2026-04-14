@@ -1121,7 +1121,45 @@ body {
 }
 
     </style>
-</head>   
+</head>  
+ <script type="module">
+  // 1. Firebase की जरूरी फाइलें लोड करना
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+  // 2. आपका अपना Firebase एड्रेस (Config)
+  const firebaseConfig = {
+    apiKey: "AIzaSyB3_Yt5cc7eXXvxKlIaovAvIZ4l5fWIC1g",
+    authDomain: "bkcclive.firebaseapp.com",
+    databaseURL: "https://bkcclive-default-rtdb.firebaseio.com",
+    projectId: "bkcclive",
+    storageBucket: "bkcclive.firebasestorage.app",
+    messagingSenderId: "1042728754418",
+    appId: "1:1042728754418:web:7bed9c4bf9b6e5f15e446b"
+  };
+
+  // 3. Firebase को चालू करना
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  // --- यहाँ से नया कोड शुरू होता है ---
+
+  // 4. डेटाबेस से 'match_status' नाम की जानकारी मांगना
+  const statusRef = ref(db, 'match_status'); 
+
+  // 5. जैसे ही डेटाबेस में स्कोर बदलेगा, यह अपने आप आपकी साइट पर अपडेट कर देगा
+  onValue(statusRef, (snapshot) => {
+    const statusValue = snapshot.val(); // डेटाबेस से वैल्यू उठाना
+    
+    if (statusValue) {
+      // आपकी HTML वाली ID 'home-match-status' में नया स्कोर डालना
+      let element = document.getElementById('home-match-status');
+      if(element) {
+        element.innerText = statusValue;
+      }
+    }
+  });
+ </script>   
  <body>
 
 <div id="home-section" class="tab-content"> 
