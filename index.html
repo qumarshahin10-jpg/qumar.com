@@ -408,7 +408,6 @@ textarea.setup-input {
     font-weight: bold;
     padding: 5px;
 }
-
 /* सुनिश्चित करें कि modal-content 'relative' हो */
 .modal-content {
     position: relative; /* यह क्रॉस बटन को इसके अंदर रखने के लिए जरूरी है */
@@ -804,8 +803,7 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
 }
-
-.team-score {
+ .team-score {
     color: #888;
     font-size: 11px;
     font-weight: normal;
@@ -1124,7 +1122,6 @@ body {
     </style>
     
 </head>
-
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -1184,8 +1181,7 @@ body {
   console.log("Firebase Initialized Successfully! ✅");
 </script>
 
-    
-    
+
 <body>
 
 <div id="home-section" class="tab-content"> 
@@ -1253,14 +1249,7 @@ body {
         <p style="text-align:center; color:#999; padding:20px;">No matches scheduled yet.</p>
     </div>
 </div>
-
-
-
-
-
-
-
-<section id="matches-sec" class="tab-content" style="display:none; padding:10px;">
+ <section id="matches-sec" class="tab-content" style="display:none; padding:10px;">
     <h3 style="text-align:center; color:#008080;">Tournament Bracket (Round of 16)</h3>
     
     <div class="bracket-wrapper" style="display:flex; gap:15px; overflow-x:auto; padding-bottom:20px;">
@@ -1512,6 +1501,7 @@ body {
     </div>
 </div>
 
+
 <div id="live-tab" class="tab-content" style="display: block; padding: 10px;">
     
     <div style="background: #fff; border-radius: 0px; border: 1px solid #eee; box-shadow: 0 2px 8px rgba(0,0,0,0.08); overflow: hidden; margin-bottom: 15px;">
@@ -1606,12 +1596,7 @@ body {
             <span class="ps-ex-detail" id="ps-extras-detail">0 (w 0, nb 0, b/lb 0)</span>
         </div>
     </div>
-      
-      
-    
-     
-
-   <div class="pro-scorecard-card bowler-card" style="margin-top: 15px;">
+         <div class="pro-scorecard-card bowler-card" style="margin-top: 15px;">
     <div class="ps-team-header">
         <span class="ps-tname"><span class="t2-name-display">Team 2</span> ⚾</span>
         <span class="ps-tscore" id="ps-t2-total">0.0 Overs</span>
@@ -1798,7 +1783,8 @@ body {
     
 <span class="setup-title" style="text-align: center; display: block; width: 100%; font-size: 18px; font-weight: bold; margin-bottom: 5px;  ">Player List of This Match</span>
 
- <div style="display: flex; justify-content: space-around; background:  #F0FFF0; padding: 0px; border-bottom ;">
+
+<div style="display: flex; justify-content: space-around; background:  #F0FFF0; padding: 0px; border-bottom ;">
   <p style="font-weight: bold; color: maroon; word-wrap: break-word; width: 45%; text-align: center;">
      <span id="display-team1-name" style="color: black; font-weight: bold;">Team A</span>
 </p>
@@ -1851,10 +1837,7 @@ body {
     <div id="teamBInputs" class="player-list-grid" style="flex: 1;">
         <div class="p-row" style="display:flex; align-items:center; margin-bottom:5px;">
             <span>1</span>
-            <input type="checkbox" id="check-B-0" onclick="handleLiveSelection(0, 'B')" class="pick-check">
-            <input type="text" class="p-input tb" style="flex:1;">
-        </div>
-        <div class="p-row" style="display:flex; align-items:center; margin-bottom:5px;">
+                    <div class="p-row" style="display:flex; align-items:center; margin-bottom:5px;">
             <span>2</span>
             <input type="checkbox" id="check-B-1" onclick="handleLiveSelection(1, 'B')" class="pick-check">
             <input type="text" class="p-input tb" style="flex:1;">
@@ -2011,14 +1994,6 @@ body {
 </div>
 
 </div>
-
-
-
-
-
-
-
-
 <div id="wicketmodal" class="modal">
     <div class="modal-content">
         <span class="close-modal-x" onclick="closeModal()">❌</span>
@@ -2135,6 +2110,7 @@ function update() {
     try {
         let schedule = JSON.parse(localStorage.getItem('bkcc_schedule')) || [];
         let scheduleUpdated = false;
+
         // 1. सही टीम नामों को सुनिश्चित करना (ताकि "Team A" न दिखे)
         let finalTopName = (currentBattingSide === "A") ? team1Name : team2Name;
         let finalBottomName = (currentBattingSide === "A") ? team2Name : team1Name;
@@ -2166,107 +2142,140 @@ function update() {
             localStorage.setItem('bkcc_schedule', JSON.stringify(schedule));
         }
 
-function update() {
-    // --- ✅ 1. नाम और स्कोर लॉजिक (Safe Checks के साथ) ---
-    let t1Name = (typeof team1Name !== 'undefined' && team1Name) ? team1Name : "Team 1";
-    let t2Name = (typeof team2Name !== 'undefined' && team2Name) ? team2Name : "Team 2";
-    
-    let topTeamName = t1Name;
-    let bottomTeamName = t2Name;
-    let topTeamScore = "0/0 (0.0)";
-    let bottomTeamScore = "Yet to Bat";
-    
-    // ओवर कैलकुलेशन
-    let currentBalls = typeof balls !== 'undefined' ? balls : 0;
-    let ov = `${Math.floor(currentBalls/6)}.${currentBalls%6}`;
-
-    if (innings === 1) {
-        topTeamName = (currentBattingSide === "A") ? t1Name : t2Name;
-        bottomTeamName = (currentBattingSide === "A") ? t2Name : t1Name;
-        topTeamScore = `${runs}/${wickets} <span class="over-bracket">(${ov})</span>`;
-        bottomTeamScore = `Yet to Bat`;
-        
-        if(document.getElementById("t1-bat-icon")) document.getElementById("t1-bat-icon").style.display = "inline";
-        if(document.getElementById("t2-bat-icon")) document.getElementById("t2-bat-icon").style.display = "none";
-    } 
-    else if (innings === 2) {
-        topTeamName = (currentBattingSide === "A") ? t1Name : t2Name;
-        bottomTeamName = (currentBattingSide === "A") ? t2Name : t1Name;
-        topTeamScore = `${runs}/${wickets} <span class="over-bracket">(${ov})</span>`;
-        
-        let fInnBalls = typeof firstInningsBalls !== 'undefined' ? firstInningsBalls : 0;
-        let fInnOv = `${Math.floor(fInnBalls/6)}.${fInnBalls%6}`;
-        bottomTeamScore = `${firstInningsTotal}/${firstInningsWickets} <span class="over-bracket">(${fInnOv})</span> <small>(1st Inn)</small>`;
-
-        if(document.getElementById("t1-bat-icon")) document.getElementById("t1-bat-icon").style.display = "inline";
-        if(document.getElementById("t2-bat-icon")) document.getElementById("t2-bat-icon").style.display = "none";
-
-        // टारगेट डिस्प्ले अपडेट
-        let targetBox = document.getElementById("target-display-box");
-        if(targetBox && targetBox.style.display !== "none") {
-            let runsNeeded = (typeof target !== 'undefined' ? target : 0) - runs;
-            let matchOversVal = document.getElementById("matchOvers") ? (parseInt(document.getElementById("matchOvers").value) || 0) : 0;
-            let ballsRemaining = (matchOversVal * 6) - currentBalls;
+        // --- 📱 HOME TAB SPECIFIC FIX ---
+        // होम स्क्रीन पर जो कार्ड 'mini-match-card' है उसे सही नाम देना
+        let homeCard = document.querySelector('.mini-match-card');
+        if (homeCard) {
+            let t1NameElem = document.getElementById("home-t1-name");
+            let t2NameElem = document.getElementById("home-t2-name");
             
-            if(document.getElementById("target-runs-needed")) document.getElementById("target-runs-needed").innerText = runsNeeded > 0 ? runsNeeded : 0;
-            if(document.getElementById("target-balls-left")) document.getElementById("target-balls-left").innerText = ballsRemaining > 0 ? ballsRemaining : 0;
-            if(document.getElementById("target-value")) document.getElementById("target-value").innerText = target;
+            if (t1NameElem) t1NameElem.innerText = finalTopName;
+            if (t2NameElem) t2NameElem.innerText = finalBottomName;
+            
+            // स्कोर अपडेट
+            if (document.getElementById("home-t1-score")) document.getElementById("home-t1-score").innerHTML = topTeamScore;
+            if (document.getElementById("home-t2-score")) document.getElementById("home-t2-score").innerHTML = bottomTeamScore;
         }
+
+    } catch (err) {
+        console.log("Sync Error:", err);
     }
 
-    // --- ✅ 2. UI SYNC (Main Tab) ---
-    if(document.getElementById("d-t1-name")) document.getElementById("d-t1-name").innerText = topTeamName;
-    if(document.getElementById("d-t2-name")) document.getElementById("d-t2-name").innerText = bottomTeamName;
-    if(document.getElementById("d-t1-score")) document.getElementById("d-t1-score").innerHTML = topTeamScore;
-    if(document.getElementById("d-t2-score")) document.getElementById("d-t2-score").innerHTML = bottomTeamScore;
+    // --- 🏆 4. WINNER & HOME SYNC LOGIC ---
+    let resultMessage = "";
+    let isMatchOver = false;
 
-    // --- 🚀 3. LOCAL STORAGE & HOME CARD SYNC ---
-    try {
-        let schedule = JSON.parse(localStorage.getItem('bkcc_schedule')) || [];
-        let scheduleUpdated = false;
-
-        schedule.forEach(match => {
-            if (match.status === 'Live') {
-                match.teamAScore = (currentBattingSide === "A") ? `${runs}/${wickets} (${ov})` : match.teamAScore;
-                match.teamBScore = (currentBattingSide === "B") ? `${runs}/${wickets} (${ov})` : match.teamBScore;
-                
-                // बैट्समैन और बॉलर का डेटा (Safe Check)
-                if(typeof striker !== 'undefined' && batsmen[striker]) {
-                    match.currentBatsman = `${batsmen[striker].name}* ${batsmen[striker].runs}(${batsmen[striker].balls})`;
-                }
-                scheduleUpdated = true;
+    if (innings === 2) {
+        let totalMaxBalls = (parseInt(document.getElementById("matchOvers").value) || 0) * 6;
+        if (wickets >= 10 || balls >= totalMaxBalls || runs >= target) {
+            isMatchOver = true;
+            if (runs >= target) {
+                resultMessage = `${topTeamName} won by ${10 - wickets} wickets!`;
+            } else {
+                resultMessage = `${bottomTeamName} won by ${target - 1 - runs} runs!`;
             }
-        });
 
-        if (scheduleUpdated) localStorage.setItem('bkcc_schedule', JSON.stringify(schedule));
+            // Live Tab Results
+            let infoBar = document.getElementById("target-display-box") || document.querySelector('.info-bar');
+            if(infoBar) {
+                infoBar.innerHTML = `<b style="color:#1A73E8; font-size: 18px; display: block; text-align: center; width: 100%;">${resultMessage}</b>`;
+                infoBar.style.background = "#1e3d3d";
+            }
 
-        // होम टैब अपडेट
-        let t1Home = document.getElementById("home-t1-name");
-        if (t1Home) {
-            if(document.getElementById("home-t1-name")) document.getElementById("home-t1-name").innerText = topTeamName;
-            if(document.getElementById("home-t2-name")) document.getElementById("home-t2-name").innerText = bottomTeamName;
-            if(document.getElementById("home-t1-score")) document.getElementById("home-t1-score").innerHTML = topTeamScore;
-            if(document.getElementById("home-t2-score")) document.getElementById("home-t2-score").innerHTML = bottomTeamScore;
-        }
-    } catch (err) { console.log("Local Sync Error:", err); }
+            // Hide temporary stats
+            if(document.getElementById("partnershipbox")) document.getElementById("partnershipbox").style.display = "none";
+            if(document.getElementById("crrbox")) document.getElementById("crrbox").style.display = "none";
 
-    // --- ✅ 4. TABLES RENDER ---
-    if(typeof batsmen !== 'undefined' && batsmen[striker] && batsmen[nonStriker]) {
-        let batterHtml = `
-            <table style="width:100%; font-size:13px;">
-                <tr style="color:#777;"><th>Batter</th><th>R</th><th>B</th><th>4s</th><th>6s</th><th>SR</th></tr>
-                <tr><td style="color:#d32f2f;"><strong>${batsmen[striker].name}*</strong></td><td>${batsmen[striker].runs}</td><td>${batsmen[striker].balls}</td><td>${batsmen[striker].fours || 0}</td><td>${batsmen[striker].sixes || 0}</td><td>${(batsmen[striker].balls > 0 ? (batsmen[striker].runs/batsmen[striker].balls*100).toFixed(1) : "0.0")}</td></tr>
-                <tr><td>${batsmen[nonStriker].name}</td><td>${batsmen[nonStriker].runs}</td><td>${batsmen[nonStriker].balls}</td><td>${batsmen[nonStriker].fours || 0}</td><td>${batsmen[nonStriker].sixes || 0}</td><td>${(batsmen[nonStriker].balls > 0 ? (batsmen[nonStriker].runs/batsmen[nonStriker].balls*100).toFixed(1) : "0.0")}</td></tr>
-            </table>`;
+                    // 🚀 HOME TAB SYNC: टीम के नाम के नीचे मैसेज दिखाने के लिए
+            let homeT2Name = document.getElementById("home-t2-name");
+            let homeT2Score = document.getElementById("home-t2-score");
+
+        if (homeT2Name && homeT2Score) {
+    // 1. नाम और स्कोर को उनकी पुरानी (Original) हालत में रखें
+    homeT2Name.style.display = "inline-block";
+    homeT2Score.style.display = "inline-block";
+    
+    // 2. टीम के नाम और स्कोर को अपडेट करें
+    homeT2Name.innerText = bottomTeamName;
+    homeT2Score.innerHTML = bottomTeamScore;
+
+    // 3. विनिंग मैसेज को 'Absolute' तरीके से नीचे चिपकाएं
+    // इससे टीम के नाम (Patna/Godda) अपनी जगह से गायब नहीं होंगे
+    let winMsgHtml = `<div style="
+        position: absolute; 
+        left: 15px; 
+        bottom: 25px; 
+        color: #1A73E8; 
+        font-weight: bold; 
+        font-size: 14px; 
+        white-space: nowrap;
+        pointer-events: none;">
+        ${resultMessage}
+    </div>`;
+
+    // पुराने मैसेज को हटाकर नया जोड़ने के लिए कार्ड के अंदर इसे डालें
+    let matchCard = homeT2Name.closest('.mini-match-card');
+    if (matchCard) {
+        // अगर पहले से कोई पुराना मैसेज है तो उसे हटा दें
+        let oldMsg = matchCard.querySelector('.win-msg-container');
+        if(oldMsg) oldMsg.remove();
+        
+        // नया मैसेज कंटेनर बनाएँ
+        let msgDiv = document.createElement('div');
+        msgDiv.className = 'win-msg-container';
+        msgDiv.innerHTML = winMsgHtml;
+        matchCard.appendChild(msgDiv);
+        matchCard.style.position = "relative"; // यह मैसेज को कार्ड के अंदर रखेगा
+        matchCard.style.paddingBottom = "30px"; // कार्ड के नीचे थोड़ी जगह बना देगा
+    }
+}
+
+            
+            // स्टेटस को LIVE से COMPLETED में बदलना
+            let liveStatus = document.querySelector('.mini-match-card div[style*="color: red"]');
+            if (liveStatus && liveStatus.innerText.includes("LIVE")) {
+                liveStatus.style.color = "#1A73E8"; 
+                liveStatus.innerText = "● COMPLETED";
+            }
+}
+}
+    // --- ✅ 5. TABLES & OTHER SYNC ---
+    let currentCRR = (balls > 0) ? (runs / (balls / 6)).toFixed(2) : "0.00";
+    if(document.getElementById("crrbox") && !isMatchOver) document.getElementById("crrbox").innerText = `CRR: ${currentCRR}`;
+    if(document.getElementById("partnershipbox") && !isMatchOver) document.getElementById("partnershipbox").innerText = `P'SHIP: ${partnershipRuns} (${partnershipBalls})`;
+
+    if(typeof batsmen !== 'undefined' && batsmen.length > 0 && batsmen[striker]) {
+        let batterHtml = `<table style="width:100%; border-collapse:collapse; font-size:13px; margin-top:5px;">
+            <tr style="color:#777; border-bottom:1px solid #eee; text-align:right;"><th style="text-align:left; padding:5px;">Batter</th><th>R</th><th>B</th><th>4s</th><th>6s</th><th>SR</th></tr>
+            <tr style="text-align:right; border-bottom:1px solid #f9f9f9;"><td style="text-align:left; padding:8px 5px; color:#d32f2f;"><strong>${batsmen[striker].name}*</strong></td><td><strong>${batsmen[striker].runs}</strong></td><td>${batsmen[striker].balls}</td><td>${batsmen[striker].fours || 0}</td><td>${batsmen[striker].sixes || 0}</td><td>${(batsmen[striker].balls > 0 ? (batsmen[striker].runs/batsmen[striker].balls*100).toFixed(1) : "0.0")}</td></tr>
+            <tr style="text-align:right;"><td style="text-align:left; padding:8px 5px;">${batsmen[nonStriker].name}</td><td><strong>${batsmen[nonStriker].runs}</strong></td><td>${batsmen[nonStriker].balls}</td><td>${batsmen[nonStriker].fours || 0}</td><td>${batsmen[nonStriker].sixes || 0}</td><td>${(batsmen[nonStriker].balls > 0 ? (batsmen[nonStriker].runs/batsmen[nonStriker].balls*100).toFixed(1) : "0.0")}</td></tr>
+        </table>`;
         if(document.getElementById("current-batsmen-list")) document.getElementById("current-batsmen-list").innerHTML = batterHtml;
     }
 
-    // --- 📡 5. FIREBASE SYNC (The Fix) ---
-    if(typeof syncEverythingToFirebase === "function") {
-        syncEverythingToFirebase();
+    if(typeof currentBowler !== 'undefined' && currentBowler && currentBowler.name) {
+        let bBalls = currentBowler.balls || 0, bOvers = currentBowler.overs || 0;
+        let exactOvers = bOvers + (bBalls / 6);
+        let econ = (exactOvers > 0) ? (currentBowler.runs / exactOvers).toFixed(1) : "0.0";
+        let bowlerHtml = `<table style="width:100%; border-collapse:collapse; font-size:13px; margin-top:5px;">
+            <tr style="color:#777; border-bottom:1px solid #eee; text-align:right;"><th style="text-align:left; padding:5px;">Bowler</th><th>O</th><th>M</th><th>R</th><th>W</th><th>ECON</th></tr>
+            <tr style="text-align:right;"><td style="text-align:left; padding:8px 5px; color:#008080;"><strong>${currentBowler.name}</strong></td><td>${bOvers}.${bBalls}</td><td>${currentBowler.maidens || 0}</td><td>${currentBowler.runs}</td><td><strong>${currentBowler.wickets}</strong></td><td>${econ}</td></tr>
+        </table>`;
+        if(document.getElementById("d-bowler-name")) document.getElementById("d-bowler-name").innerHTML = bowlerHtml;
     }
-    }
+
+    if(typeof renderOverTracker === "function") renderOverTracker();
+    if(typeof renderScorecard === "function") renderScorecard();
+    if(typeof syncLiveCheckboxes === "function") syncLiveCheckboxes();
     
+       if (typeof syncEverythingToFirebase === "function") {
+        try {
+            syncEverythingToFirebase();
+        } catch (error) {
+            console.log("Sync अभी तैयार नहीं है...");
+        }
+    }
+}
 // Bye रन के लिए फंक्शन
 function addByeRun() {
     if(matchOver || !currentBowler) {
@@ -2531,8 +2540,9 @@ function manualChangeBowler() {
         currentBowler = newBowler;
     }
     update();
-    }
-        function saveUndo() {
+}
+
+    function saveUndo() {
     // JSON.stringify के साथ अब बल्लेबाजों और बॉलर्स की स्थिति भी सेव होगी
     undoStack.push(JSON.stringify({
         runs, wickets, balls, striker, nonStriker, 
@@ -2797,9 +2807,8 @@ function renderScorecard() {
     }
     let extrasDetailElem = document.getElementById("ps-extras-detail");
     if(extrasDetailElem) extrasDetailElem.innerText = `${exW + exNB + exB} (wd ${exW}, nb ${exNB}, b/lb ${exB})`;
-}
-
-    // --- Wide Ball Function ---
+    }
+        // --- Wide Ball Function ---
 function wideBall() {
     if(matchOver || !currentBowler) {
         if(!currentBowler) alert("कृपया पहले बॉलर चुनें!");
@@ -3017,8 +3026,9 @@ if(document.getElementById("toss-result-text")) {
         console.error("Setup Error Details:", err);
         alert("कोड में गड़बड़ी: " + err.message);
     }
-    }
-    // नामों को हर जगह अपडेट करने का छोटा फंक्शन
+}
+
+// नामों को हर जगह अपडेट करने का छोटा फंक्शन
 function updateTeamNamesUI(t1, t2) {
     // जहाँ भी टीम के नाम दिखाने हैं (जैसे स्कोरकार्ड में)
     const t1Displays = document.querySelectorAll('.t1-name-display');
@@ -3306,9 +3316,8 @@ function populateTeamDropdowns() {
             dropdownB.innerHTML += option;
         }
     });
-}
-
-// 3. नया मैच LocalStorage में जोड़ना
+    }
+    // 3. नया मैच LocalStorage में जोड़ना
 function addMatchToSchedule() {
     const matchNum = document.getElementById('sched-match-num').value;
     const teamA = document.getElementById('sched-team-a').value;
@@ -3454,8 +3463,10 @@ function renderScheduleInPanel() {
         `;
     });
     displayList.innerHTML = html || '<p style="text-align:center; padding:20px;">कोई मैच नहीं मिला।</p>';
-    }
-    
+}
+
+
+
 function endMatch() {
     // ... आपका पुराना कोड (जैसे विनर डिक्लेअर करना, कन्फर्मेशन लेना आदि) ...
 
@@ -3722,8 +3733,6 @@ function handleLiveSelection(index, teamSide) {
         if(typeof update === "function") update();
     }
 }
-
-
 function syncLiveCheckboxes() {
     if (typeof batsmen === 'undefined' || batsmen.length === 0) return;
 
@@ -3792,9 +3801,9 @@ function renderScheduleManagerList() {
     });
     
     managerList.innerHTML = html || '<p style="text-align:center; color:#999;">कोई मैच शेड्यूल नहीं है।</p>';
-    }
-    
-    // 2. एडमिन एरिया से मैच डिलीट करने का लॉजिक
+}
+
+// 2. एडमिन एरिया से मैच डिलीट करने का लॉजिक
 function deleteMatch(index) {
     let schedule = JSON.parse(localStorage.getItem('bkcc_schedule')) || [];
     
@@ -4038,9 +4047,8 @@ function displayGallery() {
         wrapper.appendChild(delBtn);
         grid.appendChild(wrapper);
     });
-}
-
-// 3. Photo delete karne ka function
+    }
+   // 3. Photo delete karne ka function
 function deletePhoto(index, isAdminView = false) {
     // Confirm box taaki galti se delete na ho
     if (confirm("Kya aap sach mein ye photo delete karna chahte hain?")) {
@@ -4127,8 +4135,9 @@ function renderAdminGallery() {
         `;
         adminList.appendChild(row);
     });
-    }
-    function toggleGallerySection() {
+}
+
+function toggleGallerySection() {
     const content = document.getElementById('gallery-content-area');
     const arrow = document.getElementById('gallery-arrow');
     
@@ -4483,12 +4492,10 @@ function displayUpcomingOnHome() {
             }
         });
     }
-}
-
-// ... आपका पुराना सारा कोड ...
+    }
+   // ... आपका पुराना सारा कोड ...
 
 // JavaScript के सबसे अंत में इसे जोड़ें
-
 function syncEverythingToFirebase() {
     // 1. Check if Firebase is ready
     if (!window.db || !window.dbRef || !window.dbSet) {
@@ -4539,12 +4546,14 @@ function syncEverythingToFirebase() {
     } catch (err) {
         console.error("Firebase Sync Error:", err);
     }
-    }
-    
-
+}
 
 </script>
 
 </body>
 </html>
+            
+    
+
+            
         
