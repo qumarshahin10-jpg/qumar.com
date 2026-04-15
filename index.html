@@ -1143,23 +1143,48 @@ body {
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
-  // --- यहाँ सुधार है: इन सबको Global window object में डालें ---
+  // Global window object में फंक्शन्स डालना
   window.db = db;
   window.dbRef = ref;
   window.dbSet = set;
   window.dbUpdate = update;
+  window.dbOnValue = onValue; // यह भी ज़रूरी है
 
-  // दर्शकों के लिए रियल-टाइम अपडेट
+  // दर्शकों (दोस्त) के लिए रियल-टाइम अपडेट लॉजिक
   onValue(ref(db, 'live_match_data'), (snapshot) => {
     const data = snapshot.val();
     if (data) {
-        // यहाँ से लाइव स्कोर अपडेट होगा
-        if(document.getElementById('home-t1-score')) document.getElementById('home-t1-score').innerText = `${data.runs}/${data.wickets} (${Math.floor(data.balls/6)}.${data.balls%6})`;
+        // 1. स्कोर अपडेट
+        if(document.getElementById('home-t1-score')) {
+            document.getElementById('home-t1-score').innerText = `${data.runs}/${data.wickets} (${Math.floor(data.balls/6)}.${data.balls%6})`;
+        }
+
+        // 2. टीम के नाम अपडेट
+        if(document.getElementById('batting-team-name')) {
+            document.getElementById('batting-team-name').innerText = data.battingTeam;
+        }
+
+        // 3. बल्लेबाजों के नाम और रन अपडेट
+        if(document.getElementById('curr-batsman1')) {
+            document.getElementById('curr-batsman1').innerText = `${data.batsman1}: ${data.b1_runs}(${data.b1_balls})`;
+        }
+        if(document.getElementById('curr-batsman2')) {
+            document.getElementById('curr-batsman2').innerText = `${data.batsman2}: ${data.b2_runs}(${data.b2_balls})`;
+        }
+
+        // 4. गेंदबाज का नाम अपडेट
+        if(document.getElementById('curr-bowler')) {
+            document.getElementById('curr-bowler').innerText = data.bowler;
+        }
+        
+        console.log("Viewer Screen Updated! ✅");
     }
   });
 
   console.log("Firebase Initialized Successfully! ✅");
 </script>
+
+    
     
 <body>
 
@@ -4463,30 +4488,54 @@ function displayUpcomingOnHome() {
 // ... आपका पुराना सारा कोड ...
 
 // JavaScript के सबसे अंत में इसे जोड़ें
+
 function syncEverythingToFirebase() {
-    // 1. चेक करें कि क्या Firebase सही से लोड हुआ है
+    // 1. Check if Firebase is ready
     if (!window.db || !window.dbRef || !window.dbSet) {
-        console.error("Firebase is not initialized yet!");
+        console.warn("Firebase not ready yet!");
         return;
     }
 
     try {
         const matchData = {
+            // बेसिक स्कोर डेटा
             runs: typeof runs !== 'undefined' ? runs : 0,
             wickets: typeof wickets !== 'undefined' ? wickets : 0,
             balls: typeof balls !== 'undefined' ? balls : 0,
             innings: typeof innings !== 'undefined' ? innings : 1,
             target: typeof target !== 'undefined' ? target : 0,
+
+            // टीम के नाम (Innings के हिसाब से)
+            battingTeam: (typeof currentBattingSide !== 'undefined') ? (currentBattingSide === "A" ? team1Name : team2Name) : "Batting Team",
+            bowlingTeam: (typeof currentBattingSide !== 'undefined') ? (currentBattingSide === "A" ? team2Name : team1Name) : "Bowling Team",
+
+            // बल्लेबाजों का डेटा
+            batsman1: typeof b1_name !== 'undefined' ? b1_name : "Batsman 1",
+            b1_runs: typeof b1_runs !== 'undefined' ? b1_runs : 0,
+            b1_balls: typeof b1_balls !== 'undefined' ? b1_balls : 0,
+            
+            batsman2: typeof b2_name !== 'undefined' ? b2_name : "Batsman 2",
+            b2_runs: typeof b2_runs !== 'undefined' ? b2_runs : 0,
+            b2_balls: typeof b2_balls !== 'undefined' ? b2_balls : 0,
+
+            // गेंदबाज का डेटा
+            bowler: typeof currentBowlerName !== 'undefined' ? currentBowlerName : "Bowler",
+            bowler_runs: typeof bowlerRuns !== 'undefined' ? bowlerRuns : 0,
+            bowler_wickets: typeof bowlerWickets !== 'undefined' ? bowlerWickets : 0,
+            bowler_overs: typeof bowlerOvers !== 'undefined' ? bowlerOvers : "0.0",
+
             timestamp: Date.now()
         };
 
-        let shortScore = `${matchData.runs}/${matchData.wickets} (${Math.floor(matchData.balls/6)}.${matchData.balls%6} Ov)`;
+        // छोटा स्कोर (Status के लिए)
+        let ov = `${Math.floor(matchData.balls/6)}.${matchData.balls%6}`;
+        let shortScore = `${matchData.runs}/${matchData.wickets} (${ov} Ov)`;
         
-        // 2. डेटाबेस में डेटा भेजना (Correct Syntax)
+        // 2. Firebase में डेटा भेजना
         window.dbSet(window.dbRef(window.db, 'match_status'), shortScore);
         window.dbSet(window.dbRef(window.db, 'live_match_data'), matchData);
         
-        console.log("Firebase Synced ✅ Score:", shortScore);
+        console.log("Firebase Full Sync ✅:", shortScore);
     } catch (err) {
         console.error("Firebase Sync Error:", err);
     }
