@@ -1126,11 +1126,9 @@ body {
 </head>
 
 <script type="module">
-  // 1. Firebase की जरूरी लाइब्रेरीज़ लोड करना
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-  // 2. आपका नया Config
   const firebaseConfig = {
     apiKey: "AIzaSyAEuQ3up4s30SWJVTNcMsIzG5FJNBH0iiM",
     authDomain: "livescore-77e1e.firebaseapp.com",
@@ -1139,31 +1137,30 @@ body {
     messagingSenderId: "369945019905",
     appId: "1:369945019905:web:00730e3e484ab4efd5a200",
     measurementId: "G-23H0RK3WBZ",
-    // यहाँ अपना Database URL डालें (जो Firebase Console में मिलेगा)
-    databaseURL: "https://livescore-77e1e-default-rtdb.firebaseio.com" 
+    databaseURL: "https://livescore-77e1e-default-rtdb.firebaseio.com/" 
   };
 
-  // 3. Initialize
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
-  // 4. इसे Global बनाना (ताकि आपके पुराने Functions इसे इस्तेमाल कर सकें)
+  // --- यहाँ सुधार है: इन सबको Global window object में डालें ---
   window.db = db;
   window.dbRef = ref;
   window.dbSet = set;
   window.dbUpdate = update;
 
-  // 5. दर्शकों के लिए डेटा रिसीव करना (Real-time listener)
-  onValue(ref(db, 'match_status'), (snapshot) => {
-    const status = snapshot.val();
-    if (status) {
-      let element = document.getElementById('home-match-status');
-      if(element) element.innerText = status;
+  // दर्शकों के लिए रियल-टाइम अपडेट
+  onValue(ref(db, 'live_match_data'), (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+        // यहाँ से लाइव स्कोर अपडेट होगा
+        if(document.getElementById('home-t1-score')) document.getElementById('home-t1-score').innerText = `${data.runs}/${data.wickets} (${Math.floor(data.balls/6)}.${data.balls%6})`;
     }
   });
+
+  console.log("Firebase Initialized Successfully! ✅");
 </script>
     
-
 <body>
 
 <div id="home-section" class="tab-content"> 
