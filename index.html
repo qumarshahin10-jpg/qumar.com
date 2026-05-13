@@ -1161,7 +1161,99 @@ body {
 </head>
 
 <body>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+  import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
+  const firebaseConfig = {
+    apiKey: "AIzaSyAEuQ3up4s30SWJVTNcMsIzG5FJNBH0iiM",
+    authDomain: "livescore-77e1e.firebaseapp.com",
+    projectId: "livescore-77e1e",
+    storageBucket: "livescore-77e1e.firebasestorage.app",
+    messagingSenderId: "369945019905",
+    appId: "1:369945019905:web:00730e3e484ab4efd5a200",
+    measurementId: "G-23H0RK3WBZ",
+    databaseURL: "https://livescore-77e1e-default-rtdb.firebaseio.com/" 
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  // Global window object में फंक्शन्स डालना ताकि आप अपनी .js फाइल से इन्हें चला सकें
+  window.db = db;
+  window.dbRef = ref;
+  window.dbSet = set;
+  window.dbUpdate = update;
+  window.dbOnValue = onValue;
+
+  // --- 1. दर्शकों (दोस्त) के लिए रीयल-टाइम अपडेट लॉजिक ---
+  // यह हिस्सा आपके दोस्तों के मोबाइल पर स्कोर अपडेट करेगा
+  onValue(ref(db, 'live_match_data'), (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+        // स्कोर और ओवर (जैसे: 100/2 (10.4))
+        if(document.getElementById('home-t1-score')) {
+            let ov = `${Math.floor(data.balls/6)}.${data.balls%6}`;
+            document.getElementById('home-t1-score').innerText = `${data.runs}/${data.wickets} (${ov})`;
+        }
+
+        // टीम का नाम
+        if(document.getElementById('batting-team-name')) {
+            document.getElementById('batting-team-name').innerText = data.battingTeam || "Team A";
+        }
+
+        // बल्लेबाज 1
+        if(document.getElementById('curr-batsman1')) {
+            document.getElementById('curr-batsman1').innerText = `${data.batsman1}: ${data.b1_runs}(${data.b1_balls})`;
+        }
+        
+        // बल्लेबाज 2
+        if(document.getElementById('curr-batsman2')) {
+            document.getElementById('curr-batsman2').innerText = `${data.batsman2}: ${data.b2_runs}(${data.b2_balls})`;
+        }
+
+        // गेंदबाज
+        if(document.getElementById('curr-bowler')) {
+            document.getElementById('curr-bowler').innerText = data.bowler || "Bowler";
+        }
+        
+        console.log("Viewer Screen Updated! ✅");
+    }
+  });
+
+  // --- 2. डेटा भेजने (Admin Sync) का मास्टर फंक्शन ---
+  // जब आप स्कोरिंग करेंगे, तो इस फंक्शन को कॉल करना होगा
+  window.syncEverythingToFirebase = function() {
+      if (!window.db) return;
+
+      const matchData = {
+          runs: typeof runs !== 'undefined' ? runs : 0,
+          wickets: typeof wickets !== 'undefined' ? wickets : 0,
+          balls: typeof balls !== 'undefined' ? balls : 0,
+          battingTeam: typeof team1Name !== 'undefined' ? (currentBattingSide === "A" ? team1Name : team2Name) : "Batting Team",
+          
+          // बल्लेबाज (स्ट्राइकर और नॉन-स्ट्राइकर)
+          batsman1: typeof b1_name !== 'undefined' ? b1_name : "Batsman 1",
+          b1_runs: typeof b1_runs !== 'undefined' ? b1_runs : 0,
+          b1_balls: typeof b1_balls !== 'undefined' ? b1_balls : 0,
+
+          batsman2: typeof b2_name !== 'undefined' ? b2_name : "Batsman 2",
+          b2_runs: typeof b2_runs !== 'undefined' ? b2_runs : 0,
+          b2_balls: typeof b2_balls !== 'undefined' ? b2_balls : 0,
+
+          bowler: typeof currentBowlerName !== 'undefined' ? currentBowlerName : "Bowler",
+          timestamp: Date.now()
+      };
+
+      // Firebase में अपडेट भेजें
+      update(ref(db, 'live_match_data'), matchData)
+      .then(() => console.log("Firebase Data Synced! 🚀"))
+      .catch((err) => console.error("Sync Error:", err));
+  };
+
+  console.log("Firebase Initialized Successfully! ✅");
+        </script>
+    
 <div id="home-section" class="tab-content"> 
     <div id="upcoming-matches-container" style="display: flex; overflow-x: auto; gap: 12px; padding: 15px 10px; scrollbar-width: none; -webkit-overflow-scrolling: touch; align-items: flex-start; flex-wrap: nowrap;">
         </div>
