@@ -1183,37 +1183,62 @@ body {
   onValue(ref(db, 'live_match_data'), (snapshot) => {
     const data = snapshot.val();
     if (data) {
-        // 1. टीम के नाम (Home Card और Main Tab दोनों के लिए)
-        const t1NameElem = document.getElementById('d-t1-name') || document.getElementById('home-t1-name') || document.getElementById('batting-team');
-        const t2NameElem = document.getElementById('d-t2-name') || document.getElementById('home-t2-name') || document.getElementById('bowling-team');
-        
-        if(t1NameElem) t1NameElem.innerText = data.battingTeam;
-        if(t2NameElem) t2NameElem.innerText = data.bowlingTeam;
-
-        // 2. मुख्य स्कोर (जैसे: 105/2 (12.4))
+        // --- 1. बेसिक स्कोर अपडेट ---
         let ov = `${Math.floor(data.balls/6)}.${data.balls%6}`;
-        let fullScore = `${data.runs}/${data.wickets} (${ov})`;
+        if(document.getElementById('d-t1-name')) document.getElementById('d-t1-name').innerText = data.battingTeam;
+        if(document.getElementById('d-t2-name')) document.getElementById('d-t2-name').innerText = data.bowlingTeam;
+        if(document.getElementById('d-t1-score')) document.getElementById('d-t1-score').innerText = `${data.runs}/${data.wickets} (${ov})`;
 
-        const scoreElem = document.getElementById('d-t1-score') || document.getElementById('home-t1-score');
-        if(scoreElem) scoreElem.innerText = fullScore;
+        // --- 2. बल्लेबाज़ और बॉलर की लाइव टेबल बनाना ---
+        // 'live-data-wrapper' वह डिब्बा है जहाँ टेबल दिखेगी
+        let liveWrapper = document.getElementById("live-data-wrapper");
+        if(liveWrapper) {
+            let tableHtml = `
+                <table style="width:100%; border-collapse:collapse; font-size:13px; margin-bottom:15px; background:#fff; color:#000;">
+                    <tr style="border-bottom:1px solid #eee; text-align:right;">
+                        <th style="text-align:left; padding:8px;">BATTER</th>
+                        <th style="padding:8px;">R</th>
+                        <th style="padding:8px;">B</th>
+                        <th style="padding:8px;">SR</th>
+                    </tr>
+                    <tr style="text-align:right; border-bottom:1px solid #f9f9f9;">
+                        <td style="text-align:left; padding:10px; color:#1A73E8; font-weight:bold;">${data.batsman1} *</td>
+                        <td style="padding:8px; font-weight:bold;">${data.b1_runs}</td>
+                        <td style="padding:8px;">${data.b1_balls || 0}</td>
+                        <td style="padding:8px; color:#02b089;">${(data.b1_balls > 0 ? (data.b1_runs/data.b1_balls*100).toFixed(1) : "0.0")}</td>
+                    </tr>
+                    <tr style="text-align:right;">
+                        <td style="text-align:left; padding:10px; color:#1A73E8;">${data.batsman2}</td>
+                        <td style="padding:8px; font-weight:bold;">${data.b2_runs}</td>
+                        <td style="padding:8px;">${data.b2_balls || 0}</td>
+                        <td style="padding:8px;">${(data.b2_balls > 0 ? (data.b2_runs/data.b2_balls*100).toFixed(1) : "0.0")}</td>
+                    </tr>
+                </table>
 
-        // 3. टॉस की जानकारी
-        if(document.getElementById('toss-info')) 
-            document.getElementById('toss-info').innerText = `${data.tossWinner} ${data.tossDecision}`;
-
-        // 4. स्ट्राइकर और नॉन-स्ट्राइकर (लाइव टेबल के लिए)
-        if(document.getElementById('b1-name')) document.getElementById('b1-name').innerText = data.batsman1 + " *";
-        if(document.getElementById('b1-r')) document.getElementById('b1-r').innerText = data.b1_runs;
-        if(document.getElementById('b2-name')) document.getElementById('b2-name').innerText = data.batsman2;
-        if(document.getElementById('b2-r')) document.getElementById('b2-r').innerText = data.b2_runs;
-
-        // 5. बॉलर का डेटा
-        if(document.getElementById('bw-name')) document.getElementById('bw-name').innerText = data.bowler;
-        if(document.getElementById('bw-w')) document.getElementById('bw-w').innerText = data.bowler_wickets;
+                <table style="width:100%; border-collapse:collapse; font-size:13px; background:#fff; color:#000;">
+                    <tr style="border-bottom:1px solid #eee; text-align:right;">
+                        <th style="text-align:left; padding:8px;">BOWLER</th>
+                        <th style="padding:8px;">O</th>
+                        <th style="padding:8px;">R</th>
+                        <th style="padding:8px;">W</th>
+                        <th style="padding:8px;">EC</th>
+                    </tr>
+                    <tr style="text-align:right;">
+                        <td style="text-align:left; padding:10px; color:#1A73E8; font-weight:bold;">${data.bowler}</td>
+                        <td style="padding:8px;">${data.bowler_overs || "0.0"}</td>
+                        <td style="padding:8px;">${data.bowler_runs || 0}</td>
+                        <td style="padding:8px; color:#d32f2f; font-weight:bold;">${data.bowler_wickets}</td>
+                        <td style="padding:8px; color:#02b089;">${data.bowler_overs > 0 ? (data.bowler_runs/data.bowler_overs).toFixed(1) : "0.0"}</td>
+                    </tr>
+                </table>
+            `;
+            liveWrapper.innerHTML = tableHtml;
+        }
         
-        console.log("Match Live Updated: " + fullScore);
+        console.log("Firebase UI Sync Done ✅");
     }
-  });
+});
+  
 </script>
     
    <div id="home-section" class="tab-content"> 
