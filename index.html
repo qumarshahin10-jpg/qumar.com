@@ -1174,7 +1174,6 @@ body {
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
-  // सभी टूल्स को ग्लोबल बनाना ताकि नीचे वाला फंक्शन इन्हें इस्तेमाल कर सके
   window.db = db;
   window.dbRef = ref;
   window.dbSet = set;
@@ -1184,34 +1183,39 @@ body {
   onValue(ref(db, 'live_match_data'), (snapshot) => {
     const data = snapshot.val();
     if (data) {
-        // टॉस और टीम के नाम
+        // 1. टीम के नाम (Home Card और Main Tab दोनों के लिए)
+        const t1NameElem = document.getElementById('d-t1-name') || document.getElementById('home-t1-name') || document.getElementById('batting-team');
+        const t2NameElem = document.getElementById('d-t2-name') || document.getElementById('home-t2-name') || document.getElementById('bowling-team');
+        
+        if(t1NameElem) t1NameElem.innerText = data.battingTeam;
+        if(t2NameElem) t2NameElem.innerText = data.bowlingTeam;
+
+        // 2. मुख्य स्कोर (जैसे: 105/2 (12.4))
+        let ov = `${Math.floor(data.balls/6)}.${data.balls%6}`;
+        let fullScore = `${data.runs}/${data.wickets} (${ov})`;
+
+        const scoreElem = document.getElementById('d-t1-score') || document.getElementById('home-t1-score');
+        if(scoreElem) scoreElem.innerText = fullScore;
+
+        // 3. टॉस की जानकारी
         if(document.getElementById('toss-info')) 
             document.getElementById('toss-info').innerText = `${data.tossWinner} ${data.tossDecision}`;
-        if(document.getElementById('batting-team')) 
-            document.getElementById('batting-team').innerText = data.battingTeam;
-        if(document.getElementById('bowling-team')) 
-            document.getElementById('bowling-team').innerText = data.bowlingTeam;
 
-        // मुख्य स्कोर (जैसे: 105/2 (12.4 Ov))
-        if(document.getElementById('home-t1-score')) {
-            let ov = `${Math.floor(data.balls/6)}.${data.balls%6}`;
-            document.getElementById('home-t1-score').innerText = `${data.runs}/${data.wickets} (${ov})`;
-        }
-
-        // स्ट्राइकर और नॉन-स्ट्राइकर का डेटा
+        // 4. स्ट्राइकर और नॉन-स्ट्राइकर (लाइव टेबल के लिए)
         if(document.getElementById('b1-name')) document.getElementById('b1-name').innerText = data.batsman1 + " *";
         if(document.getElementById('b1-r')) document.getElementById('b1-r').innerText = data.b1_runs;
         if(document.getElementById('b2-name')) document.getElementById('b2-name').innerText = data.batsman2;
         if(document.getElementById('b2-r')) document.getElementById('b2-r').innerText = data.b2_runs;
 
-        // बॉलर का डेटा
+        // 5. बॉलर का डेटा
         if(document.getElementById('bw-name')) document.getElementById('bw-name').innerText = data.bowler;
         if(document.getElementById('bw-w')) document.getElementById('bw-w').innerText = data.bowler_wickets;
         
-        console.log("Firebase Data Synced to UI ✅");
+        console.log("Match Live Updated: " + fullScore);
     }
   });
 </script>
+    
    <div id="home-section" class="tab-content"> 
     <div id="upcoming-matches-container" style="display: flex; overflow-x: auto; gap: 12px; padding: 15px 10px; scrollbar-width: none; -webkit-overflow-scrolling: touch; align-items: flex-start; flex-wrap: nowrap;">
         </div>
