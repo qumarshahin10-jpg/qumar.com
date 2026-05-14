@@ -1189,34 +1189,42 @@ body {
         if(document.getElementById('d-t2-name')) document.getElementById('d-t2-name').innerText = data.bowlingTeam;
         if(document.getElementById('d-t1-score')) document.getElementById('d-t1-score').innerText = `${data.runs}/${data.wickets} (${ov})`;
 
-        // --- 2. बल्लेबाज़ और बॉलर की लाइव टेबल बनाना ---
-        // 'live-data-wrapper' वह डिब्बा है जहाँ टेबल दिखेगी
         let liveWrapper = document.getElementById("live-data-wrapper");
         if(liveWrapper) {
+            // स्ट्राइक रेट और इकॉनमी की सुरक्षा के लिए कैलकुलेशन
+            const getSR = (r, b) => (b > 0 ? ((r / b) * 100).toFixed(1) : "0.0");
+            const getEC = (r, o) => (o > 0 ? (r / o).toFixed(1) : "0.0");
+
             let tableHtml = `
                 <table style="width:100%; border-collapse:collapse; font-size:13px; margin-bottom:15px; background:#fff; color:#000;">
-                    <tr style="border-bottom:1px solid #eee; text-align:right;">
+                    <tr style="border-bottom:1px solid #eee; text-align:right; background:#f4f4f4;">
                         <th style="text-align:left; padding:8px;">BATTER</th>
                         <th style="padding:8px;">R</th>
                         <th style="padding:8px;">B</th>
+                        <th style="padding:8px;">4s</th>
+                        <th style="padding:8px;">6s</th>
                         <th style="padding:8px;">SR</th>
                     </tr>
                     <tr style="text-align:right; border-bottom:1px solid #f9f9f9;">
                         <td style="text-align:left; padding:10px; color:#1A73E8; font-weight:bold;">${data.batsman1} *</td>
-                        <td style="padding:8px; font-weight:bold;">${data.b1_runs}</td>
+                        <td style="padding:8px; font-weight:bold;">${data.b1_runs || 0}</td>
                         <td style="padding:8px;">${data.b1_balls || 0}</td>
-                        <td style="padding:8px; color:#02b089;">${(data.b1_balls > 0 ? (data.b1_runs/data.b1_balls*100).toFixed(1) : "0.0")}</td>
+                        <td style="padding:8px;">${data.b1_4s || 0}</td>
+                        <td style="padding:8px;">${data.b1_6s || 0}</td>
+                        <td style="padding:8px; color:#02b089;">${getSR(data.b1_runs, data.b1_balls)}</td>
                     </tr>
                     <tr style="text-align:right;">
                         <td style="text-align:left; padding:10px; color:#1A73E8;">${data.batsman2}</td>
-                        <td style="padding:8px; font-weight:bold;">${data.b2_runs}</td>
+                        <td style="padding:8px; font-weight:bold;">${data.b2_runs || 0}</td>
                         <td style="padding:8px;">${data.b2_balls || 0}</td>
-                        <td style="padding:8px;">${(data.b2_balls > 0 ? (data.b2_runs/data.b2_balls*100).toFixed(1) : "0.0")}</td>
+                        <td style="padding:8px;">${data.b2_4s || 0}</td>
+                        <td style="padding:8px;">${data.b2_6s || 0}</td>
+                        <td style="padding:8px; color:#02b089;">${getSR(data.b2_runs, data.b2_balls)}</td>
                     </tr>
                 </table>
 
                 <table style="width:100%; border-collapse:collapse; font-size:13px; background:#fff; color:#000;">
-                    <tr style="border-bottom:1px solid #eee; text-align:right;">
+                    <tr style="border-bottom:1px solid #eee; text-align:right; background:#f4f4f4;">
                         <th style="text-align:left; padding:8px;">BOWLER</th>
                         <th style="padding:8px;">O</th>
                         <th style="padding:8px;">R</th>
@@ -1227,17 +1235,17 @@ body {
                         <td style="text-align:left; padding:10px; color:#1A73E8; font-weight:bold;">${data.bowler}</td>
                         <td style="padding:8px;">${data.bowler_overs || "0.0"}</td>
                         <td style="padding:8px;">${data.bowler_runs || 0}</td>
-                        <td style="padding:8px; color:#d32f2f; font-weight:bold;">${data.bowler_wickets}</td>
-                        <td style="padding:8px; color:#02b089;">${data.bowler_overs > 0 ? (data.bowler_runs/data.bowler_overs).toFixed(1) : "0.0"}</td>
+                        <td style="padding:8px; color:#d32f2f; font-weight:bold;">${data.bowler_wickets || 0}</td>
+                        <td style="padding:8px; color:#02b089;">${getEC(data.bowler_runs, data.bowler_overs)}</td>
                     </tr>
                 </table>
             `;
             liveWrapper.innerHTML = tableHtml;
         }
-        
-        console.log("Firebase UI Sync Done ✅");
+        console.log("Professional UI Updated ✅");
     }
 });
+    
   
 </script>
     
