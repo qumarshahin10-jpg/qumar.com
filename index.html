@@ -395,9 +395,6 @@ textarea.setup-input {
     text-align: right; /* बैटर की तरह राइट अलाइन */
     min-width: 30px;
 }
-
-
-
 /* ensure bowler header has the same background as batter header */
 .bowler-header {
     background-color: #fefdf3; /* Cricbuzz-like light yellow */
@@ -433,7 +430,8 @@ textarea.setup-input {
     max-width: 400px;
     text-align: center;
 }
-      /* कन्टेंनर की सेटिंग */
+
+/* कन्टेंनर की सेटिंग */
 /* कन्टेंनर और फ्लेक्स बॉक्स सेटिंग */
 #controls-container {
     padding: 10px;
@@ -807,8 +805,9 @@ body {
 
 .team-slot:hover {
     background: #e1f5fe; /* हल्का नीला रंग */
-  }
-      .team-name {
+}
+
+.team-name {
     font-weight: bold;
     color: #333;
     width: 85%;
@@ -862,9 +861,8 @@ body {
     flex-direction: column;
     justify-content: space-around;
     min-width: 180px;
-}
-
-.match-card {
+    }
+  .match-card {
     background: white;
     border: 1px solid #ddd;
     border-radius: 8px;
@@ -1161,6 +1159,7 @@ body {
 </head>
 
 <body>
+
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -1169,92 +1168,51 @@ body {
     apiKey: "AIzaSyAEuQ3up4s30SWJVTNcMsIzG5FJNBH0iiM",
     authDomain: "livescore-77e1e.firebaseapp.com",
     projectId: "livescore-77e1e",
-    storageBucket: "livescore-77e1e.firebasestorage.app",
-    messagingSenderId: "369945019905",
-    appId: "1:369945019905:web:00730e3e484ab4efd5a200",
-    measurementId: "G-23H0RK3WBZ",
     databaseURL: "https://livescore-77e1e-default-rtdb.firebaseio.com/" 
   };
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
-  // Global window object में फंक्शन्स डालना ताकि आप अपनी .js फाइल से इन्हें चला सकें
+  // सभी टूल्स को ग्लोबल बनाना ताकि नीचे वाला फंक्शन इन्हें इस्तेमाल कर सके
   window.db = db;
   window.dbRef = ref;
   window.dbSet = set;
   window.dbUpdate = update;
-  window.dbOnValue = onValue;
 
-  // --- 1. दर्शकों (दोस्त) के लिए रीयल-टाइम अपडेट लॉजिक ---
-  // यह हिस्सा आपके दोस्तों के मोबाइल पर स्कोर अपडेट करेगा
+  // --- दर्शकों के लिए ऑटो-अपडेट (OnValue) ---
   onValue(ref(db, 'live_match_data'), (snapshot) => {
     const data = snapshot.val();
     if (data) {
-        // स्कोर और ओवर (जैसे: 100/2 (10.4))
+        // टॉस और टीम के नाम
+        if(document.getElementById('toss-info')) 
+            document.getElementById('toss-info').innerText = `${data.tossWinner} ${data.tossDecision}`;
+        if(document.getElementById('batting-team')) 
+            document.getElementById('batting-team').innerText = data.battingTeam;
+        if(document.getElementById('bowling-team')) 
+            document.getElementById('bowling-team').innerText = data.bowlingTeam;
+
+        // मुख्य स्कोर (जैसे: 105/2 (12.4 Ov))
         if(document.getElementById('home-t1-score')) {
             let ov = `${Math.floor(data.balls/6)}.${data.balls%6}`;
             document.getElementById('home-t1-score').innerText = `${data.runs}/${data.wickets} (${ov})`;
         }
 
-        // टीम का नाम
-        if(document.getElementById('batting-team-name')) {
-            document.getElementById('batting-team-name').innerText = data.battingTeam || "Team A";
-        }
+        // स्ट्राइकर और नॉन-स्ट्राइकर का डेटा
+        if(document.getElementById('b1-name')) document.getElementById('b1-name').innerText = data.batsman1 + " *";
+        if(document.getElementById('b1-r')) document.getElementById('b1-r').innerText = data.b1_runs;
+        if(document.getElementById('b2-name')) document.getElementById('b2-name').innerText = data.batsman2;
+        if(document.getElementById('b2-r')) document.getElementById('b2-r').innerText = data.b2_runs;
 
-        // बल्लेबाज 1
-        if(document.getElementById('curr-batsman1')) {
-            document.getElementById('curr-batsman1').innerText = `${data.batsman1}: ${data.b1_runs}(${data.b1_balls})`;
-        }
+        // बॉलर का डेटा
+        if(document.getElementById('bw-name')) document.getElementById('bw-name').innerText = data.bowler;
+        if(document.getElementById('bw-w')) document.getElementById('bw-w').innerText = data.bowler_wickets;
         
-        // बल्लेबाज 2
-        if(document.getElementById('curr-batsman2')) {
-            document.getElementById('curr-batsman2').innerText = `${data.batsman2}: ${data.b2_runs}(${data.b2_balls})`;
-        }
-
-        // गेंदबाज
-        if(document.getElementById('curr-bowler')) {
-            document.getElementById('curr-bowler').innerText = data.bowler || "Bowler";
-        }
-        
-        console.log("Viewer Screen Updated! ✅");
+        console.log("Firebase Data Synced to UI ✅");
     }
   });
-
-  // --- 2. डेटा भेजने (Admin Sync) का मास्टर फंक्शन ---
-  // जब आप स्कोरिंग करेंगे, तो इस फंक्शन को कॉल करना होगा
-  window.syncEverythingToFirebase = function() {
-      if (!window.db) return;
-
-      const matchData = {
-          runs: typeof runs !== 'undefined' ? runs : 0,
-          wickets: typeof wickets !== 'undefined' ? wickets : 0,
-          balls: typeof balls !== 'undefined' ? balls : 0,
-          battingTeam: typeof team1Name !== 'undefined' ? (currentBattingSide === "A" ? team1Name : team2Name) : "Batting Team",
-          
-          // बल्लेबाज (स्ट्राइकर और नॉन-स्ट्राइकर)
-          batsman1: typeof b1_name !== 'undefined' ? b1_name : "Batsman 1",
-          b1_runs: typeof b1_runs !== 'undefined' ? b1_runs : 0,
-          b1_balls: typeof b1_balls !== 'undefined' ? b1_balls : 0,
-
-          batsman2: typeof b2_name !== 'undefined' ? b2_name : "Batsman 2",
-          b2_runs: typeof b2_runs !== 'undefined' ? b2_runs : 0,
-          b2_balls: typeof b2_balls !== 'undefined' ? b2_balls : 0,
-
-          bowler: typeof currentBowlerName !== 'undefined' ? currentBowlerName : "Bowler",
-          timestamp: Date.now()
-      };
-
-      // Firebase में अपडेट भेजें
-      update(ref(db, 'live_match_data'), matchData)
-      .then(() => console.log("Firebase Data Synced! 🚀"))
-      .catch((err) => console.error("Sync Error:", err));
-  };
-
-  console.log("Firebase Initialized Successfully! ✅");
-        </script>
-    
-<div id="home-section" class="tab-content"> 
+</script>
+   <div id="home-section" class="tab-content"> 
     <div id="upcoming-matches-container" style="display: flex; overflow-x: auto; gap: 12px; padding: 15px 10px; scrollbar-width: none; -webkit-overflow-scrolling: touch; align-items: flex-start; flex-wrap: nowrap;">
         </div>
 </div>
@@ -1347,6 +1305,14 @@ body {
         </div>
     </div>
 </section>
+
+
+
+
+
+
+
+
 <div class="bottom-nav">
     <div class="nav-item " onclick="navTo('home', this)">
         <i class="fa-solid fa-house"></i>
@@ -1652,8 +1618,7 @@ body {
 
         
     </div>
-
-<div class="pro-scorecard-card bowler-card" style="margin-top: 15px;">
+    <div class="pro-scorecard-card bowler-card" style="margin-top: 15px;">
     <div class="ps-team-header" id="ps-bowling-team-header">
         <span class="ps-tname">Team 2 ⚾</span>
         <span class="ps-tscore">0.0 Overs</span>
@@ -1720,8 +1685,9 @@ body {
             <span id="val-team1">50%</span>
             <span id="val-team2">50%</span>
         </div>
-  </div>
-      <div id="ball-map-container" style="display: block; padding: 10px; background: #f0f0f0;">
+    </div>
+
+    <div id="ball-map-container" style="display: block; padding: 10px; background: #f0f0f0;">
         <div class="filters" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px; justify-content: center;">
             <button id="filter-inn1" class="sub-tab-btn active" style="font-size: 11px; border-radius: 15px;" onclick="filterBallMap('inn1')">Innings 1</button>
             <button id="filter-inn2" class="sub-tab-btn" style="font-size: 11px; border-radius: 15px;" onclick="filterBallMap('inn2')">Innings 2</button>
@@ -1920,9 +1886,7 @@ body {
         <div class="p-row" style="display:flex; align-items:center; margin-bottom:5px;"><span>12</span><input type="checkbox" id="check-B-11" onclick="handleLiveSelection(11, 'B')" class="pick-check"><input type="text" class="p-input tb" style="flex:1;"></div>
     </div>
 </div>
-         
-
-
+  
     <div class="setup-footer">
      <span class="advanced-settings-text" onclick="openAdvanced()">
     Advanced settings
@@ -1961,7 +1925,10 @@ body {
         ">❌</button>
     </div>
     
-        <div class="setup-card" style="padding:15px;">
+    
+
+    
+    <div class="setup-card" style="padding:15px;">
         <div class="setup-header" onclick="toggleTeamInputs()" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; background:#f9f9f9; padding:10px; border-radius:8px;">
             <span id="toggle-icon" style="color: #02b089; font-weight:bold;">▼ ALL TEAMS NAME (16 Teams)</span>
         </div>
@@ -2257,28 +2224,35 @@ function openLiveScorecard(status) {
         alert("Ye match khatam ho chuka hai, iski details History mein dekhein.");
     }
 }
+function switchToLiveMatch() {
+    isHistoryMode = false; // हिस्ट्री मोड को तुरंत बंद करें
+    viewingHistoryData = null; // किसी भी पुराने लोडेड मैच डेटा को हटा दें
+    
+    activeScorecardTab = innings; // लाइव मैच की मौजूदा पारी दिखाएँ
+    
+    // सेक्शन बदलें
+    showSection('scorecard-section'); // या 'live-section' जो भी आपकी ID है
+    
+    // UI अपडेट करें
+    renderScorecard(); 
+    console.log("Cricbuzz Style: Back to Live Score! ✅");
+}
 
 // ✅ यह सपोर्ट फंक्शन है जो क्लिक होने पर काम करेगा
 function handleHomeCardClick(status, matchId) {
-    if (status === 'LIVE' || status === 'Live') {
-        // 1. History mode ko off karein taaki live data dikhe
-        isHistoryMode = false;
+    if (status.toUpperCase() === 'LIVE') {
+        window.isHistoryMode = false;
         window.viewingHistoryData = null; 
 
-        // 2. Scorecard tab ko current innings par set karein
-        activeScorecardTab = innings; 
+        // लाइव इनिंग्स पर टैब सेट करें
+        activeScorecardTab = (typeof innings !== 'undefined') ? innings : 1; 
 
-        // 3. Scorecard section dikhayein
-        showSection('scorecard-section');
-
-        // 4. UI update karein taaki live data rander ho
-        renderScorecard();
-        update(); 
+        // यहाँ navTo को बिना दूसरे पैरामीटर (this) के कॉल करें
+        navTo('scorecard'); 
         
-        console.log("Live Match Clicked - Showing Live Scorecard");
+        console.log(`Cricbuzz Mode: Live Match ${matchId} ✅`);
     } else {
-        // Agar completed hai to purana history wala logic chale
-        viewThisMatch(matchId);
+        viewPastMatchScorecard(matchId); 
     }
 }
 
@@ -2314,8 +2288,6 @@ function saveMatchToHistory(matchNum) {
 
 function viewThisMatch(mNum) {
     const history = JSON.parse(localStorage.getItem('full_match_history')) || {};
-    
-    // सुधार: 'match_' हटा दिया क्योंकि saveMatchToHistory सिर्फ नंबर सेव करता है
     const data = history[String(mNum)];
 
     if (!data) {
@@ -2323,40 +2295,29 @@ function viewThisMatch(mNum) {
         return;
     }
 
-    // डेटा को ग्लोबल बनाएँ ताकि renderScorecard इसे पढ़ सके
-    window.viewingHistoryData = data; 
-    activeScorecardTab = 1; 
+    // --- ✅ मुख्य सुधार यहाँ है ---
+    window.isHistoryMode = true;      // अब हम हिस्ट्री मोड में हैं
+    window.viewingHistoryData = data; // पुराने मैच का डेटा भरा
+    activeScorecardTab = 1;           // पहली पारी से शुरुआत करें
+
+    // डेटा को रेंडरिंग वेरिएबल्स में सेट करें (ताकि स्कोरकार्ड उसे दिखा सके)
+    // नोट: ये आपके डेटा स्ट्रक्चर के हिसाब से होने चाहिए
+    if(data.innings1Batsmen) innings1Batsmen = data.innings1Batsmen;
+    if(data.innings1Bowlers) innings1Bowlers = data.innings1Bowlers;
+    if(data.innings2Batsmen) batsmen = data.innings2Batsmen;
+    if(data.innings2Bowlers) bowlers = data.innings2Bowlers;
 
     // सेक्शन बदलें
     showSection('scorecard-section'); 
     
-    // स्कोरकार्ड रिफ्रेश करें
+    // स्कोरकार्ड को नए डेटा के साथ रिफ्रेश करें
     if(typeof renderScorecard === 'function') {
-        setTimeout(() => { renderScorecard(); }, 50);
+        renderScorecard();
     }
 
-
-    // --- डेटा को रेंडरर (Renderer) में भरना ---
-    innings1Batsmen = data.scorecard.inn1.bat;
-    innings1Bowlers = data.scorecard.inn1.bowl;
-    batsmen = data.scorecard.inn2.bat;
-    bowlers = data.scorecard.inn2.bowl;
-
-    // FOW डेटा को UI में सेट करें
-    let fow1 = document.getElementById('fow-list-1');
-    let fow2 = document.getElementById('fow-list-2');
-    if(fow1) fow1.innerHTML = data.fow.f1.join('');
-    if(fow2) fow2.innerHTML = data.fow.f2.join('');
-
-    // सेक्शन बदलें (Scorecard पर ले जाएँ)
-    showSection('scorecard-section'); 
-    
-    // स्कोरकार्ड रिफ्रेश करें
-    if(typeof renderScorecard === 'function') renderScorecard();
-    
-    alert(`Showing details for M-${mNum}: ${data.teams.a} vs ${data.teams.b}`);
+    console.log(`Cricbuzz Style: viewing history of M-${mNum}`);
 }
-function viewPastMatchScorecard(matchNum) {
+  function viewPastMatchScorecard(matchNum) {
     console.log("Viewing History for Match:", matchNum);
     
     const history = JSON.parse(localStorage.getItem('full_match_history')) || {};
@@ -2368,7 +2329,8 @@ function viewPastMatchScorecard(matchNum) {
         alert("Oops! Match " + matchNum + " का डेटा नहीं मिला।");
         return;
     }
-      // 1. डेटा को ग्लोबल बनाएँ (renderScorecard इसे यहीं से उठाएगा)
+
+    // 1. डेटा को ग्लोबल बनाएँ (renderScorecard इसे यहीं से उठाएगा)
     window.viewingHistoryData = matchData; 
 
     // 2. टैब को 1st Innings पर रीसेट करें ताकि शुरू से स्कोरकार्ड दिखे
@@ -2697,8 +2659,7 @@ function renderScorecard() {
     }
     const batContainer = document.getElementById("ps-t1-batting");
     if(batContainer) batContainer.innerHTML = batterHtml;
-
-    // --- 5. गेंदबाजों की लिस्ट ---
+        // --- 5. गेंदबाजों की लिस्ट ---
     let bowlerHtml = "";
     if (displayBowlers && displayBowlers.length > 0) {
         displayBowlers.forEach(bw => {
@@ -2733,7 +2694,8 @@ function renderScorecard() {
      // --- 6. Fall of Wickets (अब History और Live दोनों के साथ मेल खाएगा) ---
     let fowHtml = "";
     let storageKey = (activeScorecardTab === 1) ? 'match_fow_data_inn1' : 'match_fow_data_inn2';
-      if (d) {
+
+    if (d) {
         // ✅ HISTORY के लिए सुधार: 
         // क्योंकि endMatch अब Array सेव करता है, इसलिए यहाँ join('') करना ज़रूरी है
         let rawHistoryFow = (activeScorecardTab === 1) ? d.fowInn1 : d.fowInn2;
@@ -3031,7 +2993,11 @@ if(typeof currentBowler !== 'undefined' && currentBowler && currentBowler.name) 
             <td style="padding:8px; color:#02b089; font-weight:bold;">${econ}</td>
         </tr>
     </table>`;
-}
+    }
+    // --- update() फंक्शन के अंदर कहीं भी पेस्ट करें ---
+finalLiveHtml += `<div id="b1-name" style="display:none;">${batsmen[striker] ? batsmen[striker].name : ""}</div>`;
+finalLiveHtml += `<div id="b2-name" style="display:none;">${batsmen[nonStriker] ? batsmen[nonStriker].name : ""}</div>`;
+finalLiveHtml += `<div id="bw-name" style="display:none;">${currentBowler ? currentBowler.name : ""}</div>`;
 
 // 🔴 ओवर ट्रैकर (Over Tracker) का डिब्बा
 finalLiveHtml += `<div id="overtracker" style="margin-top:15px; min-height:30px; display:flex; gap:6px; justify-content:center; align-items:center;"></div>`;
@@ -3041,7 +3007,29 @@ if(document.getElementById("live-data-wrapper")) {
     document.getElementById("live-data-wrapper").innerHTML = finalLiveHtml;
 }
 
+// स्ट्राइकर का नाम और स्कोर ID में डालें
+if(batsmen[striker]) {
+    let b1Elem = document.getElementById('b1-name');
+    if(b1Elem) b1Elem.innerText = batsmen[striker].name;
+    let b1rElem = document.getElementById('b1-r');
+    if(b1rElem) b1rElem.innerText = batsmen[striker].runs;
+}
 
+// नॉन-स्ट्राइकर का नाम और स्कोर ID में डालें
+if(batsmen[nonStriker]) {
+    let b2Elem = document.getElementById('b2-name');
+    if(b2Elem) b2Elem.innerText = batsmen[nonStriker].name;
+    let b2rElem = document.getElementById('b2-r');
+    if(b2rElem) b2rElem.innerText = batsmen[nonStriker].runs;
+}
+
+// बॉलर का नाम और विकेट ID में डालें
+if(currentBowler) {
+    let bwElem = document.getElementById('bw-name');
+    if(bwElem) bwElem.innerText = currentBowler.name;
+    let bwwElem = document.getElementById('bw-w');
+    if(bwwElem) bwwElem.innerText = currentBowler.wickets;
+}
     if(typeof renderOverTracker === "function") renderOverTracker();
     if(typeof renderScorecard === "function") renderScorecard();
     if(typeof syncLiveCheckboxes === "function") syncLiveCheckboxes();
@@ -3189,8 +3177,9 @@ function play(r) {
     } catch (err) {
         console.error("Play Function Error: ", err);
     }
-  }
-  function checkOver() {
+}
+
+function checkOver() {
     let maxOvers = parseInt(document.getElementById('matchOvers').value) || 0;
     let totalMaxBalls = maxOvers * 6;
 
@@ -3483,11 +3472,8 @@ function undo() {
             update();
         }
     }, 400);
-}
-
-
-    // --- Wide Ball Function ---
-function wideBall() {
+    }
+    function wideBall() {
     if(matchOver || !currentBowler) {
         if(!currentBowler) alert("कृपया पहले बॉलर चुनें!");
         return;
@@ -3572,7 +3558,15 @@ function showTab(tabName) {
 function startThisMatch(index) {
     let schedule = JSON.parse(localStorage.getItem('bkcc_schedule')) || [];
     let match = schedule[index];
-      if (!confirm(`${match.teamA} vs ${match.teamB} का स्कोर शुरू करें?`)) return;
+
+    if (!confirm(`${match.teamA} vs ${match.teamB} का स्कोर शुरू करें?`)) return;
+    
+    
+    // --- ✅ नया सुधार: पुराने डेटा को साफ़ करें ---
+    window.isHistoryMode = false;
+    window.viewingHistoryData = null;
+    // ------------------------------------------
+
 
     // 1. लाइव इनपुट बॉक्स में नाम भरना (IDs चेक कर लें कि यही हैं)
     document.getElementById('t1NameInput').value = match.teamA;
@@ -3594,6 +3588,10 @@ function startThisMatch(index) {
 
 function startMatchWithPlayers() {
     try {
+        window.isHistoryMode = false;      // हिस्ट्री मोड बंद करें
+        window.viewingHistoryData = null; // पुराना डेटा पूरी तरह साफ़ करें
+        localStorage.removeItem('match_fow_data_inn1'); // पुरानी विकेटों की लिस्ट साफ करें
+        localStorage.removeItem('match_fow_data_inn2');
         // 1. इनपुट से डेटा लें
         let t1NameInput = document.getElementById('t1NameInput');
         let t2NameInput = document.getElementById('t2NameInput');
@@ -3974,8 +3972,9 @@ function toggleScheduleInputs() {
         populateTeamDropdowns();
         renderScheduleManagerList();
     }
-  }
-  // 2. टीमों की ड्रॉपडाउन लिस्ट (Team A / Team B) भरना
+}
+
+// 2. टीमों की ड्रॉपडाउन लिस्ट (Team A / Team B) भरना
 function populateTeamDropdowns() {
     const dropdownA = document.getElementById('sched-team-a');
     const dropdownB = document.getElementById('sched-team-b');
@@ -3996,9 +3995,8 @@ function populateTeamDropdowns() {
             dropdownB.innerHTML += option;
         }
     });
-}
-
-// 3. नया मैच LocalStorage में जोड़ना
+    }
+    // 3. नया मैच LocalStorage में जोड़ना
 function addMatchToSchedule() {
     const matchNum = document.getElementById('sched-match-num').value;
     const teamA = document.getElementById('sched-team-a').value;
@@ -4266,8 +4264,9 @@ function endMatch() {
         console.error("End Match Error:", err);
         alert("Something went wrong while finishing the match!");
     }
-  }
-  function selectPlayer(element, team) {
+}
+
+function selectPlayer(element, team) {
     // इनपुट बॉक्स से नाम उठाना
     let playerName = element.parentElement.querySelector('input[type="text"]').value.trim();
     
@@ -4388,57 +4387,44 @@ function showMatchHistory() {
 });
 
 function navTo(page, element) {
-    // 1. क्लीनअप - सब जगह से Active क्लास हटाना
+    // 1. UI Cleanup
     document.querySelectorAll('.nav-item, .tabs button').forEach(item => {
         item.classList.remove('active');
     });
 
-    // 2. सिर्फ अभी क्लिक किए गए बटन को Active करना
+    // 2. सिर्फ तभी रिसेट करें जब नीचे के मेनू बार (element) से क्लिक हुआ हो
     if (element) {
         element.classList.add('active');
+        // अगर 'Live' या 'Home' बटन दबाया है, तभी हिस्ट्री मोड बंद करें
+        if (page === 'live' || page === 'home') {
+            window.viewingHistoryData = null;
+            window.isHistoryMode = false;
+            console.log("Manual Navigation: Live Mode Active");
+        }
     }
 
-    // 3. पुराने सारे सेक्शन्स को छुपाना
+    // 3. Sections छुपाना
     const sections = document.querySelectorAll('.tab-content');
-    sections.forEach(sec => {
-        sec.style.display = 'none';
-    });
-  if (page === 'live' || page === 'home') {
-        viewingHistoryData = null; // हिस्ट्री मोड बंद करें
-        console.log("Back to Live Mode!");
-    }
-    // 4. सही सेक्शन की ID चुनना (यहीं सुधार की जरूरत थी)
-    let targetId;
-    
-    if (page === 'matches') {
-        targetId = 'matches-sec';
-    } else if (page === 'gallery') {
-        targetId = 'gallery-tab';
-    } else if (page === 'home') {
-        targetId = 'home-section';
-    } else if (page === 'history') {
-        targetId = 'history-section';
-    } else if (page === 'activity') { // <-- यह नया जोड़ा है
-        targetId = 'activity-tab';
-    } else {
-        // live, info, scorecard के लिए
-        targetId = page + '-tab';
-    }
+    sections.forEach(sec => { sec.style.display = 'none'; });
 
-    // 5. सेक्शन दिखाना
+    // 4. सही सेक्शन दिखाना
+    let targetId = (page === 'matches') ? 'matches-sec' : 
+                   (page === 'home') ? 'home-section' : 
+                   (page === 'history') ? 'history-section' : 
+                   (page === 'activity') ? 'activity-tab' : page + '-tab';
+
     let targetSection = document.getElementById(targetId);
     if (targetSection) {
         targetSection.style.display = 'block';
-        console.log("Success: Switched to " + page);
-    } else {
-        console.error("Error: ID " + targetId + " नहीं मिली!");
     }
 
-    // 6. हर पेज के हिसाब से उसके फंक्शन चलाना
-    if (page === 'gallery' && typeof displayGallery === "function") displayGallery();
-    if (page === 'matches' && typeof renderBracket === "function") renderBracket();
-    if (page === 'home' && typeof update === "function") update();
-    if (page === 'history' && typeof loadMatchHistory === "function") loadMatchHistory();
+    // 5. रेंडरिंग (Update UI)
+    if (page === 'home' || page === 'live') {
+        if (typeof update === "function") update();
+    }
+    if (page === 'scorecard') {
+        if (typeof renderScorecard === "function") renderScorecard();
+    }
 }
 
 function handleLiveSelection(index, teamSide) {
@@ -4603,8 +4589,9 @@ function renderScheduleManagerList() {
     });
     
     managerList.innerHTML = html || '<p style="text-align:center; color:#999;">कोई मैच शेड्यूल नहीं है।</p>';
-  }
-  // 2. एडमिन एरिया से मैच डिलीट करने का लॉजिक
+}
+
+// 2. एडमिन एरिया से मैच डिलीट करने का लॉजिक
 function deleteMatch(index) {
     let schedule = JSON.parse(localStorage.getItem('bkcc_schedule')) || [];
     
@@ -4876,9 +4863,8 @@ function displayGallery() {
 
         grid.appendChild(wrapper);
     });
-}
-
-// 3. Photo delete karne ka function
+    }
+    // 3. Photo delete karne ka function
 function deletePhoto(index, isAdminView = false) {
     // Confirm box taaki galti se delete na ho
     if (confirm("Kya aap sach mein ye photo delete karna chahte hain?")) {
@@ -4904,7 +4890,10 @@ function deletePhoto(index, isAdminView = false) {
             alert("Delete karne mein error aaya!");
         }
     }
-}function renderAdminGallery() {
+}
+
+
+function renderAdminGallery() {
     const adminList = document.getElementById('admin-gallery-list');
     if (!adminList) return;
 
@@ -5232,7 +5221,8 @@ function addFOW(batsmanName, runsAtWicket, wicketNum, overAtWicket) {
             </div>
         </div>
     `;
-      // 2. डेटा को लोकल स्टोरेज से निकालें
+
+    // 2. डेटा को लोकल स्टोरेज से निकालें
     let storageKey = 'match_fow_data_inn' + innings;
     let thisInningsFOW = JSON.parse(localStorage.getItem(storageKey)) || [];
     
@@ -5312,9 +5302,8 @@ syncBatter("home-nonStriker-name", nonStriker, false); // Non-Striker के ल
     } catch (err) {
         console.error("Home Card Sync Error:", err);
     }
-}
-
-function displayUpcomingOnHome() {
+    }
+    function displayUpcomingOnHome() {
     const upcomingContainer = document.getElementById("upcoming-matches-container");
     const storedSchedule = localStorage.getItem('bkcc_schedule');
     let scheduleArray = JSON.parse(storedSchedule) || [];
@@ -5482,64 +5471,63 @@ function showHistory() {
     loadMatchHistory();
 }
 
-
-// JavaScript के सबसे अंत में इसे जोड़ें
 function syncEverythingToFirebase() {
-    // 1. Check if Firebase is ready
-    if (!window.db || !window.dbRef || !window.dbSet) {
-        console.warn("Firebase not ready yet!");
+    if (!window.db || !window.dbRef || !window.dbUpdate) {
+        console.warn("Firebase Loader waiting...");
         return;
     }
 
     try {
+        // UI से नाम उठाना (Trim के साथ ताकि एक्स्ट्रा स्पेस न रहे)
+        const realBatsman1 = document.getElementById('b1-name')?.innerText.replace('*', '').trim() || "Batsman 1";
+        const realBatsman2 = document.getElementById('b2-name')?.innerText.trim() || "Batsman 2";
+        const realBowler = document.getElementById('bw-name')?.innerText.trim() || "Bowler";
+
+        // डेटाबेस के लिए ऑब्जेक्ट तैयार करना
         const matchData = {
-            // बेसिक स्कोर डेटा
+            innings: typeof innings !== 'undefined' ? innings : 1,
+            target: typeof target !== 'undefined' ? target : 0,
             runs: typeof runs !== 'undefined' ? runs : 0,
             wickets: typeof wickets !== 'undefined' ? wickets : 0,
             balls: typeof balls !== 'undefined' ? balls : 0,
-            innings: typeof innings !== 'undefined' ? innings : 1,
-            target: typeof target !== 'undefined' ? target : 0,
+            battingTeam: (currentBattingSide === "A") ? team1Name : team2Name,
+            bowlingTeam: (currentBattingSide === "A") ? team2Name : team1Name,
 
-            // टीम के नाम (Innings के हिसाब से)
-            battingTeam: (typeof currentBattingSide !== 'undefined') ? (currentBattingSide === "A" ? team1Name : team2Name) : "Batting Team",
-            bowlingTeam: (typeof currentBattingSide !== 'undefined') ? (currentBattingSide === "A" ? team2Name : team1Name) : "Bowling Team",
-
-            // बल्लेबाजों का डेटा
-            batsman1: typeof b1_name !== 'undefined' ? b1_name : "Batsman 1",
-            b1_runs: typeof b1_runs !== 'undefined' ? b1_runs : 0,
-            b1_balls: typeof b1_balls !== 'undefined' ? b1_balls : 0,
+            // बल्लेबाजों का डेटा (सीधे Array से उठाना बेस्ट है)
+            batsman1: realBatsman1,
+            b1_runs: (batsmen[striker]) ? batsmen[striker].runs : 0,
+            b1_balls: (batsmen[striker]) ? batsmen[striker].balls : 0,
             
-            batsman2: typeof b2_name !== 'undefined' ? b2_name : "Batsman 2",
-            b2_runs: typeof b2_runs !== 'undefined' ? b2_runs : 0,
-            b2_balls: typeof b2_balls !== 'undefined' ? b2_balls : 0,
+            batsman2: realBatsman2,
+            b2_runs: (batsmen[nonStriker]) ? batsmen[nonStriker].runs : 0,
+            b2_balls: (batsmen[nonStriker]) ? batsmen[nonStriker].balls : 0,
 
-            // गेंदबाज का डेटा
-            bowler: typeof currentBowlerName !== 'undefined' ? currentBowlerName : "Bowler",
-            bowler_runs: typeof bowlerRuns !== 'undefined' ? bowlerRuns : 0,
-            bowler_wickets: typeof bowlerWickets !== 'undefined' ? bowlerWickets : 0,
-            bowler_overs: typeof bowlerOvers !== 'undefined' ? bowlerOvers : "0.0",
+            // बॉलर का डेटा
+            bowler: realBowler,
+            bowler_wickets: (currentBowler) ? currentBowler.wickets : 0,
+            bowler_runs: (currentBowler) ? currentBowler.runs : 0,
 
             timestamp: Date.now()
         };
-          // छोटा स्कोर (Status के लिए)
+
+        // Firebase पर अपडेट भेजें
+        window.dbUpdate(window.dbRef(window.db, 'live_match_data'), matchData);
+        
+        // स्टेटस अपडेट (मैच का छोटा स्कोर)
         let ov = `${Math.floor(matchData.balls/6)}.${matchData.balls%6}`;
-        let shortScore = `${matchData.runs}/${matchData.wickets} (${ov} Ov)`;
+        window.dbSet(window.dbRef(window.db, 'match_status'), `${matchData.runs}/${matchData.wickets} (${ov})`);
         
-        // 2. Firebase में डेटा भेजना
-        window.dbSet(window.dbRef(window.db, 'match_status'), shortScore);
-        window.dbSet(window.dbRef(window.db, 'live_match_data'), matchData);
-        
-        console.log("Firebase Full Sync ✅:", shortScore);
+        console.log("Firebase Sync Success! 🚀");
+
     } catch (err) {
-        console.error("Firebase Sync Error:", err);
+        console.error("Sync Error:", err);
     }
 }
 
+
 </script>
+
 
 </body>
 </html>
-      
-
-  
-  
+        
