@@ -1693,7 +1693,12 @@ onValue(ref(db, 'live_match_data'), (snapshot) => {
             <span class="p-head-item h-sr">SR</span>
         </div>
 
-        <div id="ps-t1-batting" class="ps-list"></div>
+           <div id="ps-t1-batting" class="ps-list">
+    <table style="width:100%; border-collapse:collapse;">
+        <tbody id="scorecard-bat-body">
+            </tbody>
+    </table>
+           </div>
 
         
     </div>
@@ -1714,9 +1719,13 @@ onValue(ref(db, 'live_match_data'), (snapshot) => {
         <span class="p-head-item hb-nb">NB</span> 
         <span class="p-head-item hb-econ">ECON</span>
     </div>
-
-    <div id="ps-t2-bowling" class="ps-list">
-        </div>
+  <div id="ps-t2-bowling" class="ps-list">
+    <table style="width:100%; border-collapse:collapse;">
+        <tbody id="scorecard-bowl-body">
+            </tbody>
+    </table>
+  </div>
+    
 </div>
 
 
