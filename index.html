@@ -1181,6 +1181,7 @@ body {
   window.dbSet = set;
   window.dbUpdate = update;
      // --- दर्शकों के लिए ऑटो-अपडेट (OnValue) ---
+
 onValue(ref(db, 'live_match_data'), (snapshot) => {
     const data = snapshot.val();
     if (data) {
@@ -1244,52 +1245,55 @@ onValue(ref(db, 'live_match_data'), (snapshot) => {
             liveWrapper.innerHTML = tableHtml;
         }
 
-        // --- 3. 🚀 नया स्कोरकार्ड लॉजिक (बिना पुराने को छेड़े) ---
+        // --- 3. 🚀 नया स्कोरकार्ड लॉजिक (सुधरा हुआ) ---
         let batScoreHtml = "";
         let bowlScoreHtml = "";
 
-        // बल्लेबाजों का लूप
+        // बल्लेबाजों का लूप - Object.values का उपयोग किया गया है
         if (data.all_batsmen) {
-            data.all_batsmen.forEach(p => {
-                if (p.runs > 0 || p.balls > 0 || p.isOut) {
+            // यहाँ सुधार किया गया है:
+            const bList = Array.isArray(data.all_batsmen) ? data.all_batsmen : Object.values(data.all_batsmen);
+            bList.forEach(p => {
+                if (p && (p.runs > 0 || p.balls > 0 || p.isOut)) {
                     batScoreHtml += `
                         <tr style="border-bottom:1px solid #eee; font-size:12px; text-align:right;">
                             <td style="text-align:left; padding:8px; color:#1A73E8;"><b>${p.name}</b><br><small style="color:#666;">${p.outDesc || (p.isOut ? "Out" : "Not Out")}</small></td>
                             <td style="padding:8px;"><b>${p.runs}</b></td>
                             <td style="padding:8px;">${p.balls}</td>
-                            <td style="padding:8px;">${p.fours}</td>
-                            <td style="padding:8px;">${p.sixes}</td>
+                            <td style="padding:8px;">${p.fours || 0}</td>
+                            <td style="padding:8px;">${p.sixes || 0}</td>
                             <td style="padding:8px;">${getSR(p.runs, p.balls)}</td>
                         </tr>`;
                 }
             });
         }
 
-        // बॉलर्स का लूप
+        // बॉलर्स का लूप - Object.values का उपयोग किया गया है
         if (data.all_bowlers) {
-            data.all_bowlers.forEach(b => {
-                if (b.overs > 0 || b.balls > 0) {
+            // यहाँ सुधार किया गया है:
+            const boList = Array.isArray(data.all_bowlers) ? data.all_bowlers : Object.values(data.all_bowlers);
+            boList.forEach(b => {
+                if (b && (b.overs > 0 || b.balls > 0 || b.wickets > 0)) {
                     bowlScoreHtml += `
                         <tr style="border-bottom:1px solid #eee; font-size:12px; text-align:right;">
                             <td style="text-align:left; padding:8px; color:#1A73E8;"><b>${b.name}</b></td>
-                            <td style="padding:8px;">${b.overs}.${b.balls}</td>
+                            <td style="padding:8px;">${b.overs}.${b.balls || 0}</td>
                             <td style="padding:8px;">${b.maidens || 0}</td>
-                            <td style="padding:8px;">${b.runs}</td>
-                            <td style="padding:8px; color:red;"><b>${b.wickets}</b></td>
+                            <td style="padding:8px;">${b.runs || 0}</td>
+                            <td style="padding:8px; color:red;"><b>${b.wickets || 0}</b></td>
                             <td style="padding:8px;">${getEC(b.runs, b.overs)}</td>
                         </tr>`;
                 }
             });
         }
 
-        // इन IDs में डेटा डालना (एक बार अपनी HTML फाइल में ये IDs डाल दें)
         if(document.getElementById("scorecard-bat-body")) document.getElementById("scorecard-bat-body").innerHTML = batScoreHtml;
         if(document.getElementById("scorecard-bowl-body")) document.getElementById("scorecard-bowl-body").innerHTML = bowlScoreHtml;
 
         console.log("Professional UI & Full Scorecard Updated ✅");
     }
 });
-
+    
 </script>
 
 <div id="home-section" class="tab-content"> 
