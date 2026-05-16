@@ -5538,69 +5538,6 @@ function showHistory() {
     loadMatchHistory();
 }
 
-function syncEverythingToFirebase() {
-    if (!window.db || !window.dbRef || !window.dbUpdate) {
-        console.warn("Firebase Loader waiting...");
-        return;
-    }
-
-    try {
-        const realBatsman1 = document.getElementById('b1-name')?.innerText || "Batsman 1";
-        const realBatsman2 = document.getElementById('b2-name')?.innerText || "Batsman 2";
-        const realBowler = document.getElementById('bw-name')?.innerText || "Bowler";
-
-        const matchData = {
-            innings: typeof innings !== 'undefined' ? innings : 1,
-            target: typeof target !== 'undefined' ? target : 0,
-            runs: typeof runs !== 'undefined' ? runs : 0,
-            wickets: typeof wickets !== 'undefined' ? wickets : 0,
-            balls: typeof balls !== 'undefined' ? balls : 0,
-            battingTeam: (currentBattingSide === "A") ? team1Name : team2Name,
-            bowlingTeam: (currentBattingSide === "A") ? team2Name : team1Name,
-            batsman1: realBatsman1,
-            b1_runs: (batsmen[striker]) ? batsmen[striker].runs : 0,
-            b1_balls: (batsmen[striker]) ? batsmen[striker].balls : 0,
-            b1_4s: (batsmen[striker]) ? (batsmen[striker].fours || 0) : 0,
-            b1_6s: (batsmen[striker]) ? (batsmen[striker].sixes || 0) : 0,
-            batsman2: realBatsman2,
-            b2_runs: (batsmen[nonStriker]) ? batsmen[nonStriker].runs : 0,
-            b2_balls: (batsmen[nonStriker]) ? batsmen[nonStriker].balls : 0,
-            b2_4s: (batsmen[nonStriker]) ? (batsmen[nonStriker].fours || 0) : 0,
-            b2_6s: (batsmen[nonStriker]) ? (batsmen[nonStriker].sixes || 0) : 0,
-            bowler: realBowler,
-            bowler_wickets: (currentBowler) ? currentBowler.wickets : 0,
-            bowler_runs: (currentBowler) ? currentBowler.runs : 0,
-            bowler_overs: document.getElementById('bw-o')?.innerText || "0.0",
-            toss_text: document.querySelector('div[style*="color:red"]')?.innerText || 
-                       document.querySelector('div[style*="color: red"]')?.innerText || "Match Live",
-
-            // Fix: Deep-Cloning use ki take Firebase ko crash proof banaya ja sake
-            all_batsmen: (typeof batsmen !== 'undefined') ? JSON.parse(JSON.stringify(batsmen)) : [], 
-            all_bowlers: (typeof bowlers !== 'undefined') ? JSON.parse(JSON.stringify(bowlers)) : [], 
-            fall_of_wickets: (typeof fallOfWickets !== 'undefined') ? JSON.parse(JSON.stringify(fallOfWickets)) : [], 
-            extras_data: {
-                wd: typeof extraWides !== 'undefined' ? extraWides : 0,
-                nb: typeof extraNoBalls !== 'undefined' ? extraNoBalls : 0,
-                b: typeof extraByes !== 'undefined' ? extraByes : 0,
-                lb: typeof extraLegByes !== 'undefined' ? extraLegByes : 0,
-                total: (typeof extraWides !== 'undefined' ? extraWides + extraNoBalls + extraByes + extraLegByes : 0)
-            },
-            timestamp: Date.now()
-        };
-
-        window.dbUpdate(window.dbRef(window.db, 'live_match_data'), matchData);
-        
-        let ov = `${Math.floor(matchData.balls/6)}.${matchData.balls%6}`;
-        if(window.dbSet) {
-            window.dbSet(window.dbRef(window.db, 'match_status'), `${matchData.runs}/${matchData.wickets} (${ov})`);
-        }
-        
-        console.log("Firebase Sync Professional ✅ (Scorecard Arrays Deep Cloned)");
-
-    } catch (err) {
-        console.error("Sync Error:", err);
-    }
-}
 
 </script>
 
