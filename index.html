@@ -5537,7 +5537,21 @@ function showHistory() {
     showSection('history-section'); // अपना पुराना सेक्शन बदलने वाला फंक्शन
     loadMatchHistory();
 }
-
+// 🎯 टैब बदलने पर 0/0 दिखने वाली समस्या का परमानेंट फिक्स
+if (window.location.search.includes('mode=admin') || window.isAdmin === true) {
+    // 👑 अगर आप एडमिन हैं, तभी टैब बदलने पर फ़ायरबेस में डेटा सिंक (Upload) होगा
+    if (typeof syncEverythingToFirebase === "function") {
+        try { syncEverythingToFirebase(); } catch (error) { console.error(error); }
+    }
+} else {
+    // 👥 अगर आपका दोस्त (Viewer) टैब बदलता है, तो डेटा अपलोड नहीं होगा, बल्कि फ़ायरबेस से तुरंत लाइव स्कोर दोबारा स्क्रीन पर आ जाएगा
+    if (typeof fetchLiveScoreFromFirebase === "function") {
+        try { fetchLiveScoreFromFirebase(); } catch (error) { console.error(error); }
+    } else if (typeof setupFirebaseListener === "function") {
+        try { setupFirebaseListener(); } catch (error) { console.error(error); }
+    }
+    }
+    
 // ========================================================
 // 👑 ADMIN IDENTITY CONFIGURATION
 // ========================================================
