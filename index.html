@@ -1181,20 +1181,42 @@ body {
   window.dbSet = set;
   window.dbUpdate = update;
      // --- दर्शकों के लिए ऑटो-अपडेट (OnValue) ---
-
 onValue(ref(db, 'live_match_data'), (snapshot) => {
     const data = snapshot.val();
     if (data) {
-        // --- 1. पुराना बेसिक स्कोर अपडेट (No Change) ---
+        // --- 1. पुराना बेसिक स्कोर और इनिंग्स हेडर अपडेट ---
         let ov = `${Math.floor(data.balls/6)}.${data.balls%6}`;
-        if(document.getElementById('d-t1-name')) document.getElementById('d-t1-name').innerText = data.battingTeam;
-        if(document.getElementById('d-t2-name')) document.getElementById('d-t2-name').innerText = data.bowlingTeam;
-        if(document.getElementById('d-t1-score')) document.getElementById('d-t1-score').innerText = `${data.runs}/${data.wickets} (${ov})`;
+        
+        // टॉप इनिंग्स टॉगल बटन का डेटा सिंक
+        if(document.getElementById('label-t1-name')) document.getElementById('label-t1-name').innerText = data.battingTeam || "Team 1";
+        if(document.getElementById('label-t2-name')) document.getElementById('label-t2-name').innerText = data.bowlingTeam || "Team 2";
+        if(document.getElementById('label-t1-score')) document.getElementById('label-t1-score').innerText = `${data.runs || 0}/${data.wickets || 0} (${ov})`;
 
+        // स्कोरकार्ड के अंदर का मिडिल हेडर (बैटिंग टीम नाम और स्कोर)
+        if(document.getElementById('ps-batting-team-name')) document.getElementById('ps-batting-team-name').innerText = data.battingTeam || "Team 1";
+        if(document.getElementById('ps-t1-total')) document.getElementById('ps-t1-total').innerText = `${data.runs || 0}/${data.wickets || 0} (${ov})`;
+        
+        // बॉलिंग टीम हेडर अपडेट
+        let bowTeamHeader = document.getElementById('ps-bowling-team-header');
+        if(bowTeamHeader) {
+            bowTeamHeader.innerHTML = `
+                <span class="ps-tname">${data.bowlingTeam || "Team 2"} ⚾</span>
+                <span class="ps-tscore">${ov} Overs</span>
+            `;
+        }
+
+        // सेफ स्ट्राइक रेट और इकोनॉमी कैलकुलेटर्स
         const getSR = (r, b) => (b > 0 ? ((r / b) * 100).toFixed(1) : "0.0");
-        const getEC = (r, o) => (o > 0 ? (r / o).toFixed(1) : "0.0");
+        const getEC = (runs, oversStr) => {
+            if (!oversStr || oversStr === "0.0" || oversStr === 0) return "0.0";
+            let parts = String(oversStr).split('.');
+            let overs = parseInt(parts[0]) || 0;
+            let balls = parseInt(parts[1]) || 0;
+            let totalBalls = (overs * 6) + balls;
+            return totalBalls > 0 ? ((runs / totalBalls) * 6).toFixed(1) : "0.0";
+        };
 
-        // --- 2. पुराना लाइव रैपर लॉजिक (No Change) ---
+        // --- 2. पुराना लाइव रैपर लॉजिक (जो लाइव बॉक्स में दिखता है) ---
         let liveWrapper = document.getElementById("live-data-wrapper");
         if(liveWrapper) {
             let tableHtml = `
@@ -1208,20 +1230,20 @@ onValue(ref(db, 'live_match_data'), (snapshot) => {
                         <th style="padding:8px;">SR</th>
                     </tr>
                     <tr style="text-align:right; border-bottom:1px solid #f9f9f9;">
-                        <td style="text-align:left; padding:10px; color:#1A73E8; font-weight:bold;">${data.batsman1} *</td>
+                        <td style="text-align:left; padding:10px; color:#1A73E8; font-weight:bold;">${data.batsman1 || "Batter 1"} *</td>
                         <td style="padding:8px; font-weight:bold;">${data.b1_runs || 0}</td>
                         <td style="padding:8px;">${data.b1_balls || 0}</td>
                         <td style="padding:8px;">${data.b1_4s || 0}</td>
                         <td style="padding:8px;">${data.b1_6s || 0}</td>
-                        <td style="padding:8px; color:#02b089;">${getSR(data.b1_runs, data.b1_balls)}</td>
+                        <td style="padding:8px; color:#02b089; font-weight:bold;">${getSR(data.b1_runs || 0, data.b1_balls || 0)}</td>
                     </tr>
                     <tr style="text-align:right;">
-                        <td style="text-align:left; padding:10px; color:#1A73E8;">${data.batsman2}</td>
+                        <td style="text-align:left; padding:10px; color:#1A73E8;">${data.batsman2 || "Batter 2"}</td>
                         <td style="padding:8px; font-weight:bold;">${data.b2_runs || 0}</td>
                         <td style="padding:8px;">${data.b2_balls || 0}</td>
                         <td style="padding:8px;">${data.b2_4s || 0}</td>
                         <td style="padding:8px;">${data.b2_6s || 0}</td>
-                        <td style="padding:8px; color:#02b089;">${getSR(data.b2_runs, data.b2_balls)}</td>
+                        <td style="padding:8px; color:#02b089;">${getSR(data.b2_runs || 0, data.b2_balls || 0)}</td>
                     </tr>
                 </table>
 
@@ -1234,65 +1256,83 @@ onValue(ref(db, 'live_match_data'), (snapshot) => {
                         <th style="padding:8px;">EC</th>
                     </tr>
                     <tr style="text-align:right;">
-                        <td style="text-align:left; padding:10px; color:#1A73E8; font-weight:bold;">${data.bowler}</td>
+                        <td style="text-align:left; padding:10px; color:#1A73E8; font-weight:bold;">${data.bowler || "Bowler"}</td>
                         <td style="padding:8px;">${data.bowler_overs || "0.0"}</td>
                         <td style="padding:8px;">${data.bowler_runs || 0}</td>
                         <td style="padding:8px; color:#d32f2f; font-weight:bold;">${data.bowler_wickets || 0}</td>
-                        <td style="padding:8px; color:#02b089;">${getEC(data.bowler_runs, data.bowler_overs)}</td>
+                        <td style="padding:8px; color:#02b089; font-weight:bold;">${getEC(data.bowler_runs || 0, data.bowler_overs || "0.0")}</td>
                     </tr>
                 </table>
             `;
             liveWrapper.innerHTML = tableHtml;
         }
 
-        // --- 3. 🚀 नया स्कोरकार्ड लॉजिक (सुधरा हुआ) ---
+        // --- 3. 🚀 नया फुल स्कोरकार्ड लॉजिक (आपके DIV + SPAN स्ट्रक्चर के अनुसार) ---
         let batScoreHtml = "";
         let bowlScoreHtml = "";
 
-        // बल्लेबाजों का लूप - Object.values का उपयोग किया गया है
-        if (data.all_batsmen) {
-            // यहाँ सुधार किया गया है:
-            const bList = Array.isArray(data.all_batsmen) ? data.all_batsmen : Object.values(data.all_batsmen);
-            bList.forEach(p => {
-                if (p && (p.runs > 0 || p.balls > 0 || p.isOut)) {
+        // बल्लेबाजों का लूप 
+        if (data.all_batsmen && Array.isArray(data.all_batsmen)) {
+            data.all_batsmen.forEach(p => {
+                if (!p) return;
+                if (p.runs > 0 || p.balls > 0 || p.out) {
+                    let outStatus = "not out";
+                    if(p.out) {
+                        let outType = p.outType || "Out";
+                        let bowlerRef = p.bowledBy ? ` b ${p.bowledBy}` : "";
+                        outStatus = `${outType}${bowlerRef}`;
+                    }
+                    
+                    // ✅ सुधरा हुआ HTML: आपके क्लास 'ps-batter-header' ग्रिड लेआउट के अनुसार
                     batScoreHtml += `
-                        <tr style="border-bottom:1px solid #eee; font-size:12px; text-align:right;">
-                            <td style="text-align:left; padding:8px; color:#1A73E8;"><b>${p.name}</b><br><small style="color:#666;">${p.outDesc || (p.isOut ? "Out" : "Not Out")}</small></td>
-                            <td style="padding:8px;"><b>${p.runs}</b></td>
-                            <td style="padding:8px;">${p.balls}</td>
-                            <td style="padding:8px;">${p.fours || 0}</td>
-                            <td style="padding:8px;">${p.sixes || 0}</td>
-                            <td style="padding:8px;">${getSR(p.runs, p.balls)}</td>
-                        </tr>`;
+                        <div class="ps-batter-header" style="background: none; border-bottom: 1px solid #f0f0f0; font-weight: normal; padding: 6px 0; color: #000;">
+                            <span class="p-head-item h-name" style="text-align: left; line-height: 1.3;">
+                                <b>${p.name}</b><br>
+                                <small style="color: #666; font-size: 10px; font-weight: normal;">${outStatus}</small>
+                            </span>
+                            <span class="p-head-item h-r"><b>${p.runs || 0}</b></span>
+                            <span class="p-head-item h-b">${p.balls || 0}</span>
+                            <span class="p-head-item h-4s">${p.fours || 0}</span>
+                            <span class="p-head-item h-6s">${p.sixes || 0}</span>
+                            <span class="p-head-item h-sr" style="color: #666;">${getSR(p.runs || 0, p.balls || 0)}</span>
+                        </div>`;
                 }
             });
         }
 
-        // बॉलर्स का लूप - Object.values का उपयोग किया गया है
-        if (data.all_bowlers) {
-            // यहाँ सुधार किया गया है:
-            const boList = Array.isArray(data.all_bowlers) ? data.all_bowlers : Object.values(data.all_bowlers);
-            boList.forEach(b => {
-                if (b && (b.overs > 0 || b.balls > 0 || b.wickets > 0)) {
+        // बॉलर्स का लूप
+        if (data.all_bowlers && Array.isArray(data.all_bowlers)) {
+            data.all_bowlers.forEach(b => {
+                if (!b) return;
+                if (b.overs > 0 || b.balls > 0 || b.runs > 0) {
+                    let bowlerOversCombined = `${b.overs || 0}.${b.balls || 0}`;
+                    
+                    // ✅ सुधरा हुआ HTML: आपके बॉलर ग्रिड 'ps-batter-header bowler-header' के अनुसार
                     bowlScoreHtml += `
-                        <tr style="border-bottom:1px solid #eee; font-size:12px; text-align:right;">
-                            <td style="text-align:left; padding:8px; color:#1A73E8;"><b>${b.name}</b></td>
-                            <td style="padding:8px;">${b.overs}.${b.balls || 0}</td>
-                            <td style="padding:8px;">${b.maidens || 0}</td>
-                            <td style="padding:8px;">${b.runs || 0}</td>
-                            <td style="padding:8px; color:red;"><b>${b.wickets || 0}</b></td>
-                            <td style="padding:8px;">${getEC(b.runs, b.overs)}</td>
-                        </tr>`;
+                        <div class="ps-batter-header bowler-header" style="background: none; border-bottom: 1px solid #f0f0f0; font-weight: normal; padding: 6px 0; color: #000;">
+                            <span class="p-head-item hb-name" style="text-align: left;"><b>${b.name}</b></span>
+                            <span class="p-head-item hb-o">${bowlerOversCombined}</span>
+                            <span class="p-head-item hb-m">${b.maidens || 0}</span>
+                            <span class="p-head-item hb-r">${b.runs || 0}</span>
+                            <span class="p-head-item hb-w" style="color: red; font-weight: bold;">${b.wickets || 0}</span>
+                            <span class="p-head-item hb-wd">${b.wides || 0}</span>
+                            <span class="p-head-item hb-nb">${b.noBalls || 0}</span>
+                            <span class="p-head-item hb-econ" style="color: #666;">${getEC(b.runs || 0, bowlerOversCombined)}</span>
+                        </div>`;
                 }
             });
         }
 
-        if(document.getElementById("scorecard-bat-body")) document.getElementById("scorecard-bat-body").innerHTML = batScoreHtml;
-        if(document.getElementById("scorecard-bowl-body")) document.getElementById("scorecard-bowl-body").innerHTML = bowlScoreHtml;
+        // ✅ सही IDs में डेटा डालना जो आपके भेजे गए HTML स्ट्रक्चर में हैं
+        if(document.getElementById("ps-t1-batting")) document.getElementById("ps-t1-batting").innerHTML = batScoreHtml;
+        if(document.getElementById("ps-t2-bowling")) document.getElementById("ps-t2-bowling").innerHTML = bowlScoreHtml;
 
-        console.log("Professional UI & Full Scorecard Updated ✅");
+        console.log("Professional Custom Grid UI Scorecard Updated ✅");
     }
 });
+    
+
+                    
     
 </script>
 
