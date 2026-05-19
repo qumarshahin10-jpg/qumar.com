@@ -1160,9 +1160,11 @@ body {
     
 </head>
 <body>
-<script type="module">
+
+
+  <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+  import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAEuQ3up4s30SWJVTNcMsIzG5FJNBH0iiM",
@@ -1174,11 +1176,6 @@ body {
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
 
-  window.db = db;
-  window.dbRef = ref;
-  window.dbSet = set;
-  window.dbUpdate = update;
-
   // --- दर्शकों के लिए ऑटो-अपडेट (OnValue) ---
   onValue(ref(db, 'live_match_data'), (snapshot) => {
     const data = snapshot.val();
@@ -1188,16 +1185,17 @@ body {
         let fieldTeam = data.bowlingTeam || "Team 2";
         let currentScoreStr = `${data.runs || 0}/${data.wickets || 0} (${ov})`;
 
-        // 📢 मुख्य LIVE टैब का डेटा
+        // 📢 1. मुख्य LIVE टैब का डेटा (टीमों के नाम और बड़ा स्कोर)
         if(document.getElementById('live-batting-team')) document.getElementById('live-batting-team').innerText = bTeam;
         if(document.getElementById('live-bowling-team')) document.getElementById('live-bowling-team').innerText = fieldTeam;
         if(document.getElementById('live-team-score')) document.getElementById('live-team-score').innerText = currentScoreStr;
         
+        // पुराने क्लासिक डिज़ाइन की IDs बैकअप के लिए
         if(document.getElementById('d-t1-name')) document.getElementById('d-t1-name').innerText = bTeam;
         if(document.getElementById('d-t2-name')) document.getElementById('d-t2-name').innerText = fieldTeam;
         if(document.getElementById('d-t1-score')) document.getElementById('d-t1-score').innerText = currentScoreStr;
 
-        // 📊 SCORECARD टैब के हेडर्स
+        // 📊 2. SCORECARD टैब के हेडर्स और इनिंग्स डेटा
         if(document.getElementById('label-t1-name')) document.getElementById('label-t1-name').innerText = bTeam;
         if(document.getElementById('label-t2-name')) document.getElementById('label-t2-name').innerText = fieldTeam;
         if(document.getElementById('label-t1-score')) document.getElementById('label-t1-score').innerText = currentScoreStr;
@@ -1207,9 +1205,13 @@ body {
         
         let bowTeamHeader = document.getElementById('ps-bowling-team-header');
         if(bowTeamHeader) {
-            bowTeamHeader.innerHTML = `<span class="ps-tname">${fieldTeam} ⚾</span> <span class="ps-tscore">${ov} Overs</span>`;
+            bowTeamHeader.innerHTML = `
+                <span class="ps-tname">${fieldTeam} ⚾</span>
+                <span class="ps-tscore">${ov} Overs</span>
+            `;
         }
 
+        // स्ट्राइक रेट और इकोनॉमी कैलकुलेटर
         const getSR = (r, b) => (b > 0 ? ((r / b) * 100).toFixed(1) : "0.0");
         const getEC = (runs, oversStr) => {
             if (!oversStr || oversStr === "0.0" || oversStr === 0) return "0.0";
@@ -1220,12 +1222,17 @@ body {
             return totalBalls > 0 ? ((runs / totalBalls) * 6).toFixed(1) : "0.0";
         };
 
-        // ⚡ सुंदर सफ़ेद पट्टी का डेटा (टॉस, पार्टनरशिप, CRR) - नो खिचड़ी!
+        // ========================================================
+        // ⚡ 3. लाइव स्क्रीन की सुंदर पट्टी (टॉस, पार्टनरशिप, CRR)
+        // ========================================================
         if(document.getElementById('viewer-toss-text')) document.getElementById('viewer-toss-text').innerText = data.toss_text || "Match Live";
         if(document.getElementById('viewer-partnership')) document.getElementById('viewer-partnership').innerText = data.partnership || "0 (0)";
         if(document.getElementById('viewer-crr')) document.getElementById('viewer-crr').innerText = data.crr || "0.00";
 
-        // 🏏 लाइव बल्लेबाज (टेक्स्ट अपडेट)
+        // ========================================================
+        // 🏏 4. मुख्य स्क्रीन के लाइव बल्लेबाज और गेंदबाज
+        // ========================================================
+        // बल्लेबाज 1 (स्ट्राइकर)
         if(document.getElementById('b1-name')) document.getElementById('b1-name').innerText = (data.batsman1 || "Batter 1") + " *";
         if(document.getElementById('b1-r')) document.getElementById('b1-r').innerText = data.b1_runs || 0;
         if(document.getElementById('b1-b')) document.getElementById('b1-b').innerText = data.b1_balls || 0;
@@ -1233,6 +1240,7 @@ body {
         if(document.getElementById('b1-6')) document.getElementById('b1-6').innerText = data.b1_6s || 0;
         if(document.getElementById('b1-sr')) document.getElementById('b1-sr').innerText = getSR(data.b1_runs || 0, data.b1_balls || 0);
 
+        // बल्लेबाज 2 (नॉन-स्ट्राइकर)
         if(document.getElementById('b2-name')) document.getElementById('b2-name').innerText = data.batsman2 || "Batter 2";
         if(document.getElementById('b2-r')) document.getElementById('b2-r').innerText = data.b2_runs || 0;
         if(document.getElementById('b2-b')) document.getElementById('b2-b').innerText = data.b2_balls || 0;
@@ -1240,23 +1248,34 @@ body {
         if(document.getElementById('b2-6')) document.getElementById('b2-6').innerText = data.b2_6s || 0;
         if(document.getElementById('b2-sr')) document.getElementById('b2-sr').innerText = getSR(data.b2_runs || 0, data.b2_balls || 0);
 
-        // ⚾ लाइव गेंदबाज
+        // लाइव गेंदबाज
         if(document.getElementById('bowler-name')) document.getElementById('bowler-name').innerText = data.bowler || "Bowler";
         if(document.getElementById('bowler-o')) document.getElementById('bowler-o').innerText = data.bowler_overs || "0.0";
         if(document.getElementById('bowler-r')) document.getElementById('bowler-r').innerText = data.bowler_runs || 0;
         if(document.getElementById('bowler-w')) document.getElementById('bowler-w').innerText = data.bowler_wickets || 0;
         if(document.getElementById('bowler-ec')) document.getElementById('bowler-ec').innerText = getEC(data.bowler_runs || 0, data.bowler_overs || "0.0");
 
-        // 📋 फुल बैटिंग स्कोरकार्ड लिस्ट
+        // ========================================================
+        // 📋 5. फुल बैटिंग स्कोरकार्ड लिस्ट (ग्रिड लेआउट)
+        // ========================================================
         let batScoreHtml = "";
         if (data.all_batsmen && Array.isArray(data.all_batsmen)) {
             data.all_batsmen.forEach(p => {
                 if (!p) return;
                 if (p.runs > 0 || p.balls > 0 || p.out) {
-                    let outStatus = p.out ? `${p.outType || "Out"}${p.bowledBy ? ` b ${p.bowledBy}` : ""}` : "not out";
+                    let outStatus = "not out";
+                    if(p.out) {
+                        let outType = p.outType || "Out";
+                        let bowlerRef = p.bowledBy ? ` b ${p.bowledBy}` : "";
+                        outStatus = `${outType}${bowlerRef}`;
+                    }
+                    
                     batScoreHtml += `
                         <div class="ps-batter-header" style="background: none; border-bottom: 1px solid #f0f0f0; font-weight: normal; padding: 6px 0; color: #000;">
-                            <span class="p-head-item h-name" style="text-align: left; line-height: 1.3;"><b>${p.name}</b><br><small style="color: #666; font-size: 10px;">${outStatus}</small></span>
+                            <span class="p-head-item h-name" style="text-align: left; line-height: 1.3;">
+                                <b>${p.name}</b><br>
+                                <small style="color: #666; font-size: 10px; font-weight: normal;">${outStatus}</small>
+                            </span>
                             <span class="p-head-item h-r"><b>${p.runs || 0}</b></span>
                             <span class="p-head-item h-b">${p.balls || 0}</span>
                             <span class="p-head-item h-4s">${p.fours || 0}</span>
@@ -1267,13 +1286,16 @@ body {
             });
         }
 
-        // 📋 फुल बॉलिंग स्कोरकार्ड लिस्ट
+        // ========================================================
+        // ⚾ 6. फुल बॉलिंग स्कोरकार्ड लिस्ट (ग्रिड लेआउट)
+        // ========================================================
         let bowlScoreHtml = "";
         if (data.all_bowlers && Array.isArray(data.all_bowlers)) {
             data.all_bowlers.forEach(b => {
                 if (!b) return;
                 if (b.overs > 0 || b.balls > 0 || b.runs > 0) {
                     let bowlerOversCombined = `${b.overs || 0}.${b.balls || 0}`;
+                    
                     bowlScoreHtml += `
                         <div class="ps-batter-header bowler-header" style="background: none; border-bottom: 1px solid #f0f0f0; font-weight: normal; padding: 6px 0; color: #000;">
                             <span class="p-head-item hb-name" style="text-align: left;"><b>${b.name}</b></span>
@@ -1289,14 +1311,13 @@ body {
             });
         }
 
+        // HTML स्कोरकार्ड टैब में डेटा रेंडर करना
         if(document.getElementById("ps-t1-batting")) document.getElementById("ps-t1-batting").innerHTML = batScoreHtml;
         if(document.getElementById("ps-t2-bowling")) document.getElementById("ps-t2-bowling").innerHTML = bowlScoreHtml;
-        console.log("Clean Sync Done ✅");
-    }
-  });
-</script>
 
-    
+        console.log("Clean Sync Done ✅ (No extra tables made!)");
+    }
+  });  
 
 
 </script>
