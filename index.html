@@ -1197,6 +1197,7 @@ body {
         if(document.getElementById('d-t1-name')) document.getElementById('d-t1-name').innerText = bTeam;
         if(document.getElementById('d-t2-name')) document.getElementById('d-t2-name').innerText = fieldTeam;
         if(document.getElementById('d-t1-score')) document.getElementById('d-t1-score').innerText = currentScoreStr;
+        if(document.getElementById('d-t2-score')) document.getElementById('d-t2-score').innerText = `${data.t2_runs || 0}/${data.t2_wickets || 0} (${data.t2_overs || "0.0"})`;
 
         // 📊 2. SCORECARD टैब के हेडर्स
         if(document.getElementById('label-t1-name')) document.getElementById('label-t1-name').innerText = bTeam;
@@ -1221,52 +1222,81 @@ body {
             return totalBalls > 0 ? ((runs / totalBalls) * 6).toFixed(1) : "0.0";
         };
 
-        // ⚡ 3. सुंदर सफ़ेद पट्टी का डेटा (टॉस, पार्टनरशिप, CRR)
-        if(document.getElementById('viewer-toss-text')) document.getElementById('viewer-toss-text').innerText = data.toss_text || "Match Live";
-        if(document.getElementById('viewer-partnership')) document.getElementById('viewer-partnership').innerText = data.partnership || "0 (0)";
-        if(document.getElementById('viewer-crr')) document.getElementById('viewer-crr').innerText = data.crr || "0.00";
+        // ⚡ 3. [सुधार] टॉस, पार्टनरशिप, और CRR को आपके पुराने HTML IDs के साथ जोड़ा
+        if(document.getElementById('toss-result-text')) document.getElementById('toss-result-text').innerText = `Toss: ${data.toss_text || "Match Live"}`;
+        if(document.getElementById('partnershipbox')) document.getElementById('partnershipbox').innerText = `P'SHIP: ${data.partnership || "0 (0)"}`;
+        if(document.getElementById('crrbox')) document.getElementById('crrbox').innerText = `CRR: ${data.crr || "0.00"}`;
 
-        // 🔥 [NEW] 🎯 4. इनिंग्स (Innings) और टारगेट (Target) का लाइव अपडेट
-        // अगर सेकंड इनिंग्स है तो स्क्रीन पर 'Target' अपने आप दिखने लगेगा
-        if(document.getElementById('viewer-innings')) {
-            document.getElementById('viewer-innings').innerText = `Innings: ${data.innings || 1}`;
-        }
-        if(document.getElementById('viewer-target')) {
-            if(data.target && data.target > 0) {
-                document.getElementById('viewer-target').innerText = `Target: ${data.target}`;
-                if(document.getElementById('viewer-need-text')) {
-                    let runsNeeded = data.target - (data.runs || 0);
-                    document.getElementById('viewer-need-text').innerText = runsNeeded > 0 ? `Need ${runsNeeded} runs to win` : "Match Finished";
-                }
-            } else {
-                document.getElementById('viewer-target').innerText = "";
-                if(document.getElementById('viewer-need-text')) document.getElementById('viewer-need-text').innerText = "";
+        // 🎯 4. सेकंड इनिंग्स और टारगेट का लाइव अपडेट
+        if(data.target && data.target > 0) {
+            if(document.getElementById('target-display-box')) document.getElementById('target-display-box').style.display = "block";
+            if(document.getElementById('target-value')) document.getElementById('target-value').innerText = data.target;
+            if(document.getElementById('target-runs-needed')) {
+                let runsNeeded = data.target - (data.runs || 0);
+                document.getElementById('target-runs-needed').innerText = runsNeeded > 0 ? runsNeeded : 0;
             }
+            if(document.getElementById('target-balls-left')) {
+                let totalMatchBalls = (data.max_overs || 20) * 6; 
+                let ballsLeft = totalMatchBalls - (data.balls || 0);
+                document.getElementById('target-balls-left').innerText = ballsLeft > 0 ? ballsLeft : 0;
+            }
+        } else {
+            if(document.getElementById('target-display-box')) document.getElementById('target-display-box').style.display = "none";
         }
 
-        // 🏏 5. लाइव बल्लेबाज (टेक्स्ट अपडेट)
-        if(document.getElementById('b1-name')) document.getElementById('b1-name').innerText = (data.batsman1 || "Batter 1") + " *";
-        if(document.getElementById('b1-r')) document.getElementById('b1-r').innerText = data.b1_runs || 0;
-        if(document.getElementById('b1-b')) document.getElementById('b1-b').innerText = data.b1_balls || 0;
-        if(document.getElementById('b1-4')) document.getElementById('b1-4').innerText = data.b1_4s || 0;
-        if(document.getElementById('b1-6')) document.getElementById('b1-6').innerText = data.b1_6s || 0;
-        if(document.getElementById('b1-sr')) document.getElementById('b1-sr').innerText = getSR(data.b1_runs || 0, data.b1_balls || 0);
+        // 🏏 5. [सुधार - जादू] जावास्क्रिप्ट खुद लाइव टेबल बनाकर आपके 'live-data-wrapper' बॉक्स में डाल देगा
+        let liveTablesHtml = `
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: sans-serif; margin-bottom: 15px;">
+                <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; font-weight: bold; color: #555;">
+                    <th style="padding: 8px;">BATTER</th>
+                    <th style="padding: 8px; text-align: center;">R</th>
+                    <th style="padding: 8px; text-align: center;">B</th>
+                    <th style="padding: 8px; text-align: center;">4s</th>
+                    <th style="padding: 8px; text-align: center;">6s</th>
+                    <th style="padding: 8px; text-align: center; color: #00a862;">SR</th>
+                </tr>
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 8px; font-weight: bold; color: #004ba0;">${data.batsman1 || "Batter 1"} *</td>
+                    <td style="padding: 8px; text-align: center; font-weight: bold;">${data.b1_runs || 0}</td>
+                    <td style="padding: 8px; text-align: center; color: #555;">${data.b1_balls || 0}</td>
+                    <td style="padding: 8px; text-align: center; color: #555;">${data.b1_4s || 0}</td>
+                    <td style="padding: 8px; text-align: center; color: #555;">${data.b1_6s || 0}</td>
+                    <td style="padding: 8px; text-align: center; color: #00a862; font-weight: bold;">${getSR(data.b1_runs || 0, data.b1_balls || 0)}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 8px; color: #333;">${data.batsman2 || "Batter 2"}</td>
+                    <td style="padding: 8px; text-align: center; font-weight: bold;">${data.b2_runs || 0}</td>
+                    <td style="padding: 8px; text-align: center; color: #555;">${data.b2_balls || 0}</td>
+                    <td style="padding: 8px; text-align: center; color: #555;">${data.b2_4s || 0}</td>
+                    <td style="padding: 8px; text-align: center; color: #555;">${data.b2_6s || 0}</td>
+                    <td style="padding: 8px; text-align: center; color: #00a862;">${getSR(data.b2_runs || 0, data.b2_balls || 0)}</td>
+                </tr>
+            </table>
 
-        if(document.getElementById('b2-name')) document.getElementById('b2-name').innerText = data.batsman2 || "Batter 2";
-        if(document.getElementById('b2-r')) document.getElementById('b2-r').innerText = data.b2_runs || 0;
-        if(document.getElementById('b2-b')) document.getElementById('b2-b').innerText = data.b2_balls || 0;
-        if(document.getElementById('b2-4')) document.getElementById('b2-4').innerText = data.b2_4s || 0;
-        if(document.getElementById('b2-6')) document.getElementById('b2-6').innerText = data.b2_6s || 0;
-        if(document.getElementById('b2-sr')) document.getElementById('b2-sr').innerText = getSR(data.b2_runs || 0, data.b2_balls || 0);
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: sans-serif; margin-bottom: 10px;">
+                <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; font-weight: bold; color: #555;">
+                    <th style="padding: 8px;">BOWLER</th>
+                    <th style="padding: 8px; text-align: center;">O</th>
+                    <th style="padding: 8px; text-align: center;">R</th>
+                    <th style="padding: 8px; text-align: center;">W</th>
+                    <th style="padding: 8px; text-align: center; color: #00a862;">EC</th>
+                </tr>
+                <tr>
+                    <td style="padding: 8px; font-weight: bold; color: #333;">${data.bowler || "Bowler"}</td>
+                    <td style="padding: 8px; text-align: center; font-weight: bold;">${data.bowler_overs || "0.0"}</td>
+                    <td style="padding: 8px; text-align: center; color: #555;">${data.bowler_runs || 0}</td>
+                    <td style="padding: 8px; text-align: center; color: red; font-weight: bold;">${data.bowler_wickets || 0}</td>
+                    <td style="padding: 8px; text-align: center; color: #00a862; font-weight: bold;">${getEC(data.bowler_runs || 0, data.bowler_overs || "0.0")}</td>
+                </tr>
+            </table>
+        `;
 
-        // ⚾ 6. लाइव गेंदबाज
-        if(document.getElementById('bowler-name')) document.getElementById('bowler-name').innerText = data.bowler || "Bowler";
-        if(document.getElementById('bowler-o')) document.getElementById('bowler-o').innerText = data.bowler_overs || "0.0";
-        if(document.getElementById('bowler-r')) document.getElementById('bowler-r').innerText = data.bowler_runs || 0;
-        if(document.getElementById('bowler-w')) document.getElementById('bowler-w').innerText = data.bowler_wickets || 0;
-        if(document.getElementById('bowler-ec')) document.getElementById('bowler-ec').innerText = getEC(data.bowler_runs || 0, data.bowler_overs || "0.0");
+        // इन दोनों लाइव टेबल्स को आपके पुराने खाली बॉक्स में पुश कर दिया
+        if(document.getElementById("live-data-wrapper")) {
+            document.getElementById("live-data-wrapper").innerHTML = liveTablesHtml;
+        }
 
-        // 📋 7. फुल बैटिंग स्कोरकार्ड लिस्ट
+        // 📋 6. फुल बैटिंग स्कोरकार्ड लिस्ट
         let batScoreHtml = "";
         if (data.all_batsmen && Array.isArray(data.all_batsmen)) {
             data.all_batsmen.forEach(p => {
@@ -1286,7 +1316,7 @@ body {
             });
         }
 
-        // 📋 8. फुल बॉलिंग स्कोरकार्ड लिस्ट
+        // 📋 7. फुल बॉलिंग स्कोरकार्ड लिस्ट
         let bowlScoreHtml = "";
         if (data.all_bowlers && Array.isArray(data.all_bowlers)) {
             data.all_bowlers.forEach(b => {
@@ -1311,17 +1341,26 @@ body {
         if(document.getElementById("ps-t1-batting")) document.getElementById("ps-t1-batting").innerHTML = batScoreHtml;
         if(document.getElementById("ps-t2-bowling")) document.getElementById("ps-t2-bowling").innerHTML = bowlScoreHtml;
 
-        // 🔥 [NEW] 📋 9. एक्स्ट्रा रनों का डेटा (Extras Data Update)
-        // यह स्कोरकार्ड के नीचे एक्स्ट्रा रन की वैल्यू को ऑटो-अपडेट करेगा
-        if (data.extras_data) {
+        // 📋 8. [सुधार] एक्स्ट्रा रनों का डेटा ऑटोमैटिकली स्कोरकार्ड के बीच में सेट करना
+        if (data.extras_data && document.getElementById("ps-t1-batting")) {
             let ext = data.extras_data;
-            if(document.getElementById('viewer-extras-total')) document.getElementById('viewer-extras-total').innerText = ext.total || 0;
-            if(document.getElementById('viewer-extras-detail')) {
-                document.getElementById('viewer-extras-detail').innerText = `(wd ${ext.wd || 0}, nb ${ext.nb || 0}, b ${ext.b || 0}, lb ${ext.lb || 0})`;
+            let extrasHtml = `
+                <div style="margin: 12px 0; padding: 8px 0; border-top: 1px dashed #ddd; border-bottom: 1px dashed #ddd; font-size: 12px; font-family: sans-serif; color: #000;">
+                    Extras: <b style="color: #0056b3;">${ext.total || 0}</b> <span style="color: #666;">(wd ${ext.wd || 0}, nb ${ext.nb || 0}, b ${ext.b || 0}, lb ${ext.lb || 0})</span>
+                </div>`;
+            
+            let extrasCheck = document.getElementById("viewer-extras-inserted");
+            if(!extrasCheck) {
+                let div = document.createElement("div");
+                div.id = "viewer-extras-inserted";
+                div.innerHTML = extrasHtml;
+                document.getElementById("ps-t1-batting").after(div);
+            } else {
+                extrasCheck.innerHTML = extrasHtml;
             }
         }
 
-        console.log("All Data Loaded Successfully (Innings, Target & Extras Included) ✅");
+        console.log("All Errors Fixed via JavaScript onValue update! ✅");
     }
   });
 </script>
