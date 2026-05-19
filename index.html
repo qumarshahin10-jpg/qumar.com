@@ -1181,8 +1181,7 @@ body {
   window.dbUpdate = update;
 
   // --- दर्शकों के लिए ऑटो-अपडेट (OnValue) ---
-// --- दर्शकों के लिए ऑटो-अपडेट (OnValue) ---
-onValue(ref(db, 'live_match_data'), (snapshot) => {
+ onValue(ref(db, 'live_match_data'), (snapshot) => {
     const data = snapshot.val();
     if (data) {
         // ओवर कैलकुलेशन
@@ -1193,14 +1192,12 @@ onValue(ref(db, 'live_match_data'), (snapshot) => {
         let currentScoreStr = `${data.runs || 0}/${data.wickets || 0} (${ov})`;
 
         // ========================================================
-        // 📢 1. 🚀 [नया फिक्स] मुख्य LIVE टैब का डेटा जो छूट रहा था
+        // 📢 1. मुख्य LIVE टैब का डेटा
         // ========================================================
-        // ये वो IDs हैं जो मुख्य लाइव स्क्रीन पर टीमों के नाम और बड़े स्कोर को बदलेंगी
         if(document.getElementById('live-batting-team')) document.getElementById('live-batting-team').innerText = bTeam;
         if(document.getElementById('live-bowling-team')) document.getElementById('live-bowling-team').innerText = fieldTeam;
         if(document.getElementById('live-team-score')) document.getElementById('live-team-score').innerText = currentScoreStr;
         
-        // अगर आपके लाइव स्क्रीन पर पुराना 'd-t1' लॉजिक है तो उसे भी सेफ रखते हैं
         if(document.getElementById('d-t1-name')) document.getElementById('d-t1-name').innerText = bTeam;
         if(document.getElementById('d-t2-name')) document.getElementById('d-t2-name').innerText = fieldTeam;
         if(document.getElementById('d-t1-score')) document.getElementById('d-t1-score').innerText = currentScoreStr;
@@ -1235,12 +1232,16 @@ onValue(ref(db, 'live_match_data'), (snapshot) => {
         };
 
         // ========================================================
-        // ⚡ 3. पुराना लाइव रैपर लॉजिक (स्मॉल लाइव बॉक्स)
+        // ⚡ 3. लाइव रैपर लॉजिक + पार्टनरशिप & CRR का इन-बिल्ट फिक्स ⚡
         // ========================================================
         let liveWrapper = document.getElementById("live-data-wrapper");
         if(liveWrapper) {
             let tableHtml = `
-                <table style="width:100%; border-collapse:collapse; font-size:13px; margin-bottom:15px; background:#fff; color:#000;">
+                <div style="text-align:center; color:red; font-weight:bold; margin-bottom:8px; font-size:14px;">
+                    ${data.toss_text || "Match Live"}
+                </div>
+
+                <table style="width:100%; border-collapse:collapse; font-size:13px; margin-bottom:5px; background:#fff; color:#000;">
                     <tr style="border-bottom:1px solid #eee; text-align:right; background:#f4f4f4;">
                         <th style="text-align:left; padding:8px;">BATTER</th>
                         <th style="padding:8px;">R</th>
@@ -1267,6 +1268,11 @@ onValue(ref(db, 'live_match_data'), (snapshot) => {
                     </tr>
                 </table>
 
+                <div style="display: flex; justify-content: space-between; background: #f8f9fa; border: 1px solid #eee; padding: 6px 12px; margin-bottom: 12px; font-size: 12px; font-weight: bold; color: #333;">
+                    <span>P'SHIP: <span style="color: #1A73E8;">${data.partnership || "0 (0)"}</span></span>
+                    <span style="color: #02b089;">CRR: ${data.crr || "0.00"}</span>
+                </div>
+
                 <table style="width:100%; border-collapse:collapse; font-size:13px; background:#fff; color:#000;">
                     <tr style="border-bottom:1px solid #eee; text-align:right; background:#f4f4f4;">
                         <th style="text-align:left; padding:8px;">BOWLER</th>
@@ -1287,8 +1293,13 @@ onValue(ref(db, 'live_match_data'), (snapshot) => {
             liveWrapper.innerHTML = tableHtml;
         }
 
+        // 🔗 बैकअप के लिए अगर बाहर भी IDs बनी हैं तो उन्हें भी अपडेट कर देते हैं
+        if(document.getElementById("viewer-toss-text") && data.toss_text) document.getElementById("viewer-toss-text").innerText = data.toss_text;
+        if(document.getElementById("viewer-partnership")) document.getElementById("viewer-partnership").innerText = data.partnership || "0 (0)";
+        if(document.getElementById("viewer-crr")) document.getElementById("viewer-crr").innerText = "CRR: " + (data.crr || "0.00");
+
         // ========================================================
-        // 🏏 4. फुल बैटिंग स्कोरकार्ड लिस्ट (ग्रिड लेआउट)
+        // 🏏 4. फुल बैटिंग scorecard लिस्ट (ग्रिड लेआउट)
         // ========================================================
         let batScoreHtml = "";
         if (data.all_batsmen && Array.isArray(data.all_batsmen)) {
@@ -1319,7 +1330,7 @@ onValue(ref(db, 'live_match_data'), (snapshot) => {
         }
 
         // ========================================================
-        // ⚾ 5. फुल बॉलिंग स्कोरकार्ड लिस्ट (ग्रिड लेआउट)
+        // ⚾ 5. फुल बॉलिंग scorecard लिस्ट (ग्रिड लेआउट)
         // ========================================================
         let bowlScoreHtml = "";
         if (data.all_bowlers && Array.isArray(data.all_bowlers)) {
@@ -1343,13 +1354,13 @@ onValue(ref(db, 'live_match_data'), (snapshot) => {
             });
         }
 
-        // HTML में डेटा रेंडर करना
         if(document.getElementById("ps-t1-batting")) document.getElementById("ps-t1-batting").innerHTML = batScoreHtml;
         if(document.getElementById("ps-t2-bowling")) document.getElementById("ps-t2-bowling").innerHTML = bowlScoreHtml;
 
         console.log("Everything Synced & Updated Successfully! 🎯");
     }
 });
+         
     
 
 </script>
@@ -5565,12 +5576,6 @@ if (typeof window.isAdmin === 'undefined') {
 // 🚀 FIREBASE REALTIME SCORE SYNC FUNCTION
 // ========================================================
 function syncEverythingToFirebase() {
-    // 🛑 [SECURITY CHECK]: यह लाइन दर्शकों (Viewers) को फ़ायरबेस में डेटा भेजने से तुरंत रोक देगी
-    if (!window.isAdmin) {
-        console.log("Viewer mode active: Firebase update prevented. 🛑");
-        return; 
-    }
-
     if (!window.db || !window.dbRef || !window.dbUpdate) {
         console.warn("Firebase Loader waiting...");
         return;
@@ -5581,32 +5586,99 @@ function syncEverythingToFirebase() {
         const realBatsman2 = document.getElementById('b2-name')?.innerText || "Batsman 2";
         const realBowler = document.getElementById('bw-name')?.innerText || "Bowler";
 
+        const dynamicBattingTeam = (typeof currentBattingSide !== 'undefined' && currentBattingSide === "A") 
+            ? (typeof team1Name !== 'undefined' ? team1Name : "Team A") 
+            : (typeof team2Name !== 'undefined' ? team2Name : "Team B");
+
+        const dynamicBowlingTeam = (typeof currentBattingSide !== 'undefined' && currentBattingSide === "A") 
+            ? (typeof team2Name !== 'undefined' ? team2Name : "Team B") 
+            : (typeof team1Name !== 'undefined' ? team1Name : "Team A");
+
+        // 1. 🎯 Dynamic Toss Text Selector (Toss Fixed)
+        let finalTossText = "Match Live";
+        if (typeof currentTossStatus !== 'undefined' && currentTossStatus !== "Toss: Waiting..." && currentTossStatus !== "") {
+            finalTossText = currentTossStatus;
+        } else {
+            let rawTossElement = document.querySelector('div[style*="color:red"]') || 
+                                 document.querySelector('div[style*="color: red"]') ||
+                                 document.querySelector('span[style*="color:red"]') ||
+                                 document.querySelector('span[style*="color: red"]') ||
+                                 document.querySelector('*[style*="color:rgb(255, 0, 0)"]');
+
+            if (rawTossElement && rawTossElement.innerText.trim() !== "") {
+                finalTossText = rawTossElement.innerText.trim();
+            } else if (typeof team1Name !== 'undefined' && typeof currentBattingSide !== 'undefined') {
+                finalTossText = `${dynamicBattingTeam} opt to bat`;
+            }
+        }
+
+        // 2. 📊 [NEW] Partnership Data Extract Logic
+        // Aapke UI ke anusar agar alag ID nahi hai, to hum screen par se direct search karenge
+        let partnershipText = "0 (0)";
+        let uiElements = document.querySelectorAll('span, div, p');
+        for (let el of uiElements) {
+            if (el.innerText.includes("P'SHIP:") || el.innerText.includes("PARTNERSHIP:")) {
+                // "P'SHIP: 8 (1)" mein se sirf "8 (1)" alag nikalne ke liye split kiya
+                partnershipText = el.innerText.split(/P'SHIP:|PARTNERSHIP:/i)[1]?.trim() || "0 (0)";
+                break;
+            }
+        }
+
+        // 3. 📈 [NEW] Current Run Rate (CRR) Logic
+        let currentRuns = typeof runs !== 'undefined' ? runs : 0;
+        let currentBalls = typeof balls !== 'undefined' ? balls : 0;
+        let calculatedCRR = "0.00";
+
+        // Pehle UI se CRR text dhoondhte hain
+        let crrFound = false;
+        for (let el of uiElements) {
+            if (el.innerText.includes("CRR:")) {
+                let rawCrr = el.innerText.split("CRR:")[1]?.trim();
+                // Agar CRR ke aage dusra data bhi chipka hai (jaise Need 0...), to pehla part uthayenge
+                calculatedCRR = rawCrr ? rawCrr.split(" ")[0] : "0.00";
+                crrFound = true;
+                break;
+            }
+        }
+
+        // Fallback: Agar UI par se text nahi mila to formula se calculate karega
+        if (!crrFound && currentBalls > 0) {
+            calculatedCRR = ((currentRuns / currentBalls) * 6).toFixed(2);
+        }
+
+        // Main match data object construct ho raha hai
         const matchData = {
             innings: typeof innings !== 'undefined' ? innings : 1,
             target: typeof target !== 'undefined' ? target : 0,
-            runs: typeof runs !== 'undefined' ? runs : 0,
+            runs: currentRuns,
             wickets: typeof wickets !== 'undefined' ? wickets : 0,
-            balls: typeof balls !== 'undefined' ? balls : 0,
-            battingTeam: (currentBattingSide === "A") ? team1Name : team2Name,
-            bowlingTeam: (currentBattingSide === "A") ? team2Name : team1Name,
-            batsman1: realBatsman1,
-            b1_runs: (batsmen[striker]) ? batsmen[striker].runs : 0,
-            b1_balls: (batsmen[striker]) ? batsmen[striker].balls : 0,
-            b1_4s: (batsmen[striker]) ? (batsmen[striker].fours || 0) : 0,
-            b1_6s: (batsmen[striker]) ? (batsmen[striker].sixes || 0) : 0,
-            batsman2: realBatsman2,
-            b2_runs: (batsmen[nonStriker]) ? batsmen[nonStriker].runs : 0,
-            b2_balls: (batsmen[nonStriker]) ? batsmen[nonStriker].balls : 0,
-            b2_4s: (batsmen[nonStriker]) ? (batsmen[nonStriker].fours || 0) : 0,
-            b2_6s: (batsmen[nonStriker]) ? (batsmen[nonStriker].sixes || 0) : 0,
-            bowler: realBowler,
-            bowler_wickets: (currentBowler) ? currentBowler.wickets : 0,
-            bowler_runs: (currentBowler) ? currentBowler.runs : 0,
-            bowler_overs: document.getElementById('bw-o')?.innerText || "0.0",
-            toss_text: document.querySelector('div[style*="color:red"]')?.innerText || 
-                       document.querySelector('div[style*="color: red"]')?.innerText || "Match Live",
+            balls: currentBalls,
+            battingTeam: dynamicBattingTeam,
+            bowlingTeam: dynamicBowlingTeam,
+            
+            // 🔥 Naye Jode Gaye Fields 🔥
+            partnership: partnershipText, // Firebase mein save hoga jaise: "8 (1)"
+            crr: calculatedCRR,            // Firebase mein save hoga jaise: "20.00"
 
-            // Scorecard Arrays (Deep Cloned to prevent Firebase crashes)
+            batsman1: realBatsman1,
+            b1_runs: (typeof batsmen !== 'undefined' && typeof striker !== 'undefined' && batsmen[striker]) ? batsmen[striker].runs : 0,
+            b1_balls: (typeof batsmen !== 'undefined' && typeof striker !== 'undefined' && batsmen[striker]) ? batsmen[striker].balls : 0,
+            b1_4s: (typeof batsmen !== 'undefined' && typeof striker !== 'undefined' && batsmen[striker]) ? (batsmen[striker].fours || 0) : 0,
+            b1_6s: (typeof batsmen !== 'undefined' && typeof striker !== 'undefined' && batsmen[striker]) ? (batsmen[striker].sixes || 0) : 0,
+            
+            batsman2: realBatsman2,
+            b2_runs: (typeof batsmen !== 'undefined' && typeof nonStriker !== 'undefined' && batsmen[nonStriker]) ? batsmen[nonStriker].runs : 0,
+            b2_balls: (typeof batsmen !== 'undefined' && typeof nonStriker !== 'undefined' && batsmen[nonStriker]) ? batsmen[nonStriker].balls : 0,
+            b2_4s: (typeof batsmen !== 'undefined' && typeof nonStriker !== 'undefined' && batsmen[nonStriker]) ? (batsmen[nonStriker].fours || 0) : 0,
+            b2_6s: (typeof batsmen !== 'undefined' && typeof nonStriker !== 'undefined' && batsmen[nonStriker]) ? (batsmen[nonStriker].sixes || 0) : 0,
+            
+            bowler: realBowler,
+            bowler_wickets: (typeof currentBowler !== 'undefined' && currentBowler) ? currentBowler.wickets : 0,
+            bowler_runs: (typeof currentBowler !== 'undefined' && currentBowler) ? currentBowler.runs : 0,
+            bowler_overs: document.getElementById('bw-o')?.innerText || "0.0",
+            
+            toss_text: finalTossText,
+
             all_batsmen: (typeof batsmen !== 'undefined') ? JSON.parse(JSON.stringify(batsmen)) : [], 
             all_bowlers: (typeof bowlers !== 'undefined') ? JSON.parse(JSON.stringify(bowlers)) : [], 
             fall_of_wickets: (typeof fallOfWickets !== 'undefined') ? JSON.parse(JSON.stringify(fallOfWickets)) : [], 
@@ -5620,7 +5692,7 @@ function syncEverythingToFirebase() {
             timestamp: Date.now()
         };
 
-        // Firebase Realtime Database में डेटा पुश करना
+        // Firebase Realtime Database mein bhejien
         window.dbUpdate(window.dbRef(window.db, 'live_match_data'), matchData);
         
         let ov = `${Math.floor(matchData.balls/6)}.${matchData.balls%6}`;
@@ -5628,7 +5700,7 @@ function syncEverythingToFirebase() {
             window.dbSet(window.dbRef(window.db, 'match_status'), `${matchData.runs}/${matchData.wickets} (${ov})`);
         }
         
-        console.log("Firebase Sync Professional ✅ (Secure Guard Activated)");
+        console.log("Firebase Sync Professional ✅ (Partnership & CRR Included)");
 
     } catch (err) {
         console.error("Sync Error:", err);
