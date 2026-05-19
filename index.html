@@ -332,7 +332,8 @@ textarea.setup-input {
 }
 .ps-tname { color: white; font-size: 16px; font-weight: bold; display: flex; align-items: center; gap: 5px; }
 .ps-tscore { color: black; font-size: 16px; font-weight: bold; }
-    /* 2. Light Yellow Batter Header */
+
+/* 2. Light Yellow Batter Header */
 .ps-batter-header {
     background-color: #f9f7e8; /* Cricbuzz-like light yellow */
     padding: 6px 15px;
@@ -421,8 +422,7 @@ textarea.setup-input {
     font-weight: bold;
     padding: 5px;
 }
-
-/* सुनिश्चित करें कि modal-content 'relative' हो */
+    /* सुनिश्चित करें कि modal-content 'relative' हो */
 .modal-content {
     position: relative; /* यह क्रॉस बटन को इसके अंदर रखने के लिए जरूरी है */
     background: white;
@@ -710,8 +710,7 @@ body {
     color: #333;
     margin-bottom: 15px;
 }
-
-/* टेबल हेडर की स्टाइल (R, B, 4s, 6s आदि) */
+    /* टेबल हेडर की स्टाइल (R, B, 4s, 6s आदि) */
 .cb-player-table th {
     text-align: right; /* नंबर्स को दाएं तरफ रखें */
     color: #777; /* हल्का ग्रे रंग */
@@ -803,8 +802,9 @@ body {
     justify-content: space-between;
     transition: background 0.2s ease;
     border: 1px solid #eee;
-    }
-    .team-slot:hover {
+}
+
+.team-slot:hover {
     background: #e1f5fe; /* हल्का नीला रंग */
 }
 
@@ -1102,8 +1102,7 @@ body {
     background: #f5f5f5;
     white-space: nowrap;
 }
-
-.sub-tab-btn {
+       .sub-tab-btn {
     padding: 6px 18px;
     border-radius: 25px; /* गोल करने के लिए */
     border: 1px solid #ccc;
@@ -1159,9 +1158,8 @@ body {
     </style>
     
 </head>
+
 <body>
-
-
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
@@ -1327,13 +1325,7 @@ body {
     }
   });
 </script>
-
-    
-
-
-</script>
-
-<div id="home-section" class="tab-content"> 
+    <div id="home-section" class="tab-content"> 
     <div id="upcoming-matches-container" style="display: flex; overflow-x: auto; gap: 12px; padding: 15px 10px; scrollbar-width: none; -webkit-overflow-scrolling: touch; align-items: flex-start; flex-wrap: nowrap;">
         </div>
 </div>
@@ -1520,6 +1512,8 @@ body {
         </li>
     </ul>
 </div>
+
+
 <div id="playersOverlay" class="players-full-overlay">
     <div class="overlay-header">
         <span>PLAYER LIST OF THIS MATCH</span>
@@ -1631,8 +1625,7 @@ body {
                 </tr>
             </table>
         </div>
-
-        <div style="background: #f8f9fa; padding: 10px 15px; font-size: 12px; font-weight: bold; color: #008080; border-left: 4px solid #008080; margin-top: 5px; text-transform: uppercase;">
+             <div style="background: #f8f9fa; padding: 10px 15px; font-size: 12px; font-weight: bold; color: #008080; border-left: 4px solid #008080; margin-top: 5px; text-transform: uppercase;">
             Match Conditions
         </div>
         <div style="background: #fff;">
@@ -1855,6 +1848,9 @@ body {
     </div>
 </div>
  </div>
+
+
+
 <div id="activity-tab" class="tab-content">
  <div id="controls-container">
     
@@ -1954,8 +1950,7 @@ body {
     
     
    <div style="display: flex; justify-content: space-between; gap: 10px; padding: 5px;">
-
-    <div id="teamAInputs" class="player-list-grid" style="flex: 1;">
+           <div id="teamAInputs" class="player-list-grid" style="flex: 1;">
         <div class="p-row" style="display:flex; align-items:center; margin-bottom:5px;">
             <span>1</span>
             <input type="checkbox" id="check-A-0" onclick="handleLiveSelection(0, 'A')" class="pick-check">
@@ -2043,7 +2038,11 @@ body {
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         ">❌</button>
     </div>
-        <div class="setup-card" style="padding:15px;">
+    
+    
+
+    
+    <div class="setup-card" style="padding:15px;">
         <div class="setup-header" onclick="toggleTeamInputs()" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; background:#f9f9f9; padding:10px; border-radius:8px;">
             <span id="toggle-icon" style="color: #02b089; font-weight:bold;">▼ ALL TEAMS NAME (16 Teams)</span>
         </div>
@@ -2217,9 +2216,7 @@ body {
     </div>
 </div>
 
-
-
-<script>
+    <script>
 /* --- JAVASCRIPT LOGIC (GLOBAL VARIABLES) --- */
 let fowListArray = []; 
 let selectedBatsmen = []; 
@@ -2316,8 +2313,8 @@ function renderHomeMatches() {
         container.innerHTML += cardHTML;
     });
 }
-    
- function openLiveScorecard(status) {
+
+function openLiveScorecard(status) {
     if (status === 'LIVE' || status === 'Live') {
         // 1. History mode band karein taaki live data dikhe
         isHistoryMode = false;
@@ -2583,8 +2580,7 @@ function showTeamProfile(teamName) {
 
     listContainer.innerHTML = html;
 }
-
-function closeProfile() {
+        function closeProfile() {
     document.getElementById("teamProfilePanel").classList.remove("open");
 }
 function addPlayerToTeam() {
@@ -2625,8 +2621,9 @@ function addPlayerToTeam() {
 
     // छोटा सा नोटिफिकेशन नीचे दिखाएं (Alert की ज़रूरत नहीं, अलर्ट से टाइम खराब होता है)
     console.log("Saved: " + playerName);
-    }
-    // ड्रॉपडाउन में टीमों के नाम भरने के लिए फंक्शन
+}
+
+// ड्रॉपडाउन में टीमों के नाम भरने के लिए फंक्शन
 function loadTeamsInDropdown() {
     const dropdown = document.getElementById("teamSelectDropdown");
     const storedTeams = localStorage.getItem('bkcc_teams');
@@ -2985,7 +2982,7 @@ function update() {
                 homeT2Name.innerText = bottomTeamName;
                 homeT2Score.innerHTML = bottomTeamScore;
 
-                let winMsgHtml = `<div style="position: absolute; left: 15px; bottom: 5px; color: #1A73E8; font-weight: bold; font-size: 14px; white-space: nowrap; pointer-events: none;">${resultMessage}</div>`;
+                    let winMsgHtml = `<div style="position: absolute; left: 15px; bottom: 5px; color: #1A73E8; font-weight: bold; font-size: 14px; white-space: nowrap; pointer-events: none;">${resultMessage}</div>`;
 
                 let matchCard = homeT2Name.closest('.mini-match-card');
                 if (matchCard) {
@@ -3008,7 +3005,8 @@ function update() {
             }
         }
     }
-        // --- 5. TABLES & OTHER SYNC ---
+
+    // --- 5. TABLES & OTHER SYNC ---
     let currentCRR = (balls > 0) ? (runs / (balls / 6)).toFixed(2) : "0.00";
     if(document.getElementById("crrbox") && !isMatchOver) document.getElementById("crrbox").innerText = `CRR: ${currentCRR}`;
     if(document.getElementById("partnershipbox") && !isMatchOver) document.getElementById("partnershipbox").innerText = `P'SHIP: ${partnershipRuns} (${partnershipBalls})`;
@@ -3325,8 +3323,7 @@ function out() {
     
     // 3. ओवर ट्रैकर में 'W' जोड़ें
     currentOverBalls.push("W");
-
-    // 4. गेंद गिनें
+        // 4. गेंद गिनें
     balls++;
     currentBowler.balls++;
 
@@ -3397,8 +3394,9 @@ function handleExtras(type) {
         bowlers: JSON.parse(JSON.stringify(bowlers)),
         currentBowlerName: currentBowler ? currentBowler.name : null
     }));
-    }
-    function undo() {
+}
+
+function undo() {
     if(undoStack.length === 0) return;
     let s = JSON.parse(undoStack.pop());
     runs = s.runs; wickets = s.wickets; balls = s.balls;
@@ -3577,9 +3575,8 @@ function noBall() {
     currentOverBalls.push("NB");
     if(r % 2 !== 0) changeStrike();
     update();
-}
-
-// --- Bowling Table Render करने के लिए ---
+        }
+        // --- Bowling Table Render करने के लिए ---
 function renderBowlingCard() {
     let html = `<table style="width:100%; text-align:left; border-collapse: collapse;">
                 <tr style="border-bottom:1px solid #ccc;"><th>Bowler</th><th>O</th><th>R</th><th>W</th></tr>`;
@@ -3850,8 +3847,11 @@ function toggleTeamInputs() {
 // 3. डिलीट (Clear) बटन का काम
 function clearInput(btn) {
     btn.parentElement.querySelector('input').value = "";
-    }
-    function saveTeamsToMenu() {
+}
+
+// 4. सबसे ज़रूरी: यहाँ के नाम साइड मेनू में भेजना
+// --- सिर्फ इस एक फंक्शन को रखें ---
+function saveTeamsToMenu() {
     const inputs = document.querySelectorAll('.t-name-input');
     let teamsArray = [];
 
@@ -3874,9 +3874,8 @@ function clearInput(btn) {
     
     // पैनल बंद करें
     closeAdvanced();
-}
-
-// 1. पैनल खोलने और बंद करने का फंक्शन
+        }
+        // 1. पैनल खोलने और बंद करने का फंक्शन
 function allteams() {
     // पहले साइड मेनू बंद करें (अगर खुला है)
     toggleMenu(); 
@@ -4135,8 +4134,9 @@ function renderScheduleInPanel() {
         } else if (isFinished) {
             statusBadge = `<span style="background:#4CAF50; color:white; padding:3px 8px; border-radius:12px; font-size:10px;">MATCH COMPLETED</span>`;
             cardBorder = "#4CAF50";
-    }
-            // Winner & Margin Logic
+        }
+
+        // Winner & Margin Logic
         let finalWinner = match.winner || 'Team';
         if (match.winner === 'Team A') finalWinner = match.teamA;
         if (match.winner === 'Team B') finalWinner = match.teamB;
@@ -4266,8 +4266,7 @@ function endMatch() {
         let currentOver = `${Math.floor(balls/6)}.${balls % 6}`;
         let resultMsg = (winnerName === "Match Tied" || winnerName === "No Result") ? winnerName : `${winnerName} ${marginText}`;
         window.resultMessage = resultMsg;
-
-        // ✅ सुधार 1: FOW डेटा को एरे (Array) के रूप में निकालें
+                // ✅ सुधार 1: FOW डेटा को एरे (Array) के रूप में निकालें
         let fowInn1Data = JSON.parse(localStorage.getItem('match_fow_data_inn1')) || [];
         let fowInn2Data = JSON.parse(localStorage.getItem('match_fow_data_inn2')) || [];
 
@@ -4409,8 +4408,9 @@ function selectPlayer(element, team) {
         t1Display.innerHTML = t1Name;
         t2Display.innerHTML = t2Name;
     }
-    }
-    function showMatchHistory() {
+}
+
+function showMatchHistory() {
     console.log("Opening Match History...");
     // यहाँ आप अपनी मैच हिस्ट्री दिखाने का लॉजिक लिख सकते हैं
     alert("Match History Section Coming Soon!"); 
@@ -4604,9 +4604,8 @@ function syncLiveCheckboxes() {
     
     // अगर आप चाहते हैं कि ग्राफ का प्रतिशत भी रन के साथ बदले तो यहाँ अपडेट करें
     // updateWinProbability(50, 50); 
-}
-
-// 1. एडमिन एरिया में शेड्यूल की लिस्ट दिखाना (डिलीट बटन के साथ)
+        }
+        // 1. एडमिन एरिया में शेड्यूल की लिस्ट दिखाना (डिलीट बटन के साथ)
 // 1. एडमिन एरिया में शेड्यूल की लिस्ट दिखाना (डिलीट बटन के साथ)
 function renderScheduleManagerList() {
     const managerList = document.getElementById('current-schedule-list');
@@ -4788,8 +4787,9 @@ function saveMatchInfo() {
     displayMatchInfo(); 
     alert("Match Info Updated!");
     if(typeof toggleInfoEdit === "function") toggleInfoEdit(); 
-    }
-    function displayMatchInfo() {
+}
+
+function displayMatchInfo() {
     try {
         const savedData = localStorage.getItem('bkcc_match_info');
         if (!savedData) return; // अगर डेटा नहीं है तो वापस जाओ
@@ -4908,9 +4908,8 @@ function displayGallery() {
 
         grid.appendChild(wrapper);
     });
-}
-
-// 3. Photo delete karne ka function
+        }
+        // 3. Photo delete karne ka function
 function deletePhoto(index, isAdminView = false) {
     // Confirm box taaki galti se delete na ho
     if (confirm("Kya aap sach mein ye photo delete karna chahte hain?")) {
@@ -5287,9 +5286,8 @@ function addFOW(batsmanName, runsAtWicket, wicketNum, overAtWicket) {
         // "No wickets fallen" वाले मैसेज को हटाने के लिए join का इस्तेमाल करें
         fowDisplay.innerHTML = thisInningsFOW.join('');
     }
-    }
-    
-function syncHomeCard() {
+        }
+        function syncHomeCard() {
     try {
         // --- 1. Constants & Safety Checks ---
         const safeGet = (id) => document.getElementById(id);
@@ -5516,24 +5514,7 @@ function showHistory() {
     showSection('history-section'); // अपना पुराना सेक्शन बदलने वाला फंक्शन
     loadMatchHistory();
 }
-// 🎯 टैब बदलने पर 0/0 दिखने वाली समस्या का परमानेंट फिक्स
-if (window.location.search.includes('mode=admin') || window.isAdmin === true) {
-    // 👑 अगर आप एडमिन हैं, तभी टैब बदलने पर फ़ायरबेस में डेटा सिंक (Upload) होगा
-    if (typeof syncEverythingToFirebase === "function") {
-        try { syncEverythingToFirebase(); } catch (error) { console.error(error); }
-    }
-} else {
-    // 👥 अगर आपका दोस्त (Viewer) टैब बदलता है, तो डेटा अपलोड नहीं होगा, बल्कि फ़ायरबेस से तुरंत लाइव स्कोर दोबारा स्क्रीन पर आ जाएगा
-    if (typeof fetchLiveScoreFromFirebase === "function") {
-        try { fetchLiveScoreFromFirebase(); } catch (error) { console.error(error); }
-    } else if (typeof setupFirebaseListener === "function") {
-        try { setupFirebaseListener(); } catch (error) { console.error(error); }
-    }
-    }
-    
-// ========================================================
-// 👑 ADMIN IDENTITY CONFIGURATION
-// ========================================================
+
 if (typeof currentTossStatus === 'undefined') {
     window.currentTossStatus = "Toss: Waiting..."; 
 }
@@ -5637,11 +5618,10 @@ function syncEverythingToFirebase() {
     } catch (err) {
         console.error("Sync Error:", err);
     }
-    }
+}
+
 </script>
 
 
 </body>
 </html>
-        
-
