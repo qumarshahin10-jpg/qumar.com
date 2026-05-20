@@ -1162,8 +1162,9 @@ body {
 <body>
 
 <script type="module">
+  // 🛠️ सुधार 1: यहाँ हमने 'get' को इम्पोर्ट लिस्ट में जोड़ दिया है
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-  import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+  import { getDatabase, ref, set, onValue, update, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyAEuQ3up4s30SWJVTNcMsIzG5FJNBH0iiM",
@@ -1180,189 +1181,204 @@ body {
   window.dbSet = set;
   window.dbUpdate = update;
 
+  // 🛠️ सुधार 2: पूरे रेंडरिंग लॉजिक को एक कॉमन फंक्शन (renderCricketData) में डाल दिया
+  // ताकि इसे ऑन-वैल्यू भी चला सके और टैब बदलने पर 'get' भी चला सके।
+  function renderCricketData(data) {
+    if (!data) return;
+
+    let ov = `${Math.floor(data.balls/6)}.${data.balls%6}`;
+    let bTeam = data.battingTeam || "Team 1";
+    let fieldTeam = data.bowlingTeam || "Team 2";
+    let currentScoreStr = `${data.runs || 0}/${data.wickets || 0} (${ov})`;
+
+    // 📢 1. मुख्य LIVE टैब का डेटा
+    if(document.getElementById('live-batting-team')) document.getElementById('live-batting-team').innerText = bTeam;
+    if(document.getElementById('live-bowling-team')) document.getElementById('live-bowling-team').innerText = fieldTeam;
+    if(document.getElementById('live-team-score')) document.getElementById('live-team-score').innerText = currentScoreStr;
+    
+    if(document.getElementById('d-t1-name')) document.getElementById('d-t1-name').innerText = bTeam;
+    if(document.getElementById('d-t2-name')) document.getElementById('d-t2-name').innerText = fieldTeam;
+    if(document.getElementById('d-t1-score')) document.getElementById('d-t1-score').innerText = currentScoreStr;
+    if(document.getElementById('d-t2-score')) document.getElementById('d-t2-score').innerText = `${data.t2_runs || 0}/${data.t2_wickets || 0} (${data.t2_overs || "0.0"})`;
+
+    // 📊 2. SCORECARD टैब के हेडर्स
+    if(document.getElementById('label-t1-name')) document.getElementById('label-t1-name').innerText = bTeam;
+    if(document.getElementById('label-t2-name')) document.getElementById('label-t2-name').innerText = fieldTeam;
+    if(document.getElementById('label-t1-score')) document.getElementById('label-t1-score').innerText = currentScoreStr;
+
+    if(document.getElementById('ps-batting-team-name')) document.getElementById('ps-batting-team-name').innerText = bTeam;
+    if(document.getElementById('ps-t1-total')) document.getElementById('ps-t1-total').innerText = currentScoreStr;
+    
+    let bowTeamHeader = document.getElementById('ps-bowling-team-header');
+    if(bowTeamHeader) {
+        bowTeamHeader.innerHTML = `<span class="ps-tname">${fieldTeam} ⚾</span> <span class="ps-tscore">${ov} Overs</span>`;
+    }
+
+    const getSR = (r, b) => (b > 0 ? ((r / b) * 100).toFixed(1) : "0.0");
+    const getEC = (runs, oversStr) => {
+        if (!oversStr || oversStr === "0.0" || oversStr === 0) return "0.0";
+        let parts = String(oversStr).split('.');
+        let overs = parseInt(parts[0]) || 0;
+        let balls = parseInt(parts[1]) || 0;
+        let totalBalls = (overs * 6) + balls;
+        return totalBalls > 0 ? ((runs / totalBalls) * 6).toFixed(1) : "0.0";
+    };
+
+    // ⚡ 3. टॉस, पार्टनरशिप, और CRR को आपके पुराने HTML IDs के साथ जोड़ा
+    if(document.getElementById('toss-result-text')) document.getElementById('toss-result-text').innerText = `Toss: ${data.toss_text || "Match Live"}`;
+    if(document.getElementById('partnershipbox')) document.getElementById('partnershipbox').innerText = `P'SHIP: ${data.partnership || "0 (0)"}`;
+    if(document.getElementById('crrbox')) document.getElementById('crrbox').innerText = `CRR: ${data.crr || "0.00"}`;
+
+    // 🎯 4. सेकंड इनिंग्स और टारगेट का लाइव अपडेट
+    if(data.target && data.target > 0) {
+        if(document.getElementById('target-display-box')) document.getElementById('target-display-box').style.display = "block";
+        if(document.getElementById('target-value')) document.getElementById('target-value').innerText = data.target;
+        if(document.getElementById('target-runs-needed')) {
+            let runsNeeded = data.target - (data.runs || 0);
+            document.getElementById('target-runs-needed').innerText = runsNeeded > 0 ? runsNeeded : 0;
+        }
+        if(document.getElementById('target-balls-left')) {
+            let totalMatchBalls = (data.max_overs || 20) * 6; 
+            let ballsLeft = totalMatchBalls - (data.balls || 0);
+            document.getElementById('target-balls-left').innerText = ballsLeft > 0 ? ballsLeft : 0;
+        }
+    } else {
+        if(document.getElementById('target-display-box')) document.getElementById('target-display-box').style.display = "none";
+    }
+
+    // 🏏 5. जावास्क्रिप्ट खुद लाइव टेबल बनाकर आपके 'live-data-wrapper' बॉक्स में डाल देगा
+    let liveTablesHtml = `
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: sans-serif; margin-bottom: 15px;">
+            <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; font-weight: bold; color: #555;">
+                <th style="padding: 8px;">BATTER</th>
+                <th style="padding: 8px; text-align: center;">R</th>
+                <th style="padding: 8px; text-align: center;">B</th>
+                <th style="padding: 8px; text-align: center;">4s</th>
+                <th style="padding: 8px; text-align: center;">6s</th>
+                <th style="padding: 8px; text-align: center; color: #00a862;">SR</th>
+            </tr>
+            <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 8px; font-weight: bold; color: #004ba0;">${data.batsman1 || "Batter 1"} *</td>
+                <td style="padding: 8px; text-align: center; font-weight: bold;">${data.b1_runs || 0}</td>
+                <td style="padding: 8px; text-align: center; color: #555;">${data.b1_balls || 0}</td>
+                <td style="padding: 8px; text-align: center; color: #555;">${data.b1_4s || 0}</td>
+                <td style="padding: 8px; text-align: center; color: #555;">${data.b1_6s || 0}</td>
+                <td style="padding: 8px; text-align: center; color: #00a862; font-weight: bold;">${getSR(data.b1_runs || 0, data.b1_balls || 0)}</td>
+            </tr>
+            <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 8px; color: #333;">${data.batsman2 || "Batter 2"}</td>
+                <td style="padding: 8px; text-align: center; font-weight: bold;">${data.b2_runs || 0}</td>
+                <td style="padding: 8px; text-align: center; color: #555;">${data.b2_balls || 0}</td>
+                <td style="padding: 8px; text-align: center; color: #555;">${data.b2_4s || 0}</td>
+                <td style="padding: 8px; text-align: center; color: #555;">${data.b2_6s || 0}</td>
+                <td style="padding: 8px; text-align: center; color: #00a862;">${getSR(data.b2_runs || 0, data.b2_balls || 0)}</td>
+            </tr>
+        </table>
+
+        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: sans-serif; margin-bottom: 10px;">
+            <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; font-weight: bold; color: #555;">
+                <th style="padding: 8px;">BOWLER</th>
+                <th style="padding: 8px; text-align: center;">O</th>
+                <th style="padding: 8px; text-align: center;">R</th>
+                <th style="padding: 8px; text-align: center;">W</th>
+                <th style="padding: 8px; text-align: center; color: #00a862;">EC</th>
+            </tr>
+            <tr>
+                <td style="padding: 8px; font-weight: bold; color: #333;">${data.bowler || "Bowler"}</td>
+                <td style="padding: 8px; text-align: center; font-weight: bold;">${data.bowler_overs || "0.0"}</td>
+                <td style="padding: 8px; text-align: center; color: #555;">${data.bowler_runs || 0}</td>
+                <td style="padding: 8px; text-align: center; color: red; font-weight: bold;">${data.bowler_wickets || 0}</td>
+                <td style="padding: 8px; text-align: center; color: #00a862; font-weight: bold;">${getEC(data.bowler_runs || 0, data.bowler_overs || "0.0")}</td>
+            </tr>
+        </table>
+    `;
+
+    if(document.getElementById("live-data-wrapper")) {
+        document.getElementById("live-data-wrapper").innerHTML = liveTablesHtml;
+    }
+
+    // 📋 6. फुल बैटिंग स्कोरकार्ड लिस्ट
+    let batScoreHtml = "";
+    if (data.all_batsmen && Array.isArray(data.all_batsmen)) {
+        data.all_batsmen.forEach(p => {
+            if (!p) return;
+            if (p.runs > 0 || p.balls > 0 || p.out) {
+                let outStatus = p.out ? `${p.outType || "Out"}${p.bowledBy ? ` b ${p.bowledBy}` : ""}` : "not out";
+                batScoreHtml += `
+                    <div class="ps-batter-header" style="background: none; border-bottom: 1px solid #f0f0f0; font-weight: normal; padding: 6px 0; color: #000;">
+                        <span class="p-head-item h-name" style="text-align: left; line-height: 1.3;"><b>${p.name}</b><br><small style="color: #666; font-size: 10px;">${outStatus}</small></span>
+                        <span class="p-head-item h-r"><b>${p.runs || 0}</b></span>
+                        <span class="p-head-item h-b">${p.balls || 0}</span>
+                        <span class="p-head-item h-4s">${p.fours || 0}</span>
+                        <span class="p-head-item h-6s">${p.sixes || 0}</span>
+                        <span class="p-head-item h-sr" style="color: #666;">${getSR(p.runs || 0, p.balls || 0)}</span>
+                    </div>`;
+            }
+        });
+    }
+
+    // 📋 7. फुल बॉलिंग स्कोरकार्ड लिस्ट
+    let bowlScoreHtml = "";
+    if (data.all_bowlers && Array.isArray(data.all_bowlers)) {
+        data.all_bowlers.forEach(b => {
+            if (!b) return;
+            if (b.overs > 0 || b.balls > 0 || b.runs > 0) {
+                let bowlerOversCombined = `${b.overs || 0}.${b.balls || 0}`;
+                bowlScoreHtml += `
+                    <div class="ps-batter-header bowler-header" style="background: none; border-bottom: 1px solid #f0f0f0; font-weight: normal; padding: 6px 0; color: #000;">
+                        <span class="p-head-item hb-name" style="text-align: left;"><b>${b.name}</b></span>
+                        <span class="p-head-item hb-o">${bowlerOversCombined}</span>
+                        <span class="p-head-item hb-m">${b.maidens || 0}</span>
+                        <span class="p-head-item hb-r">${b.runs || 0}</span>
+                        <span class="p-head-item hb-w" style="color: red; font-weight: bold;">${b.wickets || 0}</span>
+                        <span class="p-head-item hb-wd">${b.wides || 0}</span>
+                        <span class="p-head-item hb-nb">${b.noBalls || 0}</span>
+                        <span class="p-head-item hb-econ" style="color: #666;">${getEC(b.runs || 0, bowlerOversCombined)}</span>
+                    </div>`;
+            }
+        });
+    }
+
+    if(document.getElementById("ps-t1-batting")) document.getElementById("ps-t1-batting").innerHTML = batScoreHtml;
+    if(document.getElementById("ps-t2-bowling")) document.getElementById("ps-t2-bowling").innerHTML = bowlScoreHtml;
+
+    // 📋 8. एक्स्ट्रा रनों का डेटा
+    if (data.extras_data && document.getElementById("ps-t1-batting")) {
+        let ext = data.extras_data;
+        let extrasHtml = `
+            <div style="margin: 12px 0; padding: 8px 0; border-top: 1px dashed #ddd; border-bottom: 1px dashed #ddd; font-size: 12px; font-family: sans-serif; color: #000;">
+                Extras: <b style="color: #0056b3;">${ext.total || 0}</b> <span style="color: #666;">(wd ${ext.wd || 0}, nb ${ext.nb || 0}, b ${ext.b || 0}, lb ${ext.lb || 0})</span>
+            </div>`;
+        
+        let extrasCheck = document.getElementById("viewer-extras-inserted");
+        if(!extrasCheck) {
+            let div = document.createElement("div");
+            div.id = "viewer-extras-inserted";
+            div.innerHTML = extrasHtml;
+            document.getElementById("ps-t1-batting").after(div);
+        } else {
+            extrasCheck.innerHTML = extrasHtml;
+        }
+    }
+    console.log("Data rendered inside function! ✅");
+  }
+
   // --- दर्शकों के लिए ऑटो-अपडेट (OnValue) ---
   onValue(ref(db, 'live_match_data'), (snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-        let ov = `${Math.floor(data.balls/6)}.${data.balls%6}`;
-        let bTeam = data.battingTeam || "Team 1";
-        let fieldTeam = data.bowlingTeam || "Team 2";
-        let currentScoreStr = `${data.runs || 0}/${data.wickets || 0} (${ov})`;
-
-        // 📢 1. मुख्य LIVE टैब का डेटा
-        if(document.getElementById('live-batting-team')) document.getElementById('live-batting-team').innerText = bTeam;
-        if(document.getElementById('live-bowling-team')) document.getElementById('live-bowling-team').innerText = fieldTeam;
-        if(document.getElementById('live-team-score')) document.getElementById('live-team-score').innerText = currentScoreStr;
-        
-        if(document.getElementById('d-t1-name')) document.getElementById('d-t1-name').innerText = bTeam;
-        if(document.getElementById('d-t2-name')) document.getElementById('d-t2-name').innerText = fieldTeam;
-        if(document.getElementById('d-t1-score')) document.getElementById('d-t1-score').innerText = currentScoreStr;
-        if(document.getElementById('d-t2-score')) document.getElementById('d-t2-score').innerText = `${data.t2_runs || 0}/${data.t2_wickets || 0} (${data.t2_overs || "0.0"})`;
-
-        // 📊 2. SCORECARD टैब के हेडर्स
-        if(document.getElementById('label-t1-name')) document.getElementById('label-t1-name').innerText = bTeam;
-        if(document.getElementById('label-t2-name')) document.getElementById('label-t2-name').innerText = fieldTeam;
-        if(document.getElementById('label-t1-score')) document.getElementById('label-t1-score').innerText = currentScoreStr;
-
-        if(document.getElementById('ps-batting-team-name')) document.getElementById('ps-batting-team-name').innerText = bTeam;
-        if(document.getElementById('ps-t1-total')) document.getElementById('ps-t1-total').innerText = currentScoreStr;
-        
-        let bowTeamHeader = document.getElementById('ps-bowling-team-header');
-        if(bowTeamHeader) {
-            bowTeamHeader.innerHTML = `<span class="ps-tname">${fieldTeam} ⚾</span> <span class="ps-tscore">${ov} Overs</span>`;
-        }
-
-        const getSR = (r, b) => (b > 0 ? ((r / b) * 100).toFixed(1) : "0.0");
-        const getEC = (runs, oversStr) => {
-            if (!oversStr || oversStr === "0.0" || oversStr === 0) return "0.0";
-            let parts = String(oversStr).split('.');
-            let overs = parseInt(parts[0]) || 0;
-            let balls = parseInt(parts[1]) || 0;
-            let totalBalls = (overs * 6) + balls;
-            return totalBalls > 0 ? ((runs / totalBalls) * 6).toFixed(1) : "0.0";
-        };
-
-        // ⚡ 3. [सुधार] टॉस, पार्टनरशिप, और CRR को आपके पुराने HTML IDs के साथ जोड़ा
-        if(document.getElementById('toss-result-text')) document.getElementById('toss-result-text').innerText = `Toss: ${data.toss_text || "Match Live"}`;
-        if(document.getElementById('partnershipbox')) document.getElementById('partnershipbox').innerText = `P'SHIP: ${data.partnership || "0 (0)"}`;
-        if(document.getElementById('crrbox')) document.getElementById('crrbox').innerText = `CRR: ${data.crr || "0.00"}`;
-
-        // 🎯 4. सेकंड इनिंग्स और टारगेट का लाइव अपडेट
-        if(data.target && data.target > 0) {
-            if(document.getElementById('target-display-box')) document.getElementById('target-display-box').style.display = "block";
-            if(document.getElementById('target-value')) document.getElementById('target-value').innerText = data.target;
-            if(document.getElementById('target-runs-needed')) {
-                let runsNeeded = data.target - (data.runs || 0);
-                document.getElementById('target-runs-needed').innerText = runsNeeded > 0 ? runsNeeded : 0;
-            }
-            if(document.getElementById('target-balls-left')) {
-                let totalMatchBalls = (data.max_overs || 20) * 6; 
-                let ballsLeft = totalMatchBalls - (data.balls || 0);
-                document.getElementById('target-balls-left').innerText = ballsLeft > 0 ? ballsLeft : 0;
-            }
-        } else {
-            if(document.getElementById('target-display-box')) document.getElementById('target-display-box').style.display = "none";
-        }
-
-        // 🏏 5. [सुधार - जादू] जावास्क्रिप्ट खुद लाइव टेबल बनाकर आपके 'live-data-wrapper' बॉक्स में डाल देगा
-        let liveTablesHtml = `
-            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: sans-serif; margin-bottom: 15px;">
-                <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; font-weight: bold; color: #555;">
-                    <th style="padding: 8px;">BATTER</th>
-                    <th style="padding: 8px; text-align: center;">R</th>
-                    <th style="padding: 8px; text-align: center;">B</th>
-                    <th style="padding: 8px; text-align: center;">4s</th>
-                    <th style="padding: 8px; text-align: center;">6s</th>
-                    <th style="padding: 8px; text-align: center; color: #00a862;">SR</th>
-                </tr>
-                <tr style="border-bottom: 1px solid #eee;">
-                    <td style="padding: 8px; font-weight: bold; color: #004ba0;">${data.batsman1 || "Batter 1"} *</td>
-                    <td style="padding: 8px; text-align: center; font-weight: bold;">${data.b1_runs || 0}</td>
-                    <td style="padding: 8px; text-align: center; color: #555;">${data.b1_balls || 0}</td>
-                    <td style="padding: 8px; text-align: center; color: #555;">${data.b1_4s || 0}</td>
-                    <td style="padding: 8px; text-align: center; color: #555;">${data.b1_6s || 0}</td>
-                    <td style="padding: 8px; text-align: center; color: #00a862; font-weight: bold;">${getSR(data.b1_runs || 0, data.b1_balls || 0)}</td>
-                </tr>
-                <tr style="border-bottom: 1px solid #eee;">
-                    <td style="padding: 8px; color: #333;">${data.batsman2 || "Batter 2"}</td>
-                    <td style="padding: 8px; text-align: center; font-weight: bold;">${data.b2_runs || 0}</td>
-                    <td style="padding: 8px; text-align: center; color: #555;">${data.b2_balls || 0}</td>
-                    <td style="padding: 8px; text-align: center; color: #555;">${data.b2_4s || 0}</td>
-                    <td style="padding: 8px; text-align: center; color: #555;">${data.b2_6s || 0}</td>
-                    <td style="padding: 8px; text-align: center; color: #00a862;">${getSR(data.b2_runs || 0, data.b2_balls || 0)}</td>
-                </tr>
-            </table>
-
-            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: sans-serif; margin-bottom: 10px;">
-                <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; font-weight: bold; color: #555;">
-                    <th style="padding: 8px;">BOWLER</th>
-                    <th style="padding: 8px; text-align: center;">O</th>
-                    <th style="padding: 8px; text-align: center;">R</th>
-                    <th style="padding: 8px; text-align: center;">W</th>
-                    <th style="padding: 8px; text-align: center; color: #00a862;">EC</th>
-                </tr>
-                <tr>
-                    <td style="padding: 8px; font-weight: bold; color: #333;">${data.bowler || "Bowler"}</td>
-                    <td style="padding: 8px; text-align: center; font-weight: bold;">${data.bowler_overs || "0.0"}</td>
-                    <td style="padding: 8px; text-align: center; color: #555;">${data.bowler_runs || 0}</td>
-                    <td style="padding: 8px; text-align: center; color: red; font-weight: bold;">${data.bowler_wickets || 0}</td>
-                    <td style="padding: 8px; text-align: center; color: #00a862; font-weight: bold;">${getEC(data.bowler_runs || 0, data.bowler_overs || "0.0")}</td>
-                </tr>
-            </table>
-        `;
-
-        // इन दोनों लाइव टेबल्स को आपके पुराने खाली बॉक्स में पुश कर दिया
-        if(document.getElementById("live-data-wrapper")) {
-            document.getElementById("live-data-wrapper").innerHTML = liveTablesHtml;
-        }
-
-        // 📋 6. फुल बैटिंग स्कोरकार्ड लिस्ट
-        let batScoreHtml = "";
-        if (data.all_batsmen && Array.isArray(data.all_batsmen)) {
-            data.all_batsmen.forEach(p => {
-                if (!p) return;
-                if (p.runs > 0 || p.balls > 0 || p.out) {
-                    let outStatus = p.out ? `${p.outType || "Out"}${p.bowledBy ? ` b ${p.bowledBy}` : ""}` : "not out";
-                    batScoreHtml += `
-                        <div class="ps-batter-header" style="background: none; border-bottom: 1px solid #f0f0f0; font-weight: normal; padding: 6px 0; color: #000;">
-                            <span class="p-head-item h-name" style="text-align: left; line-height: 1.3;"><b>${p.name}</b><br><small style="color: #666; font-size: 10px;">${outStatus}</small></span>
-                            <span class="p-head-item h-r"><b>${p.runs || 0}</b></span>
-                            <span class="p-head-item h-b">${p.balls || 0}</span>
-                            <span class="p-head-item h-4s">${p.fours || 0}</span>
-                            <span class="p-head-item h-6s">${p.sixes || 0}</span>
-                            <span class="p-head-item h-sr" style="color: #666;">${getSR(p.runs || 0, p.balls || 0)}</span>
-                        </div>`;
-                }
-            });
-        }
-
-        // 📋 7. फुल बॉलिंग स्कोरकार्ड लिस्ट
-        let bowlScoreHtml = "";
-        if (data.all_bowlers && Array.isArray(data.all_bowlers)) {
-            data.all_bowlers.forEach(b => {
-                if (!b) return;
-                if (b.overs > 0 || b.balls > 0 || b.runs > 0) {
-                    let bowlerOversCombined = `${b.overs || 0}.${b.balls || 0}`;
-                    bowlScoreHtml += `
-                        <div class="ps-batter-header bowler-header" style="background: none; border-bottom: 1px solid #f0f0f0; font-weight: normal; padding: 6px 0; color: #000;">
-                            <span class="p-head-item hb-name" style="text-align: left;"><b>${b.name}</b></span>
-                            <span class="p-head-item hb-o">${bowlerOversCombined}</span>
-                            <span class="p-head-item hb-m">${b.maidens || 0}</span>
-                            <span class="p-head-item hb-r">${b.runs || 0}</span>
-                            <span class="p-head-item hb-w" style="color: red; font-weight: bold;">${b.wickets || 0}</span>
-                            <span class="p-head-item hb-wd">${b.wides || 0}</span>
-                            <span class="p-head-item hb-nb">${b.noBalls || 0}</span>
-                            <span class="p-head-item hb-econ" style="color: #666;">${getEC(b.runs || 0, bowlerOversCombined)}</span>
-                        </div>`;
-                }
-            });
-        }
-
-        if(document.getElementById("ps-t1-batting")) document.getElementById("ps-t1-batting").innerHTML = batScoreHtml;
-        if(document.getElementById("ps-t2-bowling")) document.getElementById("ps-t2-bowling").innerHTML = bowlScoreHtml;
-
-        // 📋 8. [सुधार] एक्स्ट्रा रनों का डेटा ऑटोमैटिकली स्कोरकार्ड के बीच में सेट करना
-        if (data.extras_data && document.getElementById("ps-t1-batting")) {
-            let ext = data.extras_data;
-            let extrasHtml = `
-                <div style="margin: 12px 0; padding: 8px 0; border-top: 1px dashed #ddd; border-bottom: 1px dashed #ddd; font-size: 12px; font-family: sans-serif; color: #000;">
-                    Extras: <b style="color: #0056b3;">${ext.total || 0}</b> <span style="color: #666;">(wd ${ext.wd || 0}, nb ${ext.nb || 0}, b ${ext.b || 0}, lb ${ext.lb || 0})</span>
-                </div>`;
-            
-            let extrasCheck = document.getElementById("viewer-extras-inserted");
-            if(!extrasCheck) {
-                let div = document.createElement("div");
-                div.id = "viewer-extras-inserted";
-                div.innerHTML = extrasHtml;
-                document.getElementById("ps-t1-batting").after(div);
-            } else {
-                extrasCheck.innerHTML = extrasHtml;
-            }
-        }
-
-        console.log("All Errors Fixed via JavaScript onValue update! ✅");
-    }
+    renderCricketData(snapshot.val());
   });
+
+  // 🛠️ सुधार 3: [महा-जादू लॉजिक] जैसे ही यूजर टैब चेंज वाले बटन दबाए, तुरंत डेटा आ जाए
+  // आपके HTML में बने टैब बटनों (Live, Scorecard) पर क्लिक होते ही यह फंक्शन डेटा फ़ेच करेगा।
+  window.triggerTabRefresh = function() {
+    get(ref(db, 'live_match_data')).then((snapshot) => {
+        if (snapshot.exists()) {
+            renderCricketData(snapshot.val());
+            console.log("Tab changed: Fresh data pulled from Firebase! ⚡");
+        }
+    }).catch((error) => console.error("Error on tab change get():", error));
+  };
+             
 </script>
     <div id="home-section" class="tab-content"> 
     <div id="upcoming-matches-container" style="display: flex; overflow-x: auto; gap: 12px; padding: 15px 10px; scrollbar-width: none; -webkit-overflow-scrolling: touch; align-items: flex-start; flex-wrap: nowrap;">
@@ -3632,15 +3648,31 @@ function renderBowlingCard() {
 }
 
 function showTab(tabName) {
-    if (event) { // चेक करें कि क्या क्लिक से आया है
-        document.querySelectorAll('.tabs button').forEach(btn => btn.classList.remove('active'));
-        event.currentTarget.classList.add('active');
+    if (window.event || event) { // चेक करें कि क्या क्लिक से आया है
+        const currentEvent = window.event || event;
+        if (currentEvent.currentTarget) {
+            document.querySelectorAll('.tabs button').forEach(btn => btn.classList.remove('active'));
+            currentEvent.currentTarget.classList.add('active');
+        }
     }
     
-    document.getElementById("clickSound").play();
+    // साउंड प्ले करना
+    if(document.getElementById("clickSound")) {
+        document.getElementById("clickSound").play();
+    }
+    
     document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
-    document.getElementById(tabName + '-tab').style.display = 'block';
-}
+    
+    if(document.getElementById(tabName + '-tab')) {
+        document.getElementById(tabName + '-tab').style.display = 'block';
+    }
+
+    // 🎯 [यहाँ हुआ है असली सुधार!]
+    // जैसे ही टैब बदलेगा, यह लाइन हमारे नए जावास्क्रिप्ट कोड को जगा देगी और ताज़ा डेटा लोड कर देगी
+    if (window.triggerTabRefresh) { 
+        window.triggerTabRefresh(); 
+    }
+        }
 function startThisMatch(index) {
     let schedule = JSON.parse(localStorage.getItem('bkcc_schedule')) || [];
     let match = schedule[index];
