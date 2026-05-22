@@ -1161,24 +1161,51 @@ body {
 </head>
 <body>
 
+
+<body>
+
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
-      // 🔐 [BKCC ULTRA GUARD] 
+  // 🔐 [BKCC ULTRA ADVANCE ULTRA GUARD] 
   const urlParams = new URLSearchParams(window.location.search);
   const isScorer = urlParams.get('role') === 'scorer'; 
 
-  // अगर खोलने वाला असली स्कोरर (Admin) नहीं है, तो उसके मोबाइल के बटन्स को लॉक कर दो
+  // 📦 डेटा को सुरक्षित रखने के लिए ग्लोबल मेमोरी वेरिएबल
+  if (!window.latestFirebaseData) {
+      window.latestFirebaseData = null;
+  }
+
+  // 🛡️ सुरक्षित इम्पोर्टेड फंक्शंस (अगर स्कोरर नहीं है, तो फायरबेस में लिखना पूरी तरह बैन)
+  const safeUpdate = (dbRef, data) => {
+      if (!isScorer) {
+          console.warn("BKCC Guard: Update Blocked! Viewer cannot change data.");
+          return Promise.resolve();
+      }
+      return update(dbRef, data);
+  };
+
+  const safeSet = (dbRef, data) => {
+      if (!isScorer) {
+          console.warn("BKCC Guard: Set Blocked! Viewer cannot change data.");
+          return Promise.resolve();
+      }
+      return set(dbRef, data);
+  };
+
+  // ग्लोबल विंडोज वेरिएबल्स को भी लॉक कर दिया
+  window.dbSet = safeSet;
+  window.dbUpdate = safeUpdate;
+
+  // 🛑 दर्शकों के मोबाइल में सारे बटन्स को हमेशा के लिए सुला (Disable) दो
   if (!isScorer) {
       console.log("BKCC Guard: Viewer Mode Active. Disabling Input Controls...");
-      
       setInterval(() => {
-          // 🛑 स्कोरिंग वाले सारे बटन्स को ढूंढकर ब्लॉक करना
           const scoringButtons = document.querySelectorAll('button, input[type="button"], .btn, [onclick]');
           scoringButtons.forEach(btn => {
               const btnText = btn.innerText || btn.value || "";
-              // सिर्फ टैब बदलने वाले बटन्स को छोड़कर बाकी सबको लॉक कर दो
+              // सिर्फ देखने वाले बटन्स को छोड़कर बाकी स्कोरिंग टूल्स लॉक
               if (!btnText.includes("Info") && !btnText.includes("Live") && !btnText.includes("Scorecard") && !btnText.includes("Graphs")) {
                   btn.disabled = true;
                   btn.style.opacity = "0.5"; 
@@ -1186,10 +1213,10 @@ body {
                   btn.onclick = null; 
               }
           });
-      }, 1000); // हर 1 सेकंड में चेक करेगा
+      }, 1000);
   } else {
       console.log("BKCC Guard: Admin/Scorer Mode Active! All controls unlocked.");
-      }
+  }
     
   const firebaseConfig = {
     apiKey: "AIzaSyAEuQ3up4s30SWJVTNcMsIzG5FJNBH0iiM",
@@ -1200,24 +1227,11 @@ body {
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
-
   window.db = db;
   window.dbRef = ref;
-  window.dbSet = set;
-  window.dbUpdate = update;
 
-  // --- दर्शकों के लिए ऑटो-अपडेट (OnValue) ---
-  // 📦 1. डेटा को सुरक्षित रखने के लिए एक ग्लोबल वेरिएबल (अगर पहले से न बना हो)
-if (!window.latestFirebaseData) {
-    window.latestFirebaseData = null;
-}
-
-onValue(ref(db, 'live_match_data'), (snapshot) => {
-    const data = snapshot.val();
-    if (data) {
-        // 🔥 [नया ऐड किया] आए हुए डेटा को ग्लोबल मेमोरी में सुरक्षित लॉक कर लिया
-        window.latestFirebaseData = data;
-
+  // 🎯 मुख्य फ़ंक्शन जो स्क्रीन पर लाइव डेटा रेंडर करता है
+  function renderLiveScorecard(data) {
         let ov = `${Math.floor(data.balls/6)}.${data.balls%6}`;
         let bTeam = data.battingTeam || "Team 1";
         let fieldTeam = data.bowlingTeam || "Team 2";
@@ -1256,7 +1270,7 @@ onValue(ref(db, 'live_match_data'), (snapshot) => {
             return totalBalls > 0 ? ((runs / totalBalls) * 6).toFixed(1) : "0.0";
         };
 
-        // ⚡ 3. [सुधार] टॉस, पार्टनरशिप, और CRR को आपके पुराने HTML IDs के साथ जोड़ा
+        // ⚡ 3. टॉस, पार्टनरशिप, और CRR
         if(document.getElementById('toss-result-text')) document.getElementById('toss-result-text').innerText = `Toss: ${data.toss_text || "Match Live"}`;
         if(document.getElementById('partnershipbox')) document.getElementById('partnershipbox').innerText = `P'SHIP: ${data.partnership || "0 (0)"}`;
         if(document.getElementById('crrbox')) document.getElementById('crrbox').innerText = `CRR: ${data.crr || "0.00"}`;
@@ -1278,7 +1292,7 @@ onValue(ref(db, 'live_match_data'), (snapshot) => {
             if(document.getElementById('target-display-box')) document.getElementById('target-display-box').style.display = "none";
         }
 
-        // 🏏 5. [सुधार - जादू] जावास्क्रिप्ट खुद लाइव टेबल बनाकर आपके 'live-data-wrapper' बॉक्स में डाल देगा
+        // 🏏 5. लाइव टेबल जनरेशन
         let liveTablesHtml = `
             <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: sans-serif; margin-bottom: 15px;">
                 <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; font-weight: bold; color: #555;">
@@ -1325,7 +1339,6 @@ onValue(ref(db, 'live_match_data'), (snapshot) => {
             </table>
         `;
 
-        // इन दोनों लाइव टेबल्स को आपके पुराने खाली बॉक्स में पुश कर दिया
         if(document.getElementById("live-data-wrapper")) {
             document.getElementById("live-data-wrapper").innerHTML = liveTablesHtml;
         }
@@ -1375,7 +1388,7 @@ onValue(ref(db, 'live_match_data'), (snapshot) => {
         if(document.getElementById("ps-t1-batting")) document.getElementById("ps-t1-batting").innerHTML = batScoreHtml;
         if(document.getElementById("ps-t2-bowling")) document.getElementById("ps-t2-bowling").innerHTML = bowlScoreHtml;
 
-        // 📋 8. [सुधार] एक्स्ट्रा रनों का डेटा ऑटोमैटिकली स्कोरकार्ड के बीच में सेट करना
+        // 📋 8. एक्स्ट्रा रनों का डेटा
         if (data.extras_data && document.getElementById("ps-t1-batting")) {
             let ext = data.extras_data;
             let extrasHtml = `
@@ -1393,33 +1406,37 @@ onValue(ref(db, 'live_match_data'), (snapshot) => {
                 extrasCheck.innerHTML = extrasHtml;
             }
         }
+  }
 
-        console.log("All Errors Fixed via JavaScript onValue update! ✅");
-    }
-});
+  // --- दर्शकों के लिए ऑटो-अपडेट (OnValue Listener) ---
+  onValue(ref(db, 'live_match_data'), (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+          // 🛡️ [फ्यूचर फिल्टर] अगर कोई पुराना या छोटा डेटा स्क्रीन बदलने आए, तो उसे यहीं रोक दो
+          if (window.latestFirebaseData && data.runs < window.latestFirebaseData.runs && !isScorer) {
+              console.log("BKCC Guard: Fake data reversal blocked!");
+              return; 
+          }
+          window.latestFirebaseData = data;
+          renderLiveScorecard(data);
+          console.log("All Errors Fixed via JavaScript onValue update! ✅");
+      }
+  });
 
-// ⚡ 2. [नया ऐड किया] जब भी कोई पब्लिक यूजर टैब चेंज बटन दबाएगा, यह कोड पुराना डेटा गायब होने से रोकेगा
-document.querySelectorAll('.nav-item, .tabs button, [onclick*="navTo"]').forEach(button => {
-    button.addEventListener('click', () => {
-        // अगर हमारे पास पुराना लाइव डेटा पहले से सेव है, तो उसे तुरंत रेंडर कर दो (ताकि स्क्रीन खाली न दिखे)
-        if (window.latestFirebaseData && typeof database !== 'undefined') {
-            // यह कोड जबरदस्ती आपके ऊपर वाले Firebase Listener को ट्रिगर कर देगा बिना नया रन बने
-            const mockSnapshot = { val: () => window.latestFirebaseData };
-            // आपके सभी HTML एलिमेंट्स को ताज़ा सेव किया हुआ डेटा वापस दे देगा
-            setTimeout(() => {
-                if(document.getElementById("ps-t1-batting") && window.latestFirebaseData) {
-                    // यह कोड चुपचाप बैकग्राउंड में पूरी लिस्ट दोबारा बना देगा
-                    let triggerUpdate = document.querySelector('[id*="ps-t1-batting"]');
-                    if(triggerUpdate) {
-                       // Firebase का डेटा री-अप्लाई हो रहा है
-                    }
-                }
-            }, 50); 
-        }
-    });
-});
+  // ⚡ जब भी कोई पब्लिक यूजर टैब चेंज बटन दबाएगा, यह कोड तुरंत मेमोरी से पुराना डेटा रेंडर कर देगा
+  document.querySelectorAll('.nav-item, .tabs button, [onclick*="navTo"]').forEach(button => {
+      button.addEventListener('click', () => {
+          if (window.latestFirebaseData) {
+              setTimeout(() => {
+                  renderLiveScorecard(window.latestFirebaseData);
+              }, 100); 
+          }
+      });
+  });
 
 </script>
+    
+
 
 
 <div id="home-section" class="tab-content"> 
