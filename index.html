@@ -1165,6 +1165,32 @@ body {
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
+      // 🔐 [BKCC ULTRA GUARD] 
+  const urlParams = new URLSearchParams(window.location.search);
+  const isScorer = urlParams.get('role') === 'scorer'; 
+
+  // अगर खोलने वाला असली स्कोरर (Admin) नहीं है, तो उसके मोबाइल के बटन्स को लॉक कर दो
+  if (!isScorer) {
+      console.log("BKCC Guard: Viewer Mode Active. Disabling Input Controls...");
+      
+      setInterval(() => {
+          // 🛑 स्कोरिंग वाले सारे बटन्स को ढूंढकर ब्लॉक करना
+          const scoringButtons = document.querySelectorAll('button, input[type="button"], .btn, [onclick]');
+          scoringButtons.forEach(btn => {
+              const btnText = btn.innerText || btn.value || "";
+              // सिर्फ टैब बदलने वाले बटन्स को छोड़कर बाकी सबको लॉक कर दो
+              if (!btnText.includes("Info") && !btnText.includes("Live") && !btnText.includes("Scorecard") && !btnText.includes("Graphs")) {
+                  btn.disabled = true;
+                  btn.style.opacity = "0.5"; 
+                  btn.style.pointerEvents = "none"; 
+                  btn.onclick = null; 
+              }
+          });
+      }, 1000); // हर 1 सेकंड में चेक करेगा
+  } else {
+      console.log("BKCC Guard: Admin/Scorer Mode Active! All controls unlocked.");
+      }
+    
   const firebaseConfig = {
     apiKey: "AIzaSyAEuQ3up4s30SWJVTNcMsIzG5FJNBH0iiM",
     authDomain: "livescore-77e1e.firebaseapp.com",
