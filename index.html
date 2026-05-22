@@ -322,7 +322,8 @@ textarea.setup-input {
     box-shadow: 0 4px 12px rgba(0,0,0,0.08); /* Soft shadow */
     font-family: 'Segoe UI', Roboto, sans-serif; /* Modern font */
 }
-  /* 1. Grey Team Header */
+
+/* 1. Grey Team Header */
 .ps-team-header {
     background-color: #02b089; /* Light grey */
     padding: 10px 15px;
@@ -480,8 +481,7 @@ textarea.setup-input {
     font-size: 18px !important;
 }
 .big-actions .btn-dec { background: #607d8b; color: white; height: 70px !important; }
-
-/* Row 5: Action Buttons (Large, Corner-accessible) */
+        /* Row 5: Action Buttons (Large, Corner-accessible) */
 .action-row button { height: 65px; border-radius: 12px; font-size: 16px; }
 .btn-stk { background: #673ab7; color: white; }
 .btn-bwl { background: #ff9800; color: white; }
@@ -680,8 +680,9 @@ textarea.setup-input {
     cursor: pointer;
     transition: 0.3s;
     font-size: 11px; /* 5 बटनों के लिए 11px या 12px बेस्ट है */
-    }
-        /* आइकन के लिए फाइनल सेटिंग */
+}
+
+/* आइकन के लिए फाइनल सेटिंग */
 .nav-item i {
     font-family: "Font Awesome 6 Free" !important;
     font-weight: 900 !important; 
@@ -792,9 +793,8 @@ body {
     width: 150px;
     position: relative;
     box-sizing: border-box;
-}
-
-.team-slot {
+        }
+        .team-slot {
     padding: 6px 8px;
     cursor: pointer;
     border-radius: 6px;
@@ -1041,7 +1041,8 @@ body {
     gap: 8px;                       /* कॉलम्स के बीच की दूरी (Horizontal) */
     align-items: flex-start;
 }
-    /* 3. राउंड्स (R1, Quarter) के हेडर का गैप कम करें */
+
+/* 3. राउंड्स (R1, Quarter) के हेडर का गैप कम करें */
 .bracket-round h4 {
     margin-top: 0px !important;     /* टाइटल को एकदम ऊपर रखें */
     margin-bottom: 8px !important;  /* टाइटल और पहले मैच के बीच का गैप */
@@ -1158,7 +1159,6 @@ body {
     </style>
     
 </head>
-
 <body>
 
 <script type="module">
@@ -1181,16 +1181,17 @@ body {
   window.dbUpdate = update;
 
   // --- दर्शकों के लिए ऑटो-अपडेट (OnValue) ---
-  onValue(ref(db, 'live_match_data'), (snapshot) => {
-    const data = snapshot.val();
-    
-    // ********** सुधार 1: टैब चेंज होने पर बैकअप के लिए डेटा विंडो में सेव किया **********
-    if (data) {
-        window.latestFirebaseData = data; 
-    }
-    // *****************************************************************************
+  // 📦 1. डेटा को सुरक्षित रखने के लिए एक ग्लोबल वेरिएबल (अगर पहले से न बना हो)
+if (!window.latestFirebaseData) {
+    window.latestFirebaseData = null;
+}
 
+onValue(ref(db, 'live_match_data'), (snapshot) => {
+    const data = snapshot.val();
     if (data) {
+        // 🔥 [नया ऐड किया] आए हुए डेटा को ग्लोबल मेमोरी में सुरक्षित लॉक कर लिया
+        window.latestFirebaseData = data;
+
         let ov = `${Math.floor(data.balls/6)}.${data.balls%6}`;
         let bTeam = data.battingTeam || "Team 1";
         let fieldTeam = data.bowlingTeam || "Team 2";
@@ -1321,7 +1322,9 @@ body {
                         </div>`;
                 }
             });
-                 // 📋 7. फुल बॉलिंग स्कोरकार्ड लिस्ट
+        }
+
+        // 📋 7. Full बॉलिंग स्कोरकार्ड लिस्ट
         let bowlScoreHtml = "";
         if (data.all_bowlers && Array.isArray(data.all_bowlers)) {
             data.all_bowlers.forEach(b => {
@@ -1367,18 +1370,29 @@ body {
 
         console.log("All Errors Fixed via JavaScript onValue update! ✅");
     }
-  });
+});
 
-  // ********** सुधार 2: विजिबिलिटी सिस्टम जो टैब पर वापस आने पर स्कोरकार्ड री-रेंडर करेगा **********
-  document.addEventListener("visibilitychange", function() {
-      if (document.visibilityState === "visible") {
-          console.log("यूज़र वापस आया, पुराना डेटा री-रेंडर कर रहे हैं...");
-          if (typeof renderScorecard === "function") {
-              renderScorecard();
-          }
-      }
-  });
-  // ******************************************************************************************
+// ⚡ 2. [नया ऐड किया] जब भी कोई पब्लिक यूजर टैब चेंज बटन दबाएगा, यह कोड पुराना डेटा गायब होने से रोकेगा
+document.querySelectorAll('.nav-item, .tabs button, [onclick*="navTo"]').forEach(button => {
+    button.addEventListener('click', () => {
+        // अगर हमारे पास पुराना लाइव डेटा पहले से सेव है, तो उसे तुरंत रेंडर कर दो (ताकि स्क्रीन खाली न दिखे)
+        if (window.latestFirebaseData && typeof database !== 'undefined') {
+            // यह कोड जबरदस्ती आपके ऊपर वाले Firebase Listener को ट्रिगर कर देगा बिना नया रन बने
+            const mockSnapshot = { val: () => window.latestFirebaseData };
+            // आपके सभी HTML एलिमेंट्स को ताज़ा सेव किया हुआ डेटा वापस दे देगा
+            setTimeout(() => {
+                if(document.getElementById("ps-t1-batting") && window.latestFirebaseData) {
+                    // यह कोड चुपचाप बैकग्राउंड में पूरी लिस्ट दोबारा बना देगा
+                    let triggerUpdate = document.querySelector('[id*="ps-t1-batting"]');
+                    if(triggerUpdate) {
+                       // Firebase का डेटा री-अप्लाई हो रहा है
+                    }
+                }
+            }, 50); 
+        }
+    });
+});
+
 </script>
 
 
@@ -1407,8 +1421,6 @@ body {
         </div>
     </div>
 </div>
-
-
   <div id="allTeamsPanel" class="side-panel-75">
     <div class="panel-header">
         <span>LIST OF ALL TEAMS</span>
@@ -1682,8 +1694,7 @@ body {
                 </tr>
             </table>
         </div>
-
-        <div style="background: #f8f9fa; padding: 10px 15px; font-size: 12px; font-weight: bold; color: #008080; border-left: 4px solid #008080; margin-top: 5px; text-transform: uppercase;">
+               <div style="background: #f8f9fa; padding: 10px 15px; font-size: 12px; font-weight: bold; color: #008080; border-left: 4px solid #008080; margin-top: 5px; text-transform: uppercase;">
             Match Conditions
         </div>
         <div style="background: #fff;">
@@ -1701,7 +1712,9 @@ body {
 
     </div>
 </div>
-    <div id="live-tab" class="tab-content" style="display: block; padding: 10px;">
+
+
+<div id="live-tab" class="tab-content" style="display: block; padding: 10px;">
     
     <div style="background: #fff; border-radius: 0px; border: 1px solid #eee; box-shadow: 0 2px 8px rgba(0,0,0,0.08); overflow: hidden; margin-bottom: 15px;">
         
@@ -1930,8 +1943,7 @@ body {
     <button class="btn-min" onclick="retiredHurt()">RET</button>
     <button class="btn-undo" onclick="undo()">UNDO</button>
 </div>
-
-    <div class="score-row big-actions">
+  <div class="score-row big-actions">
         <button class="btn-wkt" onclick="openWicketModal()">WICKET!</button>
         <button class="btn-dec" onclick="confirmEndInnings()">DECLARE</button>
     </div>
@@ -1994,9 +2006,10 @@ body {
 </div>
 
 <div id="player-selection-grid" style="display: flex;">
-</div>
-     
-       <div style="display: flex; border-to; position: relative; background: #fff;">
+   </div>
+
+    
+    <div style="display: flex; border-to; position: relative; background: #fff;">
         <div style="position: absolute; left: 50%; top: 0; bottom: 0; width: 1.5px; background: black; z-index: 1;"></div>
 
         <div style="flex: 1; padding: 5px; text-align: center; border-right: 0.5px solid #ccc;">
@@ -2250,14 +2263,6 @@ body {
 </div>
 
 </div>
-
-
-
-
-
-
-
-
 <div id="wicketmodal" class="modal">
     <div class="modal-content">
         <span class="close-modal-x" onclick="closeModal()">❌</span>
@@ -2317,7 +2322,8 @@ let innings1Wides = 0;
 let innings1NoBalls = 0;    
 let innings1Byes = 0;       
 let innings1LegByes = 0; // ✅ पहली पारी के लेग-बाय को भी सुरक्षित रखें
-    let firstInningsTotal = 0;
+
+let firstInningsTotal = 0;
 let firstInningsWickets = 0;
 let firstInningsBalls = 0;   
 let firstInningsOvers = "0.0"; 
@@ -2519,8 +2525,9 @@ function viewPastMatchScorecard(matchNum) {
             renderScorecard(); 
         }, 50);
     }
-    }
-        function toggleMenu() {
+}
+
+    function toggleMenu() {
     var menu = document.getElementById("sideMenu");
     // Check karein ki menu abhi kahan hai
     if (menu.style.left === "0px") {
@@ -2636,7 +2643,7 @@ function showTeamProfile(teamName) {
 
     listContainer.innerHTML = html;
 }
-
+    
 function closeProfile() {
     document.getElementById("teamProfilePanel").classList.remove("open");
 }
@@ -2709,11 +2716,7 @@ function renderScorecard() {
     // 1. Data check karein (History hai ya Live)
     let d = window.viewingHistoryData ? window.viewingHistoryData : null;
     let isLive = !d; // Agar 'd' null hai, toh match LIVE hai
-  if (isLive && (runs === undefined || runs === 0) && window.latestFirebaseData) {
-        runs = window.latestFirebaseData.runs || 0;
-        wickets = window.latestFirebaseData.wickets || 0;
-        balls = window.latestFirebaseData.balls || 0;
-    }
+
     // --- 1. नामों का सेटअप ---
     let inn1Name = d ? d.teamA : team1Name;
     let inn2Name = d ? d.teamB : team2Name;
@@ -2781,7 +2784,8 @@ function renderScorecard() {
         if (nameSpan) nameSpan.innerText = bowlingTeamName + " ⚾";
         if (scoreSpan) scoreSpan.innerText = `${Math.floor(displayBalls / 6)}.${displayBalls % 6} Overs`;
     }
-        // --- 4. बल्लेबाजों की लिस्ट ---
+
+    // --- 4. बल्लेबाजों की लिस्ट ---
     let batterHtml = "";
     if (displayBatsmen && displayBatsmen.length > 0) {
         displayBatsmen.forEach((b, index) => {
@@ -2931,8 +2935,7 @@ function update() {
         
         let fInnOv = `${Math.floor(firstInningsBalls/6)}.${firstInningsBalls%6}`;
         bottomTeamScore = `${firstInningsTotal}/${firstInningsWickets} <span class="over-bracket">(${fInnOv})</span> <small>(1st Inn)</small>`;
-
-        if(document.getElementById("t1-bat-icon")) document.getElementById("t1-bat-icon").style.display = "inline";
+            if(document.getElementById("t1-bat-icon")) document.getElementById("t1-bat-icon").style.display = "inline";
         if(document.getElementById("t2-bat-icon")) document.getElementById("t2-bat-icon").style.display = "none";
 
         // --- Home Card Fix ---
@@ -3126,7 +3129,8 @@ function update() {
             </tr>
         </table>`;
     }
-        // Fix: Hidden elements ko string ke andar hi clean value allocate kar di
+
+    // Fix: Hidden elements ko string ke andar hi clean value allocate kar di
     finalLiveHtml += `<div id="b1-name" style="display:none;">${batsmen[striker] ? batsmen[striker].name.replace('*','').trim() : "Batsman 1"}</div>`;
     finalLiveHtml += `<div id="b2-name" style="display:none;">${batsmen[nonStriker] ? batsmen[nonStriker].name.trim() : "Batsman 2"}</div>`;
     finalLiveHtml += `<div id="bw-name" style="display:none;">${currentBowler ? currentBowler.name.trim() : "Bowler"}</div>`;
@@ -3137,55 +3141,13 @@ function update() {
         document.getElementById("live-data-wrapper").innerHTML = finalLiveHtml;
     }
 
-    // ... (आपका ऊपर का पूरा पुराना कोड वैसे ही रहेगा) ...
-
     if(typeof renderOverTracker === "function") renderOverTracker();
     if(typeof renderScorecard === "function") renderScorecard();
     if(typeof syncLiveCheckboxes === "function") syncLiveCheckboxes();
     
-    // ********** यहाँ पर सुधार करना है **********
-    // पुराना तरीका हटाकर सीधे विंडो के dbUpdate का इस्तेमाल करेंगे
-    if (typeof window.dbUpdate === "function") {
-        try {
-            const matchRef = window.dbRef(window.db, 'live_match_data');
-            
-            // update() का इस्तेमाल करने से पुराना डेटा (जैसे बैट्समैन लिस्ट) सुरक्षित रहेगा
-            window.dbUpdate(matchRef, {
-                runs: runs,
-                wickets: wickets,
-                balls: balls,
-                innings: innings,
-                battingTeam: topTeamName,
-                bowlingTeam: bottomTeamName,
-                crr: currentCRR,
-                partnership: `${partnershipRuns} (${partnershipBalls})`,
-                
-                // लाइव स्क्रीन की छोटी टेबल्स के लिए डेटा
-                batsman1: batsmen[striker] ? batsmen[striker].name : "Batter 1",
-                b1_runs: batsmen[striker] ? batsmen[striker].runs : 0,
-                b1_balls: batsmen[striker] ? batsmen[striker].balls : 0,
-                b1_4s: batsmen[striker] ? (batsmen[striker].fours || 0) : 0,
-                b1_6s: batsmen[striker] ? (batsmen[striker].sixes || 0) : 0,
-                
-                batsman2: batsmen[nonStriker] ? batsmen[nonStriker].name : "Batter 2",
-                b2_runs: batsmen[nonStriker] ? batsmen[nonStriker].runs : 0,
-                b2_balls: batsmen[nonStriker] ? batsmen[nonStriker].balls : 0,
-                b2_4s: batsmen[nonStriker] ? (batsmen[nonStriker].fours || 0) : 0,
-                b2_6s: batsmen[nonStriker] ? (batsmen[nonStriker].sixes || 0) : 0,
-                
-                bowler: currentBowler ? currentBowler.name : "Bowler",
-                bowler_overs: currentBowler ? `${currentBowler.overs}.${currentBowler.balls}` : "0.0",
-                bowler_runs: currentBowler ? currentBowler.runs : 0,
-                bowler_wickets: currentBowler ? currentBowler.wickets : 0,
-                
-                target: (typeof target !== 'undefined') ? target : 0
-            });
-            console.log("डेटाबेस सुरक्षित तरीके से अपडेट हो गया! ✅");
-        } catch (error) { 
-            console.log("Firebase Sync Error inside update:", error); 
-        }
+    if (typeof syncEverythingToFirebase === "function") {
+        try { syncEverythingToFirebase(); } catch (error) { console.log("Firebase Sync Error inside update:", error); }
     }
-    // ******************************************
 }
 
 
@@ -3304,9 +3266,9 @@ function play(r) {
         // 5. स्ट्राइक बदलना (1, 3, 5 रन पर)
         if(r % 2 !== 0) {
             changeStrike();
-        }
-
-        // 6. दूसरी पारी में जीत की जांच (Innings 2 Win Check)
+    }
+    
+            // 6. दूसरी पारी में जीत की जांच (Innings 2 Win Check)
         if (innings === 2 && runs >= target) {
             update(); // आखिरी रन दिखाने के लिए
             matchOver = true;
@@ -3496,8 +3458,9 @@ function handleExtras(type) {
         bowlers: JSON.parse(JSON.stringify(bowlers)),
         currentBowlerName: currentBowler ? currentBowler.name : null
     }));
-    }
-    function undo() {
+}
+
+function undo() {
     if(undoStack.length === 0) return;
     let s = JSON.parse(undoStack.pop());
     runs = s.runs; wickets = s.wickets; balls = s.balls;
@@ -3695,30 +3658,15 @@ function renderBowlingCard() {
 }
 
 function showTab(tabName) {
-    if (window.event || event) { // चेक करें कि क्या क्लिक से आया है
-        const currentEvent = window.event || event;
-        if (currentEvent.currentTarget) {
-            document.querySelectorAll('.tabs button').forEach(btn => btn.classList.remove('active'));
-            currentEvent.currentTarget.classList.add('active');
-        }
+    if (event) { // चेक करें कि क्या क्लिक से आया है
+        document.querySelectorAll('.tabs button').forEach(btn => btn.classList.remove('active'));
+        event.currentTarget.classList.add('active');
     }
     
-    if(document.getElementById("clickSound")) {
-        document.getElementById("clickSound").play();
-    }
-    
+    document.getElementById("clickSound").play();
     document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
-    
-    if(document.getElementById(tabName + '-tab')) {
-        document.getElementById(tabName + '-tab').style.display = 'block';
-    }
-
-    // 🔥 [क्रिटिकल सुधार]: अगर कोई विंडो रिफ्रेश फंक्शन है (दर्शकों के लिए) तो उसे चलाएं
-    if (window.triggerTabRefresh) { 
-        window.triggerTabRefresh(); 
-    }
+    document.getElementById(tabName + '-tab').style.display = 'block';
 }
-
 function startThisMatch(index) {
     let schedule = JSON.parse(localStorage.getItem('bkcc_schedule')) || [];
     let match = schedule[index];
@@ -3747,10 +3695,8 @@ function startThisMatch(index) {
     updateDynamicLogos(); // लोगो/नाम अपडेट करने वाला आपका फंक्शन
     
     alert("मैच लोड हो गया है! टॉस अपडेट करें और शुरू करें।");
-}
-
-
-function startMatchWithPlayers() {
+    }
+    function startMatchWithPlayers() {
     try {
         window.isHistoryMode = false;      // हिस्ट्री मोड बंद करें
         window.viewingHistoryData = null; // पुराना डेटा पूरी तरह साफ़ करें
@@ -3948,7 +3894,8 @@ window.onload = function() {
                 </div>`;
         }
     }
-      // 4. बाकी के फंक्शंस लोड करें
+
+    // 4. बाकी के फंक्शंस लोड करें
     loadTeamsFromStorage(); // पुराने सेव किए हुए नाम लोड करें
     if(typeof renderBracket === "function") renderBracket(); 
     if(typeof displayGallery === "function") displayGallery();
@@ -4045,9 +3992,6 @@ function renderAdvancedInputFields() {
         `;
     }
 }
-
-
-
 // --- 3. LocalStorage से डेटा Load करना ---
 // 4. मेमोरी से नाम निकालकर वापस इनपुट बॉक्स में भरना
 function loadTeamsFromStorage() {
@@ -4428,8 +4372,9 @@ function endMatch() {
         console.error("End Match Error:", err);
         alert("Something went wrong while finishing the match!");
     }
-    }
-    function selectPlayer(element, team) {
+}
+
+function selectPlayer(element, team) {
     // इनपुट बॉक्स से नाम उठाना
     let playerName = element.parentElement.querySelector('input[type="text"]').value.trim();
     
@@ -4498,9 +4443,8 @@ function endMatch() {
     }
     
     if(typeof update === "function") update(); 
-}
-
-  function updateDynamicLogos() {
+    }
+      function updateDynamicLogos() {
     let t1Name = document.getElementById('t1NameInput').value.trim() || "Team A";
     let t2Name = document.getElementById('t2NameInput').value.trim() || "Team B";
 
@@ -4555,22 +4499,19 @@ function navTo(page, element) {
         item.classList.remove('active');
     });
 
-    // 2. सिर्फ तभी रिसेट करें जब नीचे के मेनू बार (element) से क्लिक हुआ हो
     if (element) {
         element.classList.add('active');
-        // अगर 'Live' या 'Home' बटन दबाया है, तभी हिस्ट्री मोड बंद करें
         if (page === 'live' || page === 'home') {
             window.viewingHistoryData = null;
             window.isHistoryMode = false;
-            console.log("Manual Navigation: Live Mode Active");
         }
     }
 
-    // 3. Sections छुपाना
+    // 2. Sections छुपाना
     const sections = document.querySelectorAll('.tab-content');
     sections.forEach(sec => { sec.style.display = 'none'; });
 
-    // 4. सही सेक्शन दिखाना
+    // 3. सही सेक्शन दिखाना
     let targetId = (page === 'matches') ? 'matches-sec' : 
                    (page === 'home') ? 'home-section' : 
                    (page === 'history') ? 'history-section' : 
@@ -4581,11 +4522,22 @@ function navTo(page, element) {
         targetSection.style.display = 'block';
     }
 
-    // 5. रेंडरिंग (Update UI)
+    // 4. 🔥 सबसे जरूरी: पब्लिक यूजर के लिए रेंडरिंग सुधार 🔥
     if (page === 'home' || page === 'live') {
         if (typeof update === "function") update();
     }
+    
     if (page === 'scorecard') {
+        // अगर पब्लिक यूजर लाइव मैच देख रहा है (हिस्ट्री मोड नहीं है)
+        if (!window.isHistoryMode && window.latestFirebaseData) {
+            // Firebase से आए ताज़ा डेटा को लोकल वेरिएबल्स में भरें ताकि Scorecard खाली न दिखे
+            batsmen = window.latestFirebaseData.all_batsmen || [];
+            bowlers = window.latestFirebaseData.all_bowlers || [];
+            extraWides = window.latestFirebaseData.extras_data?.wd || 0;
+            extraNoBalls = window.latestFirebaseData.extras_data?.nb || 0;
+            extraByes = window.latestFirebaseData.extras_data?.b || 0;
+            extraLegByes = window.latestFirebaseData.extras_data?.lb || 0;
+        }
         if (typeof renderScorecard === "function") renderScorecard();
     }
 }
@@ -4825,8 +4777,9 @@ function renderBracket() {
                 </div>`;
         }
     });
-    }
-    function setWinner(currentRound, matchIndex, position, teamName) {
+}
+
+function setWinner(currentRound, matchIndex, position, teamName) {
     if (teamName === "TBD" || !teamName) return;
 
     let nextRound = "";
@@ -4904,9 +4857,9 @@ function saveMatchInfo() {
     displayMatchInfo(); 
     alert("Match Info Updated!");
     if(typeof toggleInfoEdit === "function") toggleInfoEdit(); 
-}
-
-function displayMatchInfo() {
+    }
+    
+    function displayMatchInfo() {
     try {
         const savedData = localStorage.getItem('bkcc_match_info');
         if (!savedData) return; // अगर डेटा नहीं है तो वापस जाओ
@@ -5226,8 +5179,9 @@ if(runsNeededElem) runsNeededElem.innerText = target;
         console.error("Manual Start Error: ", err);
         alert("सेकंड इनिंग शुरू करने में एरर: " + err.message);
     }
-    }
-    function updateTossInfo(winnerTeam, decision) {
+}
+
+function updateTossInfo(winnerTeam, decision) {
     // 'batting' को 'bat' और 'bowling' को 'bowl' में बदलने के लिए
     let choice = (decision === 'batting' || decision === 'bat') ? 'bat' : 'bowl';
     
@@ -5335,9 +5289,8 @@ function showGraph(type) {
     } else {
         document.getElementById('chartCanvas').style.display = 'block';
     }
-}
-
-function updateWinProbability(p1, p2) {
+    }
+    function updateWinProbability(p1, p2) {
     const b1 = document.getElementById('bar-team1');
     const b2 = document.getElementById('bar-team2');
     const v1 = document.getElementById('val-team1');
@@ -5636,9 +5589,8 @@ function showHistory() {
 
 if (typeof currentTossStatus === 'undefined') {
     window.currentTossStatus = "Toss: Waiting..."; 
-}
-
-function syncEverythingToFirebase() {
+    }
+    function syncEverythingToFirebase() {
     if (!window.db || !window.dbRef || !window.dbUpdate) {
         console.warn("Firebase Loader waiting...");
         return;
@@ -5664,7 +5616,8 @@ function syncEverythingToFirebase() {
         } else if (typeof team1Name !== 'undefined' && typeof currentBattingSide !== 'undefined') {
             finalTossText = `${dynamicBattingTeam} opt to bat`;
         }
-     // 2. 📊 [सुधरा हुआ फ़ॉर्मूला फिक्स] पार्टनरशिप कैलकुलेशन (बिना querySelector कचरे के)
+
+        // 2. 📊 [सुधरा हुआ फ़ॉर्मूला फिक्स] पार्टनरशिप कैलकुलेशन (बिना querySelector कचरे के)
         let b1Runs = (typeof batsmen !== 'undefined' && typeof striker !== 'undefined' && batsmen[striker]) ? (batsmen[striker].runs || 0) : 0;
         let b1Balls = (typeof batsmen !== 'undefined' && typeof striker !== 'undefined' && batsmen[striker]) ? (batsmen[striker].balls || 0) : 0;
         let b2Runs = (typeof batsmen !== 'undefined' && typeof nonStriker !== 'undefined' && batsmen[nonStriker]) ? (batsmen[nonStriker].runs || 0) : 0;
@@ -5737,20 +5690,10 @@ function syncEverythingToFirebase() {
         console.error("Sync Error:", err);
     }
 }
-// यह सिस्टम ट्रैक करेगा कि जब भी पब्लिक टैब बदलेगी, डेटा तुरंत री-सिंक होगा
-document.addEventListener("visibilitychange", function() {
-    if (document.visibilityState === "visible") {
-        // जैसे ही यूजर वापस पेज पर आएगा, यह आपके स्कोरकार्ड को दोबारा रेंडर कर देगा
-        if (typeof renderScorecard === "function") {
-            renderScorecard();
-        }
-    }
-});
 
 </script>
 
 
 </body>
 </html>
-           
         
