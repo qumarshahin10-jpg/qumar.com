@@ -2281,33 +2281,43 @@ document.querySelectorAll('.nav-item, .tabs button, [onclick*="navTo"]').forEach
 
 <script>
 /* --- JAVASCRIPT LOGIC (GLOBAL VARIABLES) --- */
-    // 🔐 [सुरक्षा गार्ड] यह चेक करेगा कि यूजर स्कोरर है या पब्लिक दर्शक
+  // 🔐 [सुरक्षा गार्ड - सुधरा हुआ वर्जन]
   const urlParams = new URLSearchParams(window.location.search);
   const isScorer = urlParams.get('role') === 'scorer'; 
 
-  // 🛡️ जादुई ट्रिक: अगर कोई पब्लिक यूजर है, तो Firebase के update और set को यहीं ब्लॉक कर दो!
-  const originalUpdate = update;
-  const originalSet = set;
+  // साइट को पूरा लोड होने के लिए 1 सेकंड का समय देंगे ताकि एरर न आए
+  setTimeout(() => {
+      try {
+          const originalUpdate = window.update || update;
+          const originalSet = window.set || set;
 
-  window.update = function(...args) {
-      if (!isScorer) {
-          console.warn("Firebase Update Blocked: You are just a viewer!");
-          return Promise.resolve(); // डेटाबेस में पुराना डेटा रीसेट/रिवर्स होने से रोक देगा
+          if (originalUpdate) {
+              window.update = function(...args) {
+                  if (!isScorer) {
+                      console.warn("Firebase Update Blocked: You are just a viewer!");
+                      return Promise.resolve();
+                  }
+                  return originalUpdate(...args); 
+              };
+              window.dbUpdate = window.update;
+          }
+
+          if (originalSet) {
+              window.set = function(...args) {
+                  if (!isScorer) {
+                      console.warn("Firebase Set Blocked: You are just a viewer!");
+                      return Promise.resolve(); 
+                  }
+                  return originalSet(...args); 
+              };
+              window.dbSet = window.set;
+          }
+          console.log("BKCC Security Guard Activated Successfully!");
+      } catch (e) {
+          console.error("Security setup delayed:", e);
       }
-      return originalUpdate(...args); 
-  };
-
-  window.set = function(...args) {
-      if (!isScorer) {
-          console.warn("Firebase Set Blocked: You are just a viewer!");
-          return Promise.resolve(); 
-      }
-      return originalSet(...args); 
-  };
-
-  // ग्लोबल वेरिएबल्स को भी नए सुधरे हुए सुरक्षित फंक्शन्स के साथ जोड़ दो
-  window.dbUpdate = window.update;
-  window.dbSet = window.set;
+  }, 1000); // 1000 मिलीसेकंड = 1 सेकंड का डिले
+    
     
 let fowListArray = []; 
 let selectedBatsmen = []; 
