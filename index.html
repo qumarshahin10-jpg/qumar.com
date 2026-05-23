@@ -1194,24 +1194,46 @@ body {
       return set(dbRef, data);
   };
 
-  // ग्लोबल विंडोज वेरिएबल्स को भी लॉक कर दिया
+  // ग्लोबल विंडोज वेरिएबल्स को लॉक कर दिया
   window.dbSet = safeSet;
   window.dbUpdate = safeUpdate;
 
-  // 🛑 दर्शकों के मोबाइल में सारे बटन्स को हमेशा के लिए सुला (Disable) दो
+  // 🛑 [BKCC SMART GUARD] दर्शकों के लिए सिर्फ स्कोरिंग बटन लॉक होंगे, मेनू और नेविगेशन बिल्कुल काम करेंगे!
   if (!isScorer) {
-      console.log("BKCC Guard: Viewer Mode Active. Disabling Input Controls...");
+      console.log("BKCC Guard: Viewer Mode Active. Protecting Menu & Locking Inputs...");
       setInterval(() => {
+          // सभी बटन्स और क्लिक होने वाले एलिमेंट्स को पकड़ें
           const scoringButtons = document.querySelectorAll('button, input[type="button"], .btn, [onclick]');
           scoringButtons.forEach(btn => {
-              const btnText = btn.innerText || btn.value || "";
-              // सिर्फ देखने वाले बटन्स को छोड़कर बाकी स्कोरिंग टूल्स लॉक
-              if (!btnText.includes("Info") && !btnText.includes("Live") && !btnText.includes("Scorecard") && !btnText.includes("Graphs")) {
-                  btn.disabled = true;
-                  btn.style.opacity = "0.5"; 
-                  btn.style.pointerEvents = "none"; 
-                  btn.onclick = null; 
+              const btnText = (btn.innerText || btn.value || "").toLowerCase();
+              const btnId = (btn.id || "").toLowerCase();
+              const btnClass = (btn.className || "").toLowerCase();
+
+              // 🚫 इन शब्दों वाले बटन्स (साइड मेनू, नीचे का मेनू, टैब) को कभी भी लॉक मत करो!
+              if (
+                  btnText.includes("info") || 
+                  btnText.includes("live") || 
+                  btnText.includes("scorecard") || 
+                  btnText.includes("graphs") || 
+                  btnText.includes("menu") || 
+                  btnText.includes("home") ||
+                  btnId.includes("menu") || 
+                  btnId.includes("nav") || 
+                  btnId.includes("tab") ||
+                  btnClass.includes("menu") || 
+                  btnClass.includes("nav") || 
+                  btnClass.includes("tab") ||
+                  btnClass.includes("nav-item")
+              ) {
+                  // इन्हें खुला छोड़ दो ताकि साइड मेनू और नीचे के बटन काम करते रहें
+                  return; 
               }
+
+              // 🔒 बाकी सभी स्कोरिंग कंट्रोल (रन, विकेट, ओवर, एक्स्ट्रा) को लॉक कर दो
+              btn.disabled = true;
+              btn.style.opacity = "0.5"; 
+              btn.style.pointerEvents = "none"; 
+              btn.onclick = null; 
           });
       }, 1000);
   } else {
@@ -1237,20 +1259,46 @@ body {
         let fieldTeam = data.bowlingTeam || "Team 2";
         let currentScoreStr = `${data.runs || 0}/${data.wickets || 0} (${ov})`;
 
+        // ==========================================
+        // 🔴 [BKCC NEW CRICBUZZ FIX] इनिंग्स स्कोर और आइकॉन लॉजिक
+        // ==========================================
+        let t1NameFinal = bTeam;
+        let t2NameFinal = fieldTeam;
+        let t1ScoreFinal = currentScoreStr;
+        let t2ScoreFinal = `${data.t2_runs || 0}/${data.t2_wickets || 0} (${data.t2_overs || "0.0"})`;
+
+        let liveMainBattingTeamName = bTeam;
+        let liveMainBowlingTeamName = fieldTeam;
+
+        if (data.innings === 2 || data.innings === "2") {
+            t1NameFinal = fieldTeam; 
+            t1ScoreFinal = `${data.t1_runs || 0}/${data.t1_wickets || 0} (${data.t1_overs || "0.0"})`;
+            t2NameFinal = `${bTeam} 🏏`;
+            t2ScoreFinal = currentScoreStr;
+
+            liveMainBattingTeamName = fieldTeam;
+            liveMainBowlingTeamName = `${bTeam} 🏏`;
+        } else {
+            t1NameFinal = `${bTeam} 🏏`;
+            t2NameFinal = fieldTeam;
+        }
+        // ==========================================
+
         // 📢 1. मुख्य LIVE टैब का डेटा
-        if(document.getElementById('live-batting-team')) document.getElementById('live-batting-team').innerText = bTeam;
-        if(document.getElementById('live-bowling-team')) document.getElementById('live-bowling-team').innerText = fieldTeam;
+        if(document.getElementById('live-batting-team')) document.getElementById('live-batting-team').innerText = liveMainBattingTeamName;
+        if(document.getElementById('live-bowling-team')) document.getElementById('live-bowling-team').innerText = liveMainBowlingTeamName;
         if(document.getElementById('live-team-score')) document.getElementById('live-team-score').innerText = currentScoreStr;
         
-        if(document.getElementById('d-t1-name')) document.getElementById('d-t1-name').innerText = bTeam;
-        if(document.getElementById('d-t2-name')) document.getElementById('d-t2-name').innerText = fieldTeam;
-        if(document.getElementById('d-t1-score')) document.getElementById('d-t1-score').innerText = currentScoreStr;
-        if(document.getElementById('d-t2-score')) document.getElementById('d-t2-score').innerText = `${data.t2_runs || 0}/${data.t2_wickets || 0} (${data.t2_overs || "0.0"})`;
+        // 📢 2. टॉप बार में दोनों टीमों का लाइव नाम और स्कोर
+        if(document.getElementById('d-t1-name')) document.getElementById('d-t1-name').innerHTML = t1NameFinal;
+        if(document.getElementById('d-t2-name')) document.getElementById('d-t2-name').innerHTML = t2NameFinal;
+        if(document.getElementById('d-t1-score')) document.getElementById('d-t1-score').innerText = t1ScoreFinal;
+        if(document.getElementById('d-t2-score')) document.getElementById('d-t2-score').innerText = t2ScoreFinal;
 
-        // 📊 2. SCORECARD टैब के हेडर्स
-        if(document.getElementById('label-t1-name')) document.getElementById('label-t1-name').innerText = bTeam;
-        if(document.getElementById('label-t2-name')) document.getElementById('label-t2-name').innerText = fieldTeam;
-        if(document.getElementById('label-t1-score')) document.getElementById('label-t1-score').innerText = currentScoreStr;
+        // 📊 3. SCORECARD टैब के हेडर्स
+        if(document.getElementById('label-t1-name')) document.getElementById('label-t1-name').innerText = (data.innings === 2 || data.innings === "2") ? fieldTeam : bTeam;
+        if(document.getElementById('label-t2-name')) document.getElementById('label-t2-name').innerText = (data.innings === 2 || data.innings === "2") ? bTeam : fieldTeam;
+        if(document.getElementById('label-t1-score')) document.getElementById('label-t1-score').innerText = t1ScoreFinal;
 
         if(document.getElementById('ps-batting-team-name')) document.getElementById('ps-batting-team-name').innerText = bTeam;
         if(document.getElementById('ps-t1-total')) document.getElementById('ps-t1-total').innerText = currentScoreStr;
@@ -1270,12 +1318,12 @@ body {
             return totalBalls > 0 ? ((runs / totalBalls) * 6).toFixed(1) : "0.0";
         };
 
-        // ⚡ 3. टॉस, पार्टनरशिप, और CRR
+        // ⚡ 4. टॉस, पार्टनरशिप, और CRR
         if(document.getElementById('toss-result-text')) document.getElementById('toss-result-text').innerText = `Toss: ${data.toss_text || "Match Live"}`;
         if(document.getElementById('partnershipbox')) document.getElementById('partnershipbox').innerText = `P'SHIP: ${data.partnership || "0 (0)"}`;
         if(document.getElementById('crrbox')) document.getElementById('crrbox').innerText = `CRR: ${data.crr || "0.00"}`;
 
-        // 🎯 4. सेकंड इनिंग्स और टारगेट का लाइव अपडेट
+        // 🎯 5. सेकंड इनिंग्स और टारगेट का लाइव अपडेट
         if(data.target && data.target > 0) {
             if(document.getElementById('target-display-box')) document.getElementById('target-display-box').style.display = "block";
             if(document.getElementById('target-value')) document.getElementById('target-value').innerText = data.target;
@@ -1292,7 +1340,7 @@ body {
             if(document.getElementById('target-display-box')) document.getElementById('target-display-box').style.display = "none";
         }
 
-        // 🏏 5. लाइव टेबल जनरेशन
+        // 🏏 6. लाइव टेबल जनरेशन
         let liveTablesHtml = `
             <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: sans-serif; margin-bottom: 15px;">
                 <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; font-weight: bold; color: #555;">
@@ -1343,7 +1391,7 @@ body {
             document.getElementById("live-data-wrapper").innerHTML = liveTablesHtml;
         }
 
-        // 📋 6. फुल बैटिंग स्कोरकार्ड लिस्ट
+        // 📋 7. फुल बैटिंग स्कोरकार्ड लिस्ट
         let batScoreHtml = "";
         if (data.all_batsmen && Array.isArray(data.all_batsmen)) {
             data.all_batsmen.forEach(p => {
@@ -1363,13 +1411,13 @@ body {
             });
         }
 
-        // 📋 7. Full बॉलिंग स्कोरकार्ड लिस्ट
+        // 📋 8. Full बॉलिंग स्कोरकार्ड लिस्ट
         let bowlScoreHtml = "";
         if (data.all_bowlers && Array.isArray(data.all_bowlers)) {
             data.all_bowlers.forEach(b => {
                 if (!b) return;
-                if (b.overs > 0 || b.balls > 0 || b.runs > 0) {
-                    let bowlerOversCombined = `${b.overs || 0}.${b.balls || 0}`;
+                if (b.overs > 0 || b.balls > 0 || b.runs > 0 || b.oversStr) {
+                    let bowlerOversCombined = b.oversStr || `${b.overs || 0}.${b.balls || 0}`;
                     bowlScoreHtml += `
                         <div class="ps-batter-header bowler-header" style="background: none; border-bottom: 1px solid #f0f0f0; font-weight: normal; padding: 6px 0; color: #000;">
                             <span class="p-head-item hb-name" style="text-align: left;"><b>${b.name}</b></span>
@@ -1388,7 +1436,7 @@ body {
         if(document.getElementById("ps-t1-batting")) document.getElementById("ps-t1-batting").innerHTML = batScoreHtml;
         if(document.getElementById("ps-t2-bowling")) document.getElementById("ps-t2-bowling").innerHTML = bowlScoreHtml;
 
-        // 📋 8. एक्स्ट्रा रनों का डेटा
+        // 📋 9. एक्स्ट्रा रनों का डेटा
         if (data.extras_data && document.getElementById("ps-t1-batting")) {
             let ext = data.extras_data;
             let extrasHtml = `
@@ -1408,18 +1456,18 @@ body {
         }
   }
 
-  // --- दर्शकों के लिए ऑटो-अपडेट (OnValue Listener) ---
+  // --- 🛡️ दर्शकों के लिए ऑटो-अपडेट और रिवर्स डेटा फ़िल्टर (OnValue Listener) ---
   onValue(ref(db, 'live_match_data'), (snapshot) => {
       const data = snapshot.val();
       if (data) {
-          // 🛡️ [फ्यूचर फिल्टर] अगर कोई पुराना या छोटा डेटा स्क्रीन बदलने आए, तो उसे यहीं रोक दो
+          // 🚫 [रिवर्स डेटा फ़िल्टर] अगर डेटाबेस में रन पुराने लोकल रन से कम आएं (गलती से रिवर्स डेटा आए), तो व्यूअर साइड पर उसे रोक दो
           if (window.latestFirebaseData && data.runs < window.latestFirebaseData.runs && !isScorer) {
-              console.log("BKCC Guard: Fake data reversal blocked!");
+              console.log("BKCC Guard: Fake/Reverse data reversal blocked successfully!");
               return; 
           }
           window.latestFirebaseData = data;
           renderLiveScorecard(data);
-          console.log("All Errors Fixed via JavaScript onValue update! ✅");
+          console.log("Live Match Data Synced Safely ✅");
       }
   });
 
@@ -1434,7 +1482,7 @@ body {
       });
   });
 
-</script>
+                                </script>
     
 
 
