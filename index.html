@@ -5635,7 +5635,10 @@ function showHistory() {
 if (typeof currentTossStatus === 'undefined') {
     window.currentTossStatus = "Toss: Waiting..."; 
     }
-    function syncEverythingToFirebase() {
+    
+
+</script>
+function syncEverythingToFirebase() {
     if (!window.db || !window.dbRef || !window.dbUpdate) {
         console.warn("Firebase Loader waiting...");
         return;
@@ -5679,14 +5682,58 @@ if (typeof currentTossStatus === 'undefined') {
             calculatedCRR = ((currentRuns / currentBalls) * 6).toFixed(2);
         }
 
+        // ⚾ [BKCC FIXED] - प्रत्येक बॉलर के ओवर और गेंद की बिंदी (.1, .2) का सटीक सिंक
+        let formattedBowlers = [];
+        if (typeof bowlers !== 'undefined' && Array.isArray(bowlers)) {
+            formattedBowlers = bowlers.map(b => {
+                let copy = JSON.parse(JSON.stringify(b));
+                let bOvers = typeof copy.overs !== 'undefined' ? copy.overs : 0;
+                let bBalls = typeof copy.balls !== 'undefined' ? copy.balls : 0;
+                
+                // डिफ़ॉल्ट रूप से बॉलर के अपने ओवर और बॉल को स्ट्रिंग बनाएं
+                copy.oversStr = `${bOvers}.${bBalls}`;
+                
+                // अगर यह करंट लाइव बॉलर है, तो सीधे आपके 'bw-o' एलिमेंट से लाइव गेंदे उठाएं
+                let isCurrentBowler = false;
+                if (typeof currentBowler !== 'undefined' && currentBowler) {
+                    isCurrentBowler = (currentBowler.name === b.name || (typeof currentBowler === 'string' && currentBowler === b.name));
+                }
+                
+                if (isCurrentBowler) {
+                    let liveOversElem = document.getElementById('bw-o')?.innerText;
+                    if (liveOversElem && liveOversElem !== "0.0" && liveOversElem !== "") {
+                        copy.oversStr = liveOversElem;
+                    }
+                }
+                return copy;
+            });
+        }
+
+        // ========================================================
+        // 🔴 [BKCC NEW SLOTS] इनिंग्स स्कोर को सुरक्षित ट्रैक करने के लिए लॉजिक
+        // ========================================================
+        let currentInnings = typeof innings !== 'undefined' ? innings : 1;
+        
+        // अगर सेकंड इनिंग्स चल रही है, तो विंडो मेमोरी या टारगेट से पहली इनिंग्स का स्कोर उठाएगा
+        let t1RunsFinal = (currentInnings === 2) ? (window.firstInningsTotal || (typeof target !== 'undefined' && target > 0 ? target - 1 : currentRuns)) : currentRuns;
+        let t1WicketsFinal = (currentInnings === 2) ? (window.firstInningsWickets || 10) : (typeof wickets !== 'undefined' ? wickets : 0);
+        let t1OversFinal = (currentInnings === 2) 
+            ? (window.firstInningsBalls ? `${Math.floor(window.firstInningsBalls/6)}.${window.firstInningsBalls%6}` : (typeof maxOvers !== 'undefined' ? `${maxOvers}.0` : "20.0")) 
+            : `${Math.floor(currentBalls / 6)}.${currentBalls % 6}`;
+
         const matchData = {
-            innings: typeof innings !== 'undefined' ? innings : 1,
+            innings: currentInnings,
             target: typeof target !== 'undefined' ? target : 0,
             runs: currentRuns,
             wickets: typeof wickets !== 'undefined' ? wickets : 0,
             balls: currentBalls,
             battingTeam: dynamicBattingTeam,
             bowlingTeam: dynamicBowlingTeam,
+            
+            // 🔒 यहाँ सुधार हुआ है: ये तीनों स्लॉट GitHub कोड में गायब थे, जिन्हें सुरक्षित जोड़ दिया गया है
+            t1_runs: t1RunsFinal,
+            t1_wickets: t1WicketsFinal,
+            t1_overs: t1OversFinal,
             
             partnership: partnershipText, 
             crr: calculatedCRR,            
@@ -5710,7 +5757,7 @@ if (typeof currentTossStatus === 'undefined') {
             bowler_overs: document.getElementById('bw-o')?.innerText || "0.0",
 
             all_batsmen: (typeof batsmen !== 'undefined') ? JSON.parse(JSON.stringify(batsmen)) : [], 
-            all_bowlers: (typeof bowlers !== 'undefined') ? JSON.parse(JSON.stringify(bowlers)) : [], 
+            all_bowlers: formattedBowlers, // ✅ आपके बॉलर्स की ओवर स्ट्रिंग (.1, .2) के साथ सिंक
             fall_of_wickets: (typeof fallOfWickets !== 'undefined') ? JSON.parse(JSON.stringify(fallOfWickets)) : [], 
             extras_data: {
                 wd: typeof extraWides !== 'undefined' ? extraWides : 0,
@@ -5729,16 +5776,14 @@ if (typeof currentTossStatus === 'undefined') {
             window.dbSet(window.dbRef(window.db, 'match_status'), `${matchData.runs}/${matchData.wickets} (${ov})`);
         }
         
-        console.log("Firebase Sync Pure & Safe ✅");
+        console.log("Firebase Sync Pure & Safe ✅ [GITHUB CODE UPDATED]");
 
     } catch (err) {
         console.error("Sync Error:", err);
     }
 }
-
-</script>
-
-
+        
+    </script>
 </body>
 </html>
         
