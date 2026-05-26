@@ -1503,7 +1503,44 @@ body {
                   if(document.getElementById('live-bowling-team')) document.getElementById('live-bowling-team').innerText = liveMainBowlingTeamName;
                   if(document.getElementById('live-team-score')) document.getElementById('live-team-score').innerText = currentScoreStr;
                   if(document.getElementById('d-t1-name')) document.getElementById('d-t1-name').innerHTML = t1NameFinal;
-                  if(document.getElementById('d-t2-name')) document.getElementByI      
+                   if(document.getElementById('d-t2-name')) document.getElementById('d-t2-name').innerHTML = t2NameFinal;
+                  if(document.getElementById('d-t1-score')) document.getElementById('d-t1-score').innerText = t1ScoreFinal;
+                  if(document.getElementById('d-t2-score')) document.getElementById('d-t2-score').innerText = t2ScoreFinal;
+                  
+                  if(document.getElementById('label-t1-name')) document.getElementById('label-t1-name').innerText = (data.innings === 2) ? fieldTeam : bTeam;
+                  if(document.getElementById('label-t2-name')) document.getElementById('label-t2-name').innerText = (data.innings === 2) ? bTeam : fieldTeam;
+                  if(document.getElementById('label-t1-score')) document.getElementById('label-t1-score').innerText = t1ScoreFinal;
+
+                  if(document.getElementById('ps-batting-team-name')) document.getElementById('ps-batting-team-name').innerText = bTeam;
+                  if(document.getElementById('ps-t1-total')) document.getElementById('ps-t1-total').innerText = currentScoreStr;
+                  
+                  let bowTeamHeader = document.getElementById('ps-bowling-team-header');
+                  if(bowTeamHeader) {
+                      bowTeamHeader.innerHTML = `<span class="ps-tname">${fieldTeam} ⚾</span> <span class="ps-tscore">${ov} Overs</span>`;
+                  }
+
+                  if(document.getElementById('toss-result-text')) document.getElementById('toss-result-text').innerText = `Toss: ${data.toss_text || "Match Live"}`;
+                  if(document.getElementById('partnershipbox')) document.getElementById('partnershipbox').innerText = `P'SHIP: ${data.partnership || "0 (0)"}`;
+                  if(document.getElementById('crrbox')) document.getElementById('crrbox').innerText = `CRR: ${data.crr || "0.00"}`;
+
+                  // टारगेट डिस्प्ले बॉक्स री-स्टोर
+                  let targetBoxElem = document.getElementById('target-display-box');
+                  if (data.target && parseInt(data.target) > 0 && (data.innings == 2 || data.innings == "2")) {
+                      if (targetBoxElem) targetBoxElem.style.setProperty("display", "block", "important");
+                      if (document.getElementById('target-value')) document.getElementById('target-value').innerText = data.target;
+                      if (document.getElementById('target-runs-needed')) document.getElementById('target-runs-needed').innerText = (parseInt(data.target) - (parseInt(data.runs) || 0));
+                      if (document.getElementById('target-balls-left')) document.getElementById('target-balls-left').innerText = (((parseInt(data.max_overs) || 20) * 6) - (parseInt(data.balls) || 0));
+                  }
+
+                  // 2. लाइव मिनी टेबल कंटेनर को मेमोरी से तुरंत वापस भरना
+                  if(document.getElementById("live-data-wrapper") && window.latestTablesHtml) {
+                      document.getElementById("live-data-wrapper").innerHTML = window.latestTablesHtml;
+                  }
+              }, 150); 
+          }
+      });
+  });
+</script>
     
           
     <div id="home-section" class="tab-content"> 
