@@ -1477,6 +1477,42 @@ body {
                 extrasCheck.innerHTML = extrasHtml;
             }
         }
+              // =======================================================
+        // 📉 [BKCC FINAL FOW FIX] फॉल ऑफ विकेट लाइव अपडेट
+        // =======================================================
+        let fowHtml = "";
+        
+        if (data.fall_of_wickets && Array.isArray(data.fall_of_wickets) && data.fall_of_wickets.length > 0) {
+            fowHtml += `
+                <table style="width: 100%; border-collapse: collapse; font-size: 13px; font-family: sans-serif; color: #333; margin-top: 10px;">
+                    <tr style="background: #f8f9fa; border-bottom: 1px solid #dee2e6; font-weight: bold; color: #555;">
+                        <th style="padding: 6px; text-align: left;">PLAYER</th>
+                        <th style="padding: 6px; text-align: center;">SCORE</th>
+                        <th style="padding: 6px; text-align: right;">OVER</th>
+                    </tr>`;
+
+            data.fall_of_wickets.forEach(w => {
+                if (!w) return;
+                fowHtml += `
+                    <tr style="border-bottom: 1px solid #eee;">
+                        <td style="padding: 6px; text-align: left; color: #004ba0;">${w.name || w.playerName || "Batsman"}</td>
+                        <td style="padding: 6px; text-align: center; font-weight: bold;">${w.score || 0}-${w.wicketNum || 0}</td>
+                        <td style="padding: 6px; text-align: right; color: #666;">${w.over || "0.0"}</td>
+                    </tr>`;
+            });
+
+            fowHtml += `</table>`;
+        } else {
+            fowHtml = `<div style="text-align: center; padding: 10px; color: #999; font-size: 12px;">No wickets fallen</div>`;
+        }
+
+        // HTML के सही डिब्बे को पकड़कर डेटा सेट करना
+        let fowContainer = document.getElementById("fow-list") || document.getElementById("ps-fow-container") || document.querySelector(".fall-of-wickets-body");
+        if (fowContainer) {
+            fowContainer.innerHTML = fowHtml;
+        }
+        // =======================================================
+      
   } // 👈 यहाँ आकर renderLiveScorecard फ़ंक्शन बिल्कुल सही बंद हुआ!
     
           
