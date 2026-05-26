@@ -1158,6 +1158,7 @@ body {
 </head>
 
 <body>
+     
     <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -1171,6 +1172,9 @@ body {
   // 📦 डेटा को सुरक्षित रखने के लिए ग्लोबल मेमोरी वेरिएबल
   if (!window.latestFirebaseData) {
       window.latestFirebaseData = null;
+  }
+  if (!window.latestTablesHtml) {
+      window.latestTablesHtml = "";
   }
 
   // 🛡️ सुरक्षित इम्पोर्टेड फंक्शंस (अगर स्कोरर नहीं है, तो फायरबेस में लिखना पूरी तरह बैन)
@@ -1223,7 +1227,7 @@ body {
                   return; 
               }
 
-              // 🔒 बाकी सभी स्कोरिंग कंट्रोल लॉक कर दो
+              // 🔒 बाकी सभी स्कोरिंग कंट्रोल लॉक कर调ो
               btn.disabled = true;
               btn.style.opacity = "0.5"; 
               btn.style.pointerEvents = "none"; 
@@ -1272,7 +1276,7 @@ body {
           window.latestFirebaseData = data;
 
           // ========================================================
-          // 📈 [MAIN CARD RENDERING] - यह हिस्सा गायब था, जिसे वापस जोड़ दिया है!
+          // 📈 [MAIN CARD RENDERING]
           // ========================================================
           let ov = `${Math.floor(data.balls/6)}.${data.balls%6}`;
           let bTeam = data.battingTeam || "Team 1";
@@ -1392,6 +1396,9 @@ body {
               </table>
           `;
 
+          // टेबल का कोड ग्लोबल वेरिएबल में सुरक्षित स्टोर करें ताकि टैब बदलने पर गायब न हो
+          window.latestTablesHtml = liveTablesHtml;
+
           if(document.getElementById("live-data-wrapper")) {
               document.getElementById("live-data-wrapper").innerHTML = liveTablesHtml;
           }
@@ -1463,18 +1470,40 @@ body {
       }
   });
 
-  // ⚡ टैब चेंज बटन इवेंट लिसनर (मेमोरी से तुरंत पुराना डेटा रेंडर करने के लिए)
-  document.querySelectorAll('.nav-item, .tabs button, [onclick*="navTo"]').forEach(button => {
+  // ⚡ [BKCC SOLID TAB FIX] टैब चेंज करते ही मेमोरी से तुरंत पूरा डेटा बिना किसी डिले के रेंडर होगा!
+  document.querySelectorAll('.nav-item, .tabs button, [onclick*="navTo"], #info-tab, #live-tab, #scorecard-tab, #graphs-tab, #controls-tab').forEach(button => {
       button.addEventListener('click', () => {
           if (window.latestFirebaseData) {
+              console.log("BKCC Guard: Tab Switched! Instantly restoring stable layout from memory...");
+              
               setTimeout(() => {
-                  // पेज री-रेंडर करने के लिए एक बार फ़ायरबेस के लोकल स्नैपशॉट को री-ट्रिगर करता है
-                  console.log("Tab switched, rendering stable data...");
-              }, 100); 
-          }
-      });
-  });
-      </script>
+                  const data = window.latestFirebaseData;
+                  
+                  // 1. मेन स्कोरकार्ड हेडर डेटा को री-रेंडर करना
+                  let ov = `${Math.floor(data.balls/6)}.${data.balls%6}`;
+                  let bTeam = data.battingTeam || "Team 1";
+                  let fieldTeam = data.bowlingTeam || "Team 2";
+                  let currentScoreStr = `${data.runs || 0}/${data.wickets || 0} (${ov})`;
+
+                  let t1NameFinal = bTeam; let t2NameFinal = fieldTeam;
+                  let t1ScoreFinal = currentScoreStr;
+                  let t2ScoreFinal = (data.innings === 2 || data.innings === "2") ? currentScoreStr : "Yet to Bat";
+                  let liveMainBattingTeamName = bTeam; let liveMainBowlingTeamName = fieldTeam;
+
+                  if (data.innings === 2 || data.innings === "2") {
+                      t1NameFinal = fieldTeam; 
+                      t1ScoreFinal = `${data.t1_runs || 0}/${data.t1_wickets || 0} (${data.t1_overs || "0.0"})`;
+                      t2NameFinal = `${bTeam} 🏏`; t2ScoreFinal = currentScoreStr;
+                      liveMainBattingTeamName = fieldTeam; liveMainBowlingTeamName = `${bTeam} 🏏`;
+                  } else {
+                      t1NameFinal = `${bTeam} 🏏`; t2NameFinal = fieldTeam;
+                  }
+
+                  if(document.getElementById('live-batting-team')) document.getElementById('live-batting-team').innerText = liveMainBattingTeamName;
+                  if(document.getElementById('live-bowling-team')) document.getElementById('live-bowling-team').innerText = liveMainBowlingTeamName;
+                  if(document.getElementById('live-team-score')) document.getElementById('live-team-score').innerText = currentScoreStr;
+                  if(document.getElementById('d-t1-name')) document.getElementById('d-t1-name').innerHTML = t1NameFinal;
+                  if(document.getElementById('d-t2-name')) document.getElementByI      
     
           
     <div id="home-section" class="tab-content"> 
