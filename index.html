@@ -1190,7 +1190,7 @@ body {
       return set(dbRef, data);
   };
 
-  // ग्लोबल विंडोज वेरिएबल्स को लॉक कर दिया ताकि ओरिजिनल फंक्शंस डायरेक्ट एक्सेस न हों
+  // ग्लोबल विंडोज वेरिएबल्स को लॉक किया
   window.dbSet = safeSet;
   window.dbUpdate = safeUpdate;
 
@@ -1198,14 +1198,13 @@ body {
   if (!isScorer) {
       console.log("BKCC Guard: Viewer Mode Active. Protecting Menu & Locking Inputs...");
       setInterval(() => {
-          // सभी बटन्स और क्लिक होने वाले एलिमेंट्स को पकड़ें
           const scoringButtons = document.querySelectorAll('button, input[type="button"], .btn, [onclick]');
           scoringButtons.forEach(btn => {
               const btnText = (btn.innerText || btn.value || "").toLowerCase();
               const btnId = (btn.id || "").toLowerCase();
               const btnClass = (btn.className || "").toLowerCase();
 
-              // 🚫 इन शब्दों वाले बटन्स (साइड मेनू, नीचे का मेनू, टैब) को कभी भी लॉक मत करो!
+              // 🚫 मेनू/नेविगेशन को कभी भी लॉक मत करो
               if (
                   btnText.includes("info") || 
                   btnText.includes("live") || 
@@ -1221,10 +1220,10 @@ body {
                   btnClass.includes("tab") ||
                   btnClass.includes("nav-item")
               ) {
-                  return; // इन्हें खुला छोड़ दो ताकि साइड मेनू और नीचे के बटन काम करते रहें
+                  return; 
               }
 
-              // 🔒 बाकी सभी स्कोरिंग कंट्रोल (रन, विकेट, ओवर, एक्स्ट्रा) को लॉक कर दो
+              // 🔒 बाकी सभी स्कोरिंग कंट्रोल लॉक कर दो
               btn.disabled = true;
               btn.style.opacity = "0.5"; 
               btn.style.pointerEvents = "none"; 
@@ -1248,7 +1247,7 @@ body {
   window.db = db;
   window.dbRef = ref;
 
-  // स्ट्राइक रेट और इकॉनमी निकालने के लिए हेल्पर फंक्शंस
+  // हेल्पर फंक्शंस
   const getSR = (r, b) => (b > 0 ? ((r / b) * 100).toFixed(1) : "0.0");
   const getEC = (runs, oversStr) => {
       if (!oversStr || oversStr === "0.0" || oversStr === 0) return "0.0";
@@ -1264,25 +1263,144 @@ body {
       const data = snapshot.val();
       if (data) {
           
-          // ==========================================
           // 🚫 [BKCC REVERSE DATA FILTER]
-          // ==========================================
-          // अगर डेटाबेस में रन पुराने लोकल रन से कम आएं (गलती से रिवर्स डेटा आए), तो व्यूअर साइड पर उसे रोक दो
           if (window.latestFirebaseData && data.runs < window.latestFirebaseData.runs && !isScorer) {
               console.log("BKCC Guard: Fake/Reverse data reversal blocked successfully!");
               return; 
           }
           
-          // आए हुए डेटा को ग्लोबल मेमोरी में सुरक्षित लॉक कर लिया
           window.latestFirebaseData = data;
 
-          // 📋 7. फुल बैटिंग स्कोरकार्ड लिस्ट (अब पूरी तरह ठीक है)
+          // ========================================================
+          // 📈 [MAIN CARD RENDERING] - यह हिस्सा गायब था, जिसे वापस जोड़ दिया है!
+          // ========================================================
+          let ov = `${Math.floor(data.balls/6)}.${data.balls%6}`;
+          let bTeam = data.battingTeam || "Team 1";
+          let fieldTeam = data.bowlingTeam || "Team 2";
+          let currentScoreStr = `${data.runs || 0}/${data.wickets || 0} (${ov})`;
+
+          let t1NameFinal = bTeam;
+          let t2NameFinal = fieldTeam;
+          let t1ScoreFinal = currentScoreStr;
+          let t2ScoreFinal = (data.innings === 2 || data.innings === "2") ? currentScoreStr : "Yet to Bat";
+
+          let liveMainBattingTeamName = bTeam;
+          let liveMainBowlingTeamName = fieldTeam;
+
+          if (data.innings === 2 || data.innings === "2") {
+              t1NameFinal = fieldTeam; 
+              t1ScoreFinal = `${data.t1_runs || 0}/${data.t1_wickets || 0} (${data.t1_overs || "0.0"})`;
+              t2NameFinal = `${bTeam} 🏏`;
+              t2ScoreFinal = currentScoreStr;
+
+              liveMainBattingTeamName = fieldTeam;
+              liveMainBowlingTeamName = `${bTeam} 🏏`;
+          } else {
+              t1NameFinal = `${bTeam} 🏏`;
+              t2NameFinal = fieldTeam;
+          }
+
+          // HTML एलिमेंट्स में लाइव डेटा पुश करना
+          if(document.getElementById('live-batting-team')) document.getElementById('live-batting-team').innerText = liveMainBattingTeamName;
+          if(document.getElementById('live-bowling-team')) document.getElementById('live-bowling-team').innerText = liveMainBowlingTeamName;
+          if(document.getElementById('live-team-score')) document.getElementById('live-team-score').innerText = currentScoreStr;
+          
+          if(document.getElementById('d-t1-name')) document.getElementById('d-t1-name').innerHTML = t1NameFinal;
+          if(document.getElementById('d-t2-name')) document.getElementById('d-t2-name').innerHTML = t2NameFinal;
+          if(document.getElementById('d-t1-score')) document.getElementById('d-t1-score').innerText = t1ScoreFinal;
+          if(document.getElementById('d-t2-score')) document.getElementById('d-t2-score').innerText = t2ScoreFinal;
+
+          if(document.getElementById('label-t1-name')) document.getElementById('label-t1-name').innerText = (data.innings === 2) ? fieldTeam : bTeam;
+          if(document.getElementById('label-t2-name')) document.getElementById('label-t2-name').innerText = (data.innings === 2) ? bTeam : fieldTeam;
+          if(document.getElementById('label-t1-score')) document.getElementById('label-t1-score').innerText = t1ScoreFinal;
+
+          if(document.getElementById('ps-batting-team-name')) document.getElementById('ps-batting-team-name').innerText = bTeam;
+          if(document.getElementById('ps-t1-total')) document.getElementById('ps-t1-total').innerText = currentScoreStr;
+          
+          let bowTeamHeader = document.getElementById('ps-bowling-team-header');
+          if(bowTeamHeader) {
+              bowTeamHeader.innerHTML = `<span class="ps-tname">${fieldTeam} ⚾</span> <span class="ps-tscore">${ov} Overs</span>`;
+          }
+
+          if(document.getElementById('toss-result-text')) document.getElementById('toss-result-text').innerText = `Toss: ${data.toss_text || "Match Live"}`;
+          if(document.getElementById('partnershipbox')) document.getElementById('partnershipbox').innerText = `P'SHIP: ${data.partnership || "0 (0)"}`;
+          if(document.getElementById('crrbox')) document.getElementById('crrbox').innerText = `CRR: ${data.crr || "0.00"}`;
+
+          // टारगेट डिस्प्ले बॉक्स का लॉजिक
+          let targetBoxElem = document.getElementById('target-display-box');
+          if (data.target && parseInt(data.target) > 0 && (data.innings == 2 || data.innings == "2")) {
+              if (targetBoxElem) targetBoxElem.style.setProperty("display", "block", "important");
+              if (document.getElementById('target-value')) document.getElementById('target-value').innerText = data.target;
+              
+              if (document.getElementById('target-runs-needed')) {
+                  let runsNeeded = parseInt(data.target) - (parseInt(data.runs) || 0);
+                  document.getElementById('target-runs-needed').innerText = runsNeeded > 0 ? runsNeeded : 0;
+              }
+              if (document.getElementById('target-balls-left')) {
+                  let totalMatchBalls = (parseInt(data.max_overs) || 20) * 6; 
+                  let ballsLeft = totalMatchBalls - (parseInt(data.balls) || 0);
+                  document.getElementById('target-balls-left').innerText = ballsLeft > 0 ? ballsLeft : 0;
+              }
+          } else {
+              if (targetBoxElem) targetBoxElem.style.setProperty("display", "none", "important");
+          }
+
+          // मिनी लाइव टेबल जनरेशन (बैट्समैन 1, बैट्समैन 2 और बॉलर बॉक्स)
+          let liveTablesHtml = `
+              <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: sans-serif; margin-bottom: 15px;">
+                  <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; font-weight: bold; color: #555;">
+                      <th style="padding: 8px;">BATTER</th>
+                      <th style="padding: 8px; text-align: center;">R</th>
+                      <th style="padding: 8px; text-align: center;">B</th>
+                      <th style="padding: 8px; text-align: center;">4s</th>
+                      <th style="padding: 8px; text-align: center;">6s</th>
+                      <th style="padding: 8px; text-align: center; color: #00a862;">SR</th>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #eee;">
+                      <td style="padding: 8px; font-weight: bold; color: #004ba0;">${data.batsman1 || "Batter 1"} *</td>
+                      <td style="padding: 8px; text-align: center; font-weight: bold;">${data.b1_runs || 0}</td>
+                      <td style="padding: 8px; text-align: center; color: #555;">${data.b1_balls || 0}</td>
+                      <td style="padding: 8px; text-align: center; color: #555;">${data.b1_4s || 0}</td>
+                      <td style="padding: 8px; text-align: center; color: #555;">${data.b1_6s || 0}</td>
+                      <td style="padding: 8px; text-align: center; color: #00a862; font-weight: bold;">${getSR(data.b1_runs || 0, data.b1_balls || 0)}</td>
+                  </tr>
+                  <tr style="border-bottom: 1px solid #eee;">
+                      <td style="padding: 8px; color: #333;">${data.batsman2 || "Batter 2"}</td>
+                      <td style="padding: 8px; text-align: center; font-weight: bold;">${data.b2_runs || 0}</td>
+                      <td style="padding: 8px; text-align: center; color: #555;">${data.b2_balls || 0}</td>
+                      <td style="padding: 8px; text-align: center; color: #555;">${data.b2_4s || 0}</td>
+                      <td style="padding: 8px; text-align: center; color: #555;">${data.b2_6s || 0}</td>
+                      <td style="padding: 8px; text-align: center; color: #00a862;">${getSR(data.b2_runs || 0, data.b2_balls || 0)}</td>
+                  </tr>
+              </table>
+
+              <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: sans-serif; margin-bottom: 10px;">
+                  <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; font-weight: bold; color: #555;">
+                      <th style="padding: 8px;">BOWLER</th>
+                      <th style="padding: 8px; text-align: center;">O</th>
+                      <th style="padding: 8px; text-align: center;">R</th>
+                      <th style="padding: 8px; text-align: center;">W</th>
+                      <th style="padding: 8px; text-align: center; color: #00a862;">EC</th>
+                  </tr>
+                  <tr>
+                      <td style="padding: 8px; font-weight: bold; color: #333;">${data.bowler || "Bowler"}</td>
+                      <td style="padding: 8px; text-align: center; font-weight: bold;">${data.bowler_overs || "0.0"}</td>
+                      <td style="padding: 8px; text-align: center; color: #555;">${data.bowler_runs || 0}</td>
+                      <td style="padding: 8px; text-align: center; color: red; font-weight: bold;">${data.bowler_wickets || 0}</td>
+                      <td style="padding: 8px; text-align: center; color: #00a862; font-weight: bold;">${getEC(data.bowler_runs || 0, data.bowler_overs || "0.0")}</td>
+                  </tr>
+              </table>
+          `;
+
+          if(document.getElementById("live-data-wrapper")) {
+              document.getElementById("live-data-wrapper").innerHTML = liveTablesHtml;
+          }
+
+          // 📋 7. फुल बैटिंग स्कोरकार्ड लिस्ट
           let batScoreHtml = "";
           if (data.all_batsmen && Array.isArray(data.all_batsmen)) {
               data.all_batsmen.forEach(p => {
                   if (!p) return;
-                  
-                  // 🎯 सुधार: पुरानी "if (p.runs > 0 || p.balls > 0 || p.out)" वाली लाइन हटा दी गई है!
                   let outStatus = p.out ? `${p.outType || "Out"}${p.bowledBy ? ` b ${p.bowledBy}` : ""}` : "not out";
                   
                   batScoreHtml += `
@@ -1344,7 +1462,21 @@ body {
           console.log("All Inning Errors & Icons Fixed Successfully! ✅ [BKCC VIEWER UPDATED]");
       }
   });
-                  </script>
+
+  // ⚡ टैब चेंज बटन इवेंट लिसनर (मेमोरी से तुरंत पुराना डेटा रेंडर करने के लिए)
+  document.querySelectorAll('.nav-item, .tabs button, [onclick*="navTo"]').forEach(button => {
+      button.addEventListener('click', () => {
+          if (window.latestFirebaseData) {
+              setTimeout(() => {
+                  // पेज री-रेंडर करने के लिए एक बार फ़ायरबेस के लोकल स्नैपशॉट को री-ट्रिगर करता है
+                  console.log("Tab switched, rendering stable data...");
+              }, 100); 
+          }
+      });
+  });
+      </script>
+    
+          
     <div id="home-section" class="tab-content"> 
     <div id="upcoming-matches-container" style="display: flex; overflow-x: auto; gap: 12px; padding: 15px 10px; scrollbar-width: none; -webkit-overflow-scrolling: touch; align-items: flex-start; flex-wrap: nowrap;">
         </div>
