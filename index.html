@@ -1253,6 +1253,10 @@ body {
   window.dbRef = ref;
 
   // 🎯 मुख्य फ़ंक्शन जो स्क्रीन पर लाइव डेटा रेंडर करता है
+
+
+            
+  // 🎯 मुख्य फ़ंक्शन जो स्क्रीन पर लाइव डेटा रेंडर करता है
   function renderLiveScorecard(data) {
         let ov = `${Math.floor(data.balls/6)}.${data.balls%6}`;
         let bTeam = data.battingTeam || "Team 1";
@@ -1282,7 +1286,6 @@ body {
             t1NameFinal = `${bTeam} 🏏`;
             t2NameFinal = fieldTeam;
         }
-        // ==========================================
 
         // 📢 1. मुख्य LIVE टैब का डेटा
         if(document.getElementById('live-batting-team')) document.getElementById('live-batting-team').innerText = liveMainBattingTeamName;
@@ -1390,23 +1393,19 @@ body {
         if(document.getElementById("live-data-wrapper")) {
             document.getElementById("live-data-wrapper").innerHTML = liveTablesHtml;
         }
+
         // =======================================================
-        // 📋 7. फुल बैटिंग स्कोरकार्ड लिस्ट (केवल बैटिंग कर चुके या कर रहे खिलाड़ी दिखेंगे)
+        // 📋 7. फुल बैटिंग स्कोरकार्ड लिस्ट (ब्रैकेट फिक्स)
         // =======================================================
         let batScoreHtml = "";
         if (data.all_batsmen && Array.isArray(data.all_batsmen)) {
             data.all_batsmen.forEach(p => {
                 if (!p) return;
 
-                // 🎯 स्मार्ट फ़िल्टर: केवल उन्हीं खिलाड़ियों को दिखाओ जिन्होंने कम से कम 1 बॉल खेली हो, 
-                // या रन बनाए हों, या आउट हुए हों, या फिर जो वर्तमान में लाइव खेल रहे हों (batsman1 या batsman2 हों)
                 let isCurrentlyPlaying = (p.name === data.batsman1 || p.name === data.batsman2);
                 
                 if (p.runs > 0 || p.balls > 0 || p.out || isCurrentlyPlaying) {
-                    
                     let outStatus = p.out ? `${p.outType || "Out"}${p.bowledBy ? ` b ${p.bowledBy}` : ""}` : "not out";
-                    
-                    // अगर खिलाड़ी अभी क्रीज पर खेल रहा है, तो उसके नाम के आगे * लगाओ
                     let displayName = isCurrentlyPlaying ? `${p.name} *` : p.name;
 
                     batScoreHtml += `
@@ -1422,29 +1421,23 @@ body {
             });
         }
       
-
         // =======================================================
-        // 📋 8. Full बॉलिंग स्कोरकार्ड लिस्ट (केवल बॉलिंग कर चुके या कर रहे खिलाड़ी दिखेंगे)
+        // 📋 8. Full बॉलिंग स्कोरकार्ड लिस्ट (ब्रैकेट फिक्स)
         // =======================================================
         let bowlScoreHtml = "";
         if (data.all_bowlers && Array.isArray(data.all_bowlers)) {
             data.all_bowlers.forEach(b => {
                 if (!b) return;
 
-                // 🎯 स्मार्ट फ़िल्टर: केवल उसी गेंदबाज को दिखाओ जिसने कम से कम 1 बॉल फेंकी हो, 
-                // रन दिए हों, विकेट लिया हो, या जो अभी वर्तमान में बॉलिंग कर रहा हो (data.bowler हो)
                 let isCurrentlyBowling = (b.name === data.bowler);
                 let hasBowled = (b.overs > 0 || b.balls > 0 || b.runs > 0 || b.wickets > 0);
 
                 if (hasBowled || isCurrentlyBowling) {
-                    
-                    // अगर b.oversStr "0.0" है और उसने कोई वास्तविक बॉल नहीं फेंकी है, तो उसे ठीक करें
                     let bowlerOversCombined = b.oversStr || `${b.overs || 0}.${b.balls || 0}`;
                     if (!hasBowled && isCurrentlyBowling) {
                         bowlerOversCombined = "0.0";
                     }
 
-                    // वर्तमान गेंदबाज के नाम के आगे स्टार (*) लगाएं
                     let displayBowlerName = isCurrentlyBowling ? `${b.name} *` : b.name;
 
                     bowlScoreHtml += `
@@ -1460,8 +1453,11 @@ body {
                         </div>`;
                 }
             });
-            }
-      
+        }
+
+        // 📢 HTML में डेटा पुश करने का सही स्थान (लूप से बाहर)
+        if(document.getElementById("ps-t1-batting")) document.getElementById("ps-t1-batting").innerHTML = batScoreHtml;
+        if(document.getElementById("ps-t2-bowling")) document.getElementById("ps-t2-bowling").innerHTML = bowlScoreHtml;
 
         // 📋 9. एक्स्ट्रा रनों का डेटा
         if (data.extras_data && document.getElementById("ps-t1-batting")) {
@@ -1481,7 +1477,9 @@ body {
                 extrasCheck.innerHTML = extrasHtml;
             }
         }
-  }
+  } // 👈 यहाँ आकर renderLiveScorecard फ़ंक्शन बिल्कुल सही बंद हुआ!
+    
+          
 
   // --- 🛡️ दर्शकों के लिए ऑटो-अपडेट और रिवर्स डेटा फ़िल्टर (OnValue Listener) ---
   onValue(ref(db, 'live_match_data'), (snapshot) => {
