@@ -1391,25 +1391,27 @@ body {
             document.getElementById("live-data-wrapper").innerHTML = liveTablesHtml;
         }
 
-        // 📋 7. फुल बैटिंग स्कोरकार्ड लिस्ट
-        let batScoreHtml = "";
-        if (data.all_batsmen && Array.isArray(data.all_batsmen)) {
-            data.all_batsmen.forEach(p => {
-                if (!p) return;
-                if (p.runs > 0 || p.balls > 0 || p.out) {
-                    let outStatus = p.out ? `${p.outType || "Out"}${p.bowledBy ? ` b ${p.bowledBy}` : ""}` : "not out";
-                    batScoreHtml += `
-                        <div class="ps-batter-header" style="background: none; border-bottom: 1px solid #f0f0f0; font-weight: normal; padding: 6px 0; color: #000;">
-                            <span class="p-head-item h-name" style="text-align: left; line-height: 1.3;"><b>${p.name}</b><br><small style="color: #666; font-size: 10px;">${outStatus}</small></span>
-                            <span class="p-head-item h-r"><b>${p.runs || 0}</b></span>
-                            <span class="p-head-item h-b">${p.balls || 0}</span>
-                            <span class="p-head-item h-4s">${p.fours || 0}</span>
-                            <span class="p-head-item h-6s">${p.sixes || 0}</span>
-                            <span class="p-head-item h-sr" style="color: #666;">${getSR(p.runs || 0, p.balls || 0)}</span>
-                        </div>`;
-                }
-            });
-        }
+           // 📋 7. फुल बैटिंग स्कोरकार्ड लिस्ट (अब पूरी तरह ठीक है)
+let batScoreHtml = "";
+if (data.all_batsmen && Array.isArray(data.all_batsmen)) {
+    data.all_batsmen.forEach(p => {
+        if (!p) return;
+        
+        // 🎯 सुधार: पुरानी "if (p.runs > 0 || p.balls > 0 || p.out)" वाली लाइन हटा दी गई है!
+        let outStatus = p.out ? `${p.outType || "Out"}${p.bowledBy ? ` b ${p.bowledBy}` : ""}` : "not out";
+        
+        batScoreHtml += `
+            <div class="ps-batter-header" style="background: none; border-bottom: 1px solid #f0f0f0; font-weight: normal; padding: 6px 0; color: #000;">
+                <span class="p-head-item h-name" style="text-align: left; line-height: 1.3;"><b>${p.name}</b><br><small style="color: #666; font-size: 10px;">${outStatus}</small></span>
+                <span class="p-head-item h-r"><b>${p.runs || 0}</b></span>
+                <span class="p-head-item h-b">${p.balls || 0}</span>
+                <span class="p-head-item h-4s">${p.fours || 0}</span>
+                <span class="p-head-item h-6s">${p.sixes || 0}</span>
+                <span class="p-head-item h-sr" style="color: #666;">${getSR(p.runs || 0, p.balls || 0)}</span>
+            </div>`;
+    });
+    }
+      
 
         // 📋 8. Full बॉलिंग स्कोरकार्ड लिस्ट
         let bowlScoreHtml = "";
@@ -3789,12 +3791,13 @@ function startThisMatch(index) {
     
     alert("मैच लोड हो गया है! टॉस अपडेट करें और शुरू करें।");
     }
-    function startMatchWithPlayers() {
+function startMatchWithPlayers() {
     try {
         window.isHistoryMode = false;      // हिस्ट्री मोड बंद करें
         window.viewingHistoryData = null; // पुराना डेटा पूरी तरह साफ़ करें
         localStorage.removeItem('match_fow_data_inn1'); // पुरानी विकेटों की लिस्ट साफ करें
         localStorage.removeItem('match_fow_data_inn2');
+        
         // 1. इनपुट से डेटा लें
         let t1NameInput = document.getElementById('t1NameInput');
         let t2NameInput = document.getElementById('t2NameInput');
@@ -3816,69 +3819,71 @@ function startThisMatch(index) {
         let p1List = Array.from(t1Inps).map(inp => inp.value.trim()).filter(val => val !== "");
         let p2List = Array.from(t2Inps).map(inp => inp.value.trim()).filter(val => val !== "");
 
-        // 2. बैटिंग साइड तय करना
+        // 2. बैटिंग और बॉलिंग साइड तय करना
         const isTeam1TossWinner = (tossWinner.value === "team1");
         const optedToBat = (matchChoice.value === "bat");
 
         let currentBattingList = [];
+        let currentBowlingList = [];
         let currentBattingName = "";
+        let currentBowlingName = "";
 
         if ((isTeam1TossWinner && optedToBat) || (!isTeam1TossWinner && !optedToBat)) {
             currentBattingSide = "A"; 
             currentBattingList = p1List;
             currentBattingName = team1Name;
+            currentBowlingList = p2List;
+            currentBowlingName = team2Name;
         } else {
             currentBattingSide = "B"; 
             currentBattingList = p2List;
             currentBattingName = team2Name;
+            currentBowlingList = p1List;
+            currentBowlingName = team1Name;
         }
 
-        // 3. ✅ स्ट्राइकर/नॉन-स्ट्राइकर चेक (यही एरर दे रहा था)
+        // 3. स्ट्राइकर/नॉन-स्ट्राइकर चेक
         if (striker === null || nonStriker === null) {
             alert(`कृपया ${currentBattingName} के 2 खिलाड़ियों को टिक करें!`);
             return;
         }
 
-        // 4. बल्लेबाजों का डेटा तैयार करना
-        // पुराने खिलाड़ियों का डेटा साफ करके नई लिस्ट बनाना
+        // 4. बल्लेबाजों और गेंदबाजों का शुरुआती डेटा तैयार करना
         batsmen = currentBattingList.map(name => ({ 
             name: name, runs: 0, balls: 0, fours: 0, sixes: 0, 
             out: false, outType: "", bowledBy: "" 
         }));
 
-        // मैच की वैल्यू सेट करना
+        bowlers = currentBowlingList.map(name => ({
+            name: name, overs: 0, balls: 0, runs: 0, wickets: 0, maidens: 0, wides: 0, noballs: 0, oversStr: "0.0"
+        }));
+
+        // मैच की शुरुआती वैल्यू रीसेट
         runs = 0; wickets = 0; balls = 0; innings = 1; matchOver = false;
         currentOverBalls = [];
 
-       // टॉस का मैसेज दिखाना (Cricbuzz Style)
-let winnerName = (tossWinner.value === "team1") ? team1Name : team2Name;
-let choiceText = (matchChoice.value === "bat") ? "bat" : "bowl"; // हिंदी से English में बदला
+        // टॉस का मैसेज दिखाना (Cricbuzz Style)
+        let winnerName = (tossWinner.value === "team1") ? team1Name : team2Name;
+        let choiceText = (matchChoice.value === "bat") ? "bat" : "bowl";
+        let tossMsg = `${winnerName} opt to ${choiceText}`;
 
-// Cricbuzz स्टाइल में "opt to" वाला मैसेज
-let tossMsg = `${winnerName} opt to ${choiceText}`;
+        if(document.getElementById("toss-result-text")) {
+            let tossElement = document.getElementById("toss-result-text");
+            tossElement.innerText = tossMsg;
+            tossElement.style.color = "#C62828"; 
+            tossElement.style.fontWeight = "500";
+            tossElement.style.fontSize = "14px";
+        }
 
-if(document.getElementById("toss-result-text")) {
-    let tossElement = document.getElementById("toss-result-text");
-    
-    // टेक्स्ट को अपडेट करें
-    tossElement.innerText = tossMsg;
-    
-    // Cricbuzz जैसा गुलाबी रंग देने के लिए (अगर पहले से CSS में नहीं है)
-    tossElement.style.color = "#C62828"; 
-    tossElement.style.fontWeight = "500";
-    tossElement.style.fontSize = "14px";
-}
-        // --- ✅ यहाँ से नया सुधार (Status को Live करने के लिए) ---
+        // लोकल शेड्यूल स्टेटस अपडेट करना
         let schedule = JSON.parse(localStorage.getItem('bkcc_schedule')) || [];
         let scheduleUpdated = false;
 
         schedule.forEach(match => {
-            // स्पेलिंग और स्पेस का ध्यान रखते हुए मैच मैचिंग
             if ((match.teamA.trim() === team1Name && match.teamB.trim() === team2Name) || 
                 (match.teamA.trim() === team2Name && match.teamB.trim() === team1Name)) {
-                
-                match.status = 'Live'; // स्टेटस बदला
-                match.score = '0/0 (0.0 Ov)'; // शुरुआती स्कोर
+                match.status = 'Live'; 
+                match.score = '0/0 (0.0 Ov)'; 
                 scheduleUpdated = true;
             }
         });
@@ -3886,6 +3891,27 @@ if(document.getElementById("toss-result-text")) {
         if (scheduleUpdated) {
             localStorage.setItem('bkcc_schedule', JSON.stringify(schedule));
             console.log("Schedule updated to Live success!");
+        }
+
+        // ==========================================
+        // 🔥 [CRITICAL FIREBASE INITIAL SYNC]: 
+        // मैच स्टार्ट होते ही पूरी टीम लिस्ट (0 स्कोर के साथ) Firebase में जाएगी
+        // ==========================================
+        if (window.db && window.dbRef && window.dbUpdate) {
+            window.dbUpdate(window.dbRef(window.db, 'live_match_data'), {
+                innings: 1,
+                runs: 0,
+                wickets: 0,
+                balls: 0,
+                battingTeam: currentBattingName,
+                bowlingTeam: currentBowlingName,
+                all_batsmen: batsmen, 
+                all_bowlers: bowlers,
+                toss_text: tossMsg,
+                target: 0,
+                timestamp: Date.now()
+            });
+            console.log("Initial Squads Sync to Firebase Success! 🚀");
         }
 
         // 5. सेक्शन बदलना (Setup छुपाएं, Controls दिखाएं)
@@ -3898,14 +3924,16 @@ if(document.getElementById("toss-result-text")) {
         // स्कोरकार्ड और UI अपडेट
         if(typeof update === "function") update();
         if(typeof showTab === "function") showTab('live');
-        // 🔥 होम स्क्रीन के लाइव डब्बे को तुरंत दिखाने के लिए:
         if(typeof displayUpcomingOnHome === "function") displayUpcomingOnHome();
+
+        alert("मैच सफलतापूर्वक लाइव हो गया है!");
 
     } catch (err) {
         console.error("Setup Error Details:", err);
         alert("कोड में गड़बड़ी: " + err.message);
     }
-}
+    }
+    
 
 // नामों को हर जगह अपडेट करने का छोटा फंक्शन
 function updateTeamNamesUI(t1, t2) {
