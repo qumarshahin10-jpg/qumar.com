@@ -1199,45 +1199,51 @@ body {
   window.dbSet = safeSet;
   window.dbUpdate = safeUpdate;
 
-  // 🛑 [BKCC SMART GUARD] दर्शकों के लिए सिर्फ स्कोरिंग बटन लॉक होंगे, मेनू और नेविगेशन बिल्कुल काम करेंगे!
+  // 🛑 [BKCC SMART GUARD - FIXED] दर्शकों के लिए सिर्फ स्कोरिंग बटन लॉक होंगे, मेनू और इनिंग्स चेंज बिल्कुल काम करेंगे!
   if (!isScorer) {
       console.log("BKCC Guard: Viewer Mode Active. Protecting Menu & Locking Inputs...");
       setInterval(() => {
+          // केवल उन्हीं एलिमेंट्स को पकड़ेंगे जो सच में इनपुट या स्कोरिंग बटन हैं
           const scoringButtons = document.querySelectorAll('button, input[type="button"], .btn, [onclick]');
           scoringButtons.forEach(btn => {
               const btnText = (btn.innerText || btn.value || "").toLowerCase();
               const btnId = (btn.id || "").toLowerCase();
               const btnClass = (btn.className || "").toLowerCase();
 
-              // 🚫 मेनू/नेविगेशन को कभी भी लॉक मत करो
+              // 🚫 [सुरक्षा चक्र]: इनिंग्स बटन, साइड मेनू और नेविगेशन टैब्स को ब्लॉक होने से कड़ाई से रोकें
               if (
                   btnText.includes("info") || 
                   btnText.includes("live") || 
                   btnText.includes("scorecard") || 
                   btnText.includes("graphs") || 
+                  btnText.includes("controls") || 
                   btnText.includes("menu") || 
                   btnText.includes("home") ||
+                  btnText.includes("innings") || // Innings टेक्स्ट वाले बटन सुरक्षित
                   btnId.includes("menu") || 
                   btnId.includes("nav") || 
                   btnId.includes("tab") ||
+                  btnId.includes("innings") ||  // Innings ID वाले बटन सुरक्षित
                   btnClass.includes("menu") || 
                   btnClass.includes("nav") || 
                   btnClass.includes("tab") ||
-                  btnClass.includes("nav-item")
+                  btnClass.includes("innings") || // Innings Class वाले बटन सुरक्षित
+                  btnClass.includes("nav-item") ||
+                  btnClass.includes("hamburger")  // साइड मेनू आइकॉन सुरक्षित
               ) {
-                  return; 
+                  return; // इन्हें कुछ मत करो, ये काम करते रहेंगे!
               }
 
-              // 🔒 बाकी सभी स्कोरिंग कंट्रोल लॉक कर दो
+              // 🔒 सिर्फ असली स्कोरिंग बटनों (+1, +2, +4, +6, Out, Wide) को लॉक करो
               btn.disabled = true;
               btn.style.opacity = "0.5"; 
               btn.style.pointerEvents = "none"; 
-              btn.onclick = null; 
           });
       }, 1000);
   } else {
       console.log("BKCC Guard: Admin/Scorer Mode Active! All controls unlocked.");
   }
+    
     
   // --- फायरबेस कॉन्फ़िगरेशन ---
   const firebaseConfig = {
