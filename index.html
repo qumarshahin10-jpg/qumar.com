@@ -1390,39 +1390,66 @@ body {
         if(document.getElementById("live-data-wrapper")) {
             document.getElementById("live-data-wrapper").innerHTML = liveTablesHtml;
         }
+        // =======================================================
+        // 📋 7. फुल बैटिंग स्कोरकार्ड लिस्ट (केवल बैटिंग कर चुके या कर रहे खिलाड़ी दिखेंगे)
+        // =======================================================
+        let batScoreHtml = "";
+        if (data.all_batsmen && Array.isArray(data.all_batsmen)) {
+            data.all_batsmen.forEach(p => {
+                if (!p) return;
 
-           // 📋 7. फुल बैटिंग स्कोरकार्ड लिस्ट (अब पूरी तरह ठीक है)
-let batScoreHtml = "";
-if (data.all_batsmen && Array.isArray(data.all_batsmen)) {
-    data.all_batsmen.forEach(p => {
-        if (!p) return;
-        
-        // 🎯 सुधार: पुरानी "if (p.runs > 0 || p.balls > 0 || p.out)" वाली लाइन हटा दी गई है!
-        let outStatus = p.out ? `${p.outType || "Out"}${p.bowledBy ? ` b ${p.bowledBy}` : ""}` : "not out";
-        
-        batScoreHtml += `
-            <div class="ps-batter-header" style="background: none; border-bottom: 1px solid #f0f0f0; font-weight: normal; padding: 6px 0; color: #000;">
-                <span class="p-head-item h-name" style="text-align: left; line-height: 1.3;"><b>${p.name}</b><br><small style="color: #666; font-size: 10px;">${outStatus}</small></span>
-                <span class="p-head-item h-r"><b>${p.runs || 0}</b></span>
-                <span class="p-head-item h-b">${p.balls || 0}</span>
-                <span class="p-head-item h-4s">${p.fours || 0}</span>
-                <span class="p-head-item h-6s">${p.sixes || 0}</span>
-                <span class="p-head-item h-sr" style="color: #666;">${getSR(p.runs || 0, p.balls || 0)}</span>
-            </div>`;
-    });
-    }
+                // 🎯 स्मार्ट फ़िल्टर: केवल उन्हीं खिलाड़ियों को दिखाओ जिन्होंने कम से कम 1 बॉल खेली हो, 
+                // या रन बनाए हों, या आउट हुए हों, या फिर जो वर्तमान में लाइव खेल रहे हों (batsman1 या batsman2 हों)
+                let isCurrentlyPlaying = (p.name === data.batsman1 || p.name === data.batsman2);
+                
+                if (p.runs > 0 || p.balls > 0 || p.out || isCurrentlyPlaying) {
+                    
+                    let outStatus = p.out ? `${p.outType || "Out"}${p.bowledBy ? ` b ${p.bowledBy}` : ""}` : "not out";
+                    
+                    // अगर खिलाड़ी अभी क्रीज पर खेल रहा है, तो उसके नाम के आगे * लगाओ
+                    let displayName = isCurrentlyPlaying ? `${p.name} *` : p.name;
+
+                    batScoreHtml += `
+                        <div class="ps-batter-header" style="background: none; border-bottom: 1px solid #f0f0f0; font-weight: normal; padding: 6px 0; color: #000;">
+                            <span class="p-head-item h-name" style="text-align: left; line-height: 1.3;"><b>${displayName}</b><br><small style="color: #666; font-size: 10px;">${outStatus}</small></span>
+                            <span class="p-head-item h-r"><b>${p.runs || 0}</b></span>
+                            <span class="p-head-item h-b">${p.balls || 0}</span>
+                            <span class="p-head-item h-4s">${p.fours || 0}</span>
+                            <span class="p-head-item h-6s">${p.sixes || 0}</span>
+                            <span class="p-head-item h-sr" style="color: #666;">${getSR(p.runs || 0, p.balls || 0)}</span>
+                        </div>`;
+                }
+            });
+        }
       
 
-        // 📋 8. Full बॉलिंग स्कोरकार्ड लिस्ट
+        // =======================================================
+        // 📋 8. Full बॉलिंग स्कोरकार्ड लिस्ट (केवल बॉलिंग कर चुके या कर रहे खिलाड़ी दिखेंगे)
+        // =======================================================
         let bowlScoreHtml = "";
         if (data.all_bowlers && Array.isArray(data.all_bowlers)) {
             data.all_bowlers.forEach(b => {
                 if (!b) return;
-                if (b.overs > 0 || b.balls > 0 || b.runs > 0 || b.oversStr) {
+
+                // 🎯 स्मार्ट फ़िल्टर: केवल उसी गेंदबाज को दिखाओ जिसने कम से कम 1 बॉल फेंकी हो, 
+                // रन दिए हों, विकेट लिया हो, या जो अभी वर्तमान में बॉलिंग कर रहा हो (data.bowler हो)
+                let isCurrentlyBowling = (b.name === data.bowler);
+                let hasBowled = (b.overs > 0 || b.balls > 0 || b.runs > 0 || b.wickets > 0);
+
+                if (hasBowled || isCurrentlyBowling) {
+                    
+                    // अगर b.oversStr "0.0" है और उसने कोई वास्तविक बॉल नहीं फेंकी है, तो उसे ठीक करें
                     let bowlerOversCombined = b.oversStr || `${b.overs || 0}.${b.balls || 0}`;
+                    if (!hasBowled && isCurrentlyBowling) {
+                        bowlerOversCombined = "0.0";
+                    }
+
+                    // वर्तमान गेंदबाज के नाम के आगे स्टार (*) लगाएं
+                    let displayBowlerName = isCurrentlyBowling ? `${b.name} *` : b.name;
+
                     bowlScoreHtml += `
                         <div class="ps-batter-header bowler-header" style="background: none; border-bottom: 1px solid #f0f0f0; font-weight: normal; padding: 6px 0; color: #000;">
-                            <span class="p-head-item hb-name" style="text-align: left;"><b>${b.name}</b></span>
+                            <span class="p-head-item hb-name" style="text-align: left;"><b>${displayBowlerName}</b></span>
                             <span class="p-head-item hb-o">${bowlerOversCombined}</span>
                             <span class="p-head-item hb-m">${b.maidens || 0}</span>
                             <span class="p-head-item hb-r">${b.runs || 0}</span>
@@ -1433,10 +1460,8 @@ if (data.all_batsmen && Array.isArray(data.all_batsmen)) {
                         </div>`;
                 }
             });
-        }
-
-        if(document.getElementById("ps-t1-batting")) document.getElementById("ps-t1-batting").innerHTML = batScoreHtml;
-        if(document.getElementById("ps-t2-bowling")) document.getElementById("ps-t2-bowling").innerHTML = bowlScoreHtml;
+            }
+      
 
         // 📋 9. एक्स्ट्रा रनों का डेटा
         if (data.extras_data && document.getElementById("ps-t1-batting")) {
