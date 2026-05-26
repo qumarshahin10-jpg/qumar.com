@@ -1410,15 +1410,23 @@ body {
                     // ========================================================
           // 📋 [सुधरा हुआ कोड] बैटिंग स्कोरकार्ड लिस्ट
           // ========================================================
+                  // ========================================================
+          // 📋 [100% परफेक्ट फिक्स] बैटिंग स्कोरकार्ड लिस्ट (0/0 पर भी तुरंत दिखेगा)
+          // ========================================================
           let batScoreHtml = "";
           if (data.all_batsmen && Array.isArray(data.all_batsmen)) {
               data.all_batsmen.forEach(p => {
-                  if (!p) return;
+                  if (!p || !p.name) return;
                   
-                  let isCurrentActive = (p.name === data.batsman1 || p.name === data.batsman2);
+                  // नाम को बिना स्पेस और केस के मैच करेंगे ताकि कोई गड़बड़ी न हो
+                  let pNameClean = String(p.name).trim().toLowerCase();
+                  let b1Clean = data.batsman1 ? String(data.batsman1).trim().toLowerCase() : "";
+                  let b2Clean = data.batsman2 ? String(data.batsman2).trim().toLowerCase() : "";
                   
-                  // 🎯 [सुधार]: सिर्फ एक्टिव प्लेयर, आउट हो चुके प्लेयर या जिन्होंने रन/बॉल खेली है वही दिखेंगे (0 बॉल पर भी तुरंत दिखेगा!)
-                  if (isCurrentActive || p.out || (p.runs > 0 || p.balls > 0)) {
+                  let isCurrentActive = (pNameClean === b1Clean || pNameClean === b2Clean || p.name === data.batsman1 || p.name === data.batsman2);
+                  
+                  // 🎯 [कंडीशन]: अगर नाम सिलेक्टेड है, या आउट है, या 1 भी रन/बॉल है, तो तुरंत स्क्रीन पर दिखेगा
+                  if (isCurrentActive || p.out || (parseInt(p.runs) > 0 || parseInt(p.balls) > 0)) {
                       
                       let outStatus = p.out ? `${p.outType || "Out"}${p.bowledBy ? ` b ${p.bowledBy}` : ""}` : "not out";
                       let nameStyle = isCurrentActive ? "color: #004ba0; font-weight: bold;" : "color: #222;";
@@ -1439,23 +1447,22 @@ body {
           }
 
           // ========================================================
-          // 📋 [सुधरा हुआ कोड] फुल बॉलिंग स्कोरकार्ड लिस्ट
-          // ========================================================
-                    // ========================================================
-          // 📋 [परफेक्ट फिक्स] फुल बॉलिंग स्कोरकार्ड लिस्ट (फालतू बॉलर अब गायब)
+          // 📋 [100% परफेक्ट फिक्स] फुल बॉलिंग स्कोरकार्ड लिस्ट (फालतू बॉलर गायब, लाइव बॉलर तुरंत हाजिर)
           // ========================================================
           let bowlScoreHtml = "";
           if (data.all_bowlers && Array.isArray(data.all_bowlers)) {
               data.all_bowlers.forEach(b => {
-                  if (!b) return;
+                  if (!b || !b.name) return;
                   
-                  let isCurrentBowler = (b.name === data.bowler);
+                  let bNameClean = String(b.name).trim().toLowerCase();
+                  let currentBowlerClean = data.bowler ? String(data.bowler).trim().toLowerCase() : "";
                   
-                  // 🎯 चेक करेंगे कि बॉलर ने सच में कोई ओवर या बॉल फेंकी है या नहीं
+                  let isCurrentBowler = (bNameClean === currentBowlerClean || b.name === data.bowler);
+                  
                   let bowlerOversCombined = b.oversStr || `${b.overs || 0}.${b.balls || 0}`;
                   let hasActuallyBowled = (parseInt(b.runs) > 0 || parseInt(b.wickets) > 0 || (bowlerOversCombined !== "0.0" && bowlerOversCombined !== "0" && bowlerOversCombined !== "0.00"));
                   
-                  // 🎯 [कंडीशन]: सिर्फ लाइव बॉलर या जिसने सच में मैच में बॉलिंग की है, वही हमेशा दिखेगा!
+                  // 🎯 [कंडीशन]: लाइव सिलेक्टेड बॉलर बिना कोई गेंद फेंके भी 0/0 स्कोरकार्ड पर तुरंत दिखेगा!
                   if (isCurrentBowler || hasActuallyBowled) {
                       let bNameStyle = isCurrentBowler ? "color: #004ba0; font-weight: bold;" : "color: #222;";
 
