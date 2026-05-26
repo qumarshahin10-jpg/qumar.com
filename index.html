@@ -1407,38 +1407,51 @@ body {
           // ========================================================
           // 📋 [सुधार 2] फुल बैटिंग स्कोरकार्ड लिस्ट (कलर थीम और एक्टिव प्लेयर स्टार फिक्स)
           // ========================================================
+                    // ========================================================
+          // 📋 [सुधरा हुआ कोड] बैटिंग स्कोरकार्ड लिस्ट
+          // ========================================================
           let batScoreHtml = "";
           if (data.all_batsmen && Array.isArray(data.all_batsmen)) {
               data.all_batsmen.forEach(p => {
                   if (!p) return;
-                  let outStatus = p.out ? `${p.outType || "Out"}${p.bowledBy ? ` b ${p.bowledBy}` : ""}` : "not out";
                   
-                  // एडमिन जैसा गहरा नीला कलर केवल क्रीज पर मौजूद एक्टिव प्लेयर्स के लिए
                   let isCurrentActive = (p.name === data.batsman1 || p.name === data.batsman2);
-                  let nameStyle = isCurrentActive ? "color: #004ba0; font-weight: bold;" : "color: #222;";
-                  let runStyle = isCurrentActive ? "color: #004ba0; font-weight: bold;" : "font-weight: bold; color: #000;";
-                  let subTextStyle = isCurrentActive ? "color: #00a862; font-size: 10px;" : "color: #777; font-size: 10px;";
+                  
+                  // 🎯 [सुधार]: सिर्फ एक्टिव प्लेयर, आउट हो चुके प्लेयर या जिन्होंने रन/बॉल खेली है वही दिखेंगे (0 बॉल पर भी तुरंत दिखेगा!)
+                  if (isCurrentActive || p.out || (p.runs > 0 || p.balls > 0)) {
+                      
+                      let outStatus = p.out ? `${p.outType || "Out"}${p.bowledBy ? ` b ${p.bowledBy}` : ""}` : "not out";
+                      let nameStyle = isCurrentActive ? "color: #004ba0; font-weight: bold;" : "color: #222;";
+                      let runStyle = isCurrentActive ? "color: #004ba0; font-weight: bold;" : "font-weight: bold; color: #000;";
+                      let subTextStyle = isCurrentActive ? "color: #00a862; font-size: 10px;" : "color: #777; font-size: 10px;";
 
-                  batScoreHtml += `
-                      <div class="ps-batter-header" style="background: none; border-bottom: 1px solid #e0e0e0; font-weight: normal; padding: 8px 4px; color: #000; display: flex; align-items: center;">
-                          <span class="p-head-item h-name" style="text-align: left; line-height: 1.3; flex: 3;"><b style="${nameStyle}">${p.name} ${isCurrentActive ? '*' : ''}</b><br><small style="${subTextStyle}">(${outStatus})</small></span>
-                          <span class="p-head-item h-r" style="text-align: center; flex: 1; ${runStyle}">${p.runs || 0}</span>
-                          <span class="p-head-item h-b" style="text-align: center; flex: 1; color: #444;">${p.balls || 0}</span>
-                          <span class="p-head-item h-4s" style="text-align: center; flex: 1; color: #444;">${p.fours || 0}</span>
-                          <span class="p-head-item h-6s" style="text-align: center; flex: 1; color: #444;">${p.sixes || 0}</span>
-                          <span class="p-head-item h-sr" style="text-align: center; flex: 1; color: #004ba0; font-weight: 500;">${getSR(p.runs || 0, p.balls || 0)}</span>
-                      </div>`;
+                      batScoreHtml += `
+                          <div class="ps-batter-header" style="background: none; border-bottom: 1px solid #e0e0e0; font-weight: normal; padding: 8px 4px; color: #000; display: flex; align-items: center;">
+                              <span class="p-head-item h-name" style="text-align: left; line-height: 1.3; flex: 3;"><b style="${nameStyle}">${p.name} ${isCurrentActive ? '*' : ''}</b><br><small style="${subTextStyle}">(${outStatus})</small></span>
+                              <span class="p-head-item h-r" style="text-align: center; flex: 1; ${runStyle}">${p.runs || 0}</span>
+                              <span class="p-head-item h-b" style="text-align: center; flex: 1; color: #444;">${p.balls || 0}</span>
+                              <span class="p-head-item h-4s" style="text-align: center; flex: 1; color: #444;">${p.fours || 0}</span>
+                              <span class="p-head-item h-6s" style="text-align: center; flex: 1; color: #444;">${p.sixes || 0}</span>
+                              <span class="p-head-item h-sr" style="text-align: center; flex: 1; color: #004ba0; font-weight: 500;">${getSR(p.runs || 0, p.balls || 0)}</span>
+                          </div>`;
+                  }
               });
           }
 
-          // 📋 Full बॉलिंग स्कोरकार्ड लिस्ट (कलर थीम और एक्टिव बॉलर स्टार फिक्स)
+          // ========================================================
+          // 📋 [सुधरा हुआ कोड] फुल बॉलिंग स्कोरकार्ड लिस्ट
+          // ========================================================
           let bowlScoreHtml = "";
           if (data.all_bowlers && Array.isArray(data.all_bowlers)) {
               data.all_bowlers.forEach(b => {
                   if (!b) return;
-                  if (b.overs > 0 || b.balls > 0 || b.runs > 0 || b.oversStr) {
+                  
+                  let isCurrentBowler = (b.name === data.bowler);
+                  let hasBowled = (b.overs > 0 || b.balls > 0 || b.runs > 0 || b.oversStr);
+                  
+                  // 🎯 [सुधार]: सिर्फ लाइव बॉलर या जो बॉलिंग कर चुके हैं वही दिखेंगे, एक्स्ट्रा स्क्वाड के नाम छुप जाएंगे।
+                  if (isCurrentBowler || hasBowled) {
                       let bowlerOversCombined = b.oversStr || `${b.overs || 0}.${b.balls || 0}`;
-                      let isCurrentBowler = (b.name === data.bowler);
                       let bNameStyle = isCurrentBowler ? "color: #004ba0; font-weight: bold;" : "color: #222;";
 
                       bowlScoreHtml += `
@@ -1455,6 +1468,7 @@ body {
                   }
               });
           }
+          
 
           if(document.getElementById("ps-t1-batting")) document.getElementById("ps-t1-batting").innerHTML = batScoreHtml;
           if(document.getElementById("ps-t2-bowling")) document.getElementById("ps-t2-bowling").innerHTML = bowlScoreHtml;
