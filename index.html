@@ -1441,17 +1441,22 @@ body {
           // ========================================================
           // 📋 [सुधरा हुआ कोड] फुल बॉलिंग स्कोरकार्ड लिस्ट
           // ========================================================
+                    // ========================================================
+          // 📋 [परफेक्ट फिक्स] फुल बॉलिंग स्कोरकार्ड लिस्ट (फालतू बॉलर अब गायब)
+          // ========================================================
           let bowlScoreHtml = "";
           if (data.all_bowlers && Array.isArray(data.all_bowlers)) {
               data.all_bowlers.forEach(b => {
                   if (!b) return;
                   
                   let isCurrentBowler = (b.name === data.bowler);
-                  let hasBowled = (b.overs > 0 || b.balls > 0 || b.runs > 0 || b.oversStr);
                   
-                  // 🎯 [सुधार]: सिर्फ लाइव बॉलर या जो बॉलिंग कर चुके हैं वही दिखेंगे, एक्स्ट्रा स्क्वाड के नाम छुप जाएंगे।
-                  if (isCurrentBowler || hasBowled) {
-                      let bowlerOversCombined = b.oversStr || `${b.overs || 0}.${b.balls || 0}`;
+                  // 🎯 चेक करेंगे कि बॉलर ने सच में कोई ओवर या बॉल फेंकी है या नहीं
+                  let bowlerOversCombined = b.oversStr || `${b.overs || 0}.${b.balls || 0}`;
+                  let hasActuallyBowled = (parseInt(b.runs) > 0 || parseInt(b.wickets) > 0 || (bowlerOversCombined !== "0.0" && bowlerOversCombined !== "0" && bowlerOversCombined !== "0.00"));
+                  
+                  // 🎯 [कंडीशन]: सिर्फ लाइव बॉलर या जिसने सच में मैच में बॉलिंग की है, वही हमेशा दिखेगा!
+                  if (isCurrentBowler || hasActuallyBowled) {
                       let bNameStyle = isCurrentBowler ? "color: #004ba0; font-weight: bold;" : "color: #222;";
 
                       bowlScoreHtml += `
