@@ -1158,7 +1158,6 @@ body {
 </head>
 
 <body>
-
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -1312,7 +1311,7 @@ body {
               document.getElementById("live-data-wrapper").innerHTML = liveTablesHtml;
           }
 
-          // 📋 7. फुल बैटिंग स्कोरकार्ड लिस्ट (स्मार्ट इंजेक्शन के साथ)
+          // 📋 7. फुल बैटिंग स्कोरकार्ड लिस्ट (क्लीन लेआउट फिक्स)
           let batScoreHtml = "";
           let displayedBatsmen = new Set();
 
@@ -1322,10 +1321,11 @@ body {
                   let pNameClean = String(p.name).trim().toLowerCase();
                   displayedBatsmen.add(pNameClean);
                   
-                  let outStatus = p.out ? `${p.outType || "Out"}${p.bowledBy ? ` b ${p.bowledBy}` : ""}` : "not out";
+                  // लेआउट बिगाड़ने वाला पुराना स्मॉल टैग और (not out) यहाँ से गायब कर दिया गया है
+                  let outStatus = p.out ? `<small style="color: #666; font-size: 10px;"><br>${p.outType || "Out"}${p.bowledBy ? ` b ${p.bowledBy}` : ""}</small>` : "";
                   batScoreHtml += `
                       <div class="ps-batter-header" style="background: none; border-bottom: 1px solid #f0f0f0; font-weight: normal; padding: 6px 0; color: #000;">
-                          <span class="p-head-item h-name" style="text-align: left; line-height: 1.3;"><b>${p.name}</b><br><small style="color: #666; font-size: 10px;">${outStatus}</small></span>
+                          <span class="p-head-item h-name" style="text-align: left; line-height: 1.2;"><b>${p.name}</b>${outStatus}</span>
                           <span class="p-head-item h-r"><b>${p.runs || 0}</b></span>
                           <span class="p-head-item h-b">${p.balls || 0}</span>
                           <span class="p-head-item h-4s">${p.fours || 0}</span>
@@ -1335,16 +1335,31 @@ body {
               });
           }
 
-          // [FALLBACK - BATTER 1 FIXED] अगर डेटाबेस लिस्ट में नहीं है, फिर भी स्कोरकार्ड में तुरंत दिखाओ
+          // [FALLBACK FIX] अगर लिस्ट में नहीं है, तो बिना (not out) के क्लीन रो बनाओ ताकि लेआउट न टूटे
           if (data.batsman1 && !displayedBatsmen.has(String(data.batsman1).trim().toLowerCase())) {
-              batScoreHtml += `<div class="ps-batter-header" style="background: none; border-bottom: 1px solid #f0f0f0; font-weight: normal; padding: 6px 0; color: #000;"><span class="p-head-item h-name" style="text-align: left; line-height: 1.3;"><b>${data.batsman1} *</b><br><small style="color: #00a862; font-size: 10px;">not out</small></span><span class="p-head-item h-r"><b>${data.b1_runs || 0}</b></span><span class="p-head-item h-b">${data.b1_balls || 0}</span><span class="p-head-item h-4s">${data.b1_4s || 0}</span><span class="p-head-item h-6s">${data.b1_6s || 0}</span><span class="p-head-item h-sr" style="color: #666;">${getSR(data.b1_runs || 0, data.b1_balls || 0)}</span></div>`;
+              batScoreHtml += `
+                  <div class="ps-batter-header" style="background: none; border-bottom: 1px solid #f0f0f0; font-weight: normal; padding: 6px 0; color: #000;">
+                      <span class="p-head-item h-name" style="text-align: left; line-height: 1.2;"><b>${data.batsman1} *</b></span>
+                      <span class="p-head-item h-r"><b>${data.b1_runs || 0}</b></span>
+                      <span class="p-head-item h-b">${data.b1_balls || 0}</span>
+                      <span class="p-head-item h-4s">${data.b1_4s || 0}</span>
+                      <span class="p-head-item h-6s">${data.b1_6s || 0}</span>
+                      <span class="p-head-item h-sr" style="color: #666;">${getSR(data.b1_runs || 0, data.b1_balls || 0)}</span>
+                  </div>`;
           }
-          // [FALLBACK - BATTER 2 FIXED]
           if (data.batsman2 && !displayedBatsmen.has(String(data.batsman2).trim().toLowerCase())) {
-              batScoreHtml += `<div class="ps-batter-header" style="background: none; border-bottom: 1px solid #f0f0f0; font-weight: normal; padding: 6px 0; color: #000;"><span class="p-head-item h-name" style="text-align: left; line-height: 1.3;"><b>${data.batsman2}</b><br><small style="color: #666; font-size: 10px;">not out</small></span><span class="p-head-item h-r"><b>${data.b2_runs || 0}</b></span><span class="p-head-item h-b">${data.b2_balls || 0}</span><span class="p-head-item h-4s">${data.b2_4s || 0}</span><span class="p-head-item h-6s">${data.b2_6s || 0}</span><span class="p-head-item h-sr" style="color: #666;">${getSR(data.b2_runs || 0, data.b2_balls || 0)}</span></div>`;
+              batScoreHtml += `
+                  <div class="ps-batter-header" style="background: none; border-bottom: 1px solid #f0f0f0; font-weight: normal; padding: 6px 0; color: #000;">
+                      <span class="p-head-item h-name" style="text-align: left; line-height: 1.2;"><b>${data.batsman2}</b></span>
+                      <span class="p-head-item h-r"><b>${data.b2_runs || 0}</b></span>
+                      <span class="p-head-item h-b">${data.b2_balls || 0}</span>
+                      <span class="p-head-item h-4s">${data.b2_4s || 0}</span>
+                      <span class="p-head-item h-6s">${data.b2_6s || 0}</span>
+                      <span class="p-head-item h-sr" style="color: #666;">${getSR(data.b2_runs || 0, data.b2_balls || 0)}</span>
+                  </div>`;
           }
 
-          // 📋 8. Full बॉलिंग स्कोरकार्ड लिस्ट (0.0 ओवर फिक्स के साथ)
+          // 📋 8. Full बॉलिंग स्कोरकार्ड लिस्ट
           let bowlScoreHtml = "";
           let displayedBowlers = new Set();
 
@@ -1369,9 +1384,19 @@ body {
               });
           }
 
-          // [FALLBACK - BOWLER 0.0 OVER FIXED] अगर नया बॉलर है और 0.0 ओवर फेंका है, तो भी लिस्ट में तुरंत घुसाओ
           if (data.bowler && !displayedBowlers.has(String(data.bowler).trim().toLowerCase())) {
-              bowlScoreHtml += `<div class="ps-batter-header bowler-header" style="background: none; border-bottom: 1px solid #f0f0f0; font-weight: normal; padding: 6px 0; color: #000;"><span class="p-head-item hb-name" style="text-align: left;"><b>${data.bowler} *</b></span><span class="p-head-item hb-o">${data.bowler_overs || "0.0"}</span><span class="p-head-item hb-m">0</span><span class="p-head-item hb-r">${data.bowler_runs || 0}</span><span class="p-head-item hb-w" style="color: red; font-weight: bold;">${data.bowler_wickets || 0}</span><span class="p-head-item hb-wd">0</span><span class="p-head-item hb-nb">0</span><span class="p-head-item hb-econ" style="color: #666;">${getEC(data.bowler_runs || 0, data.bowler_overs || "0.0")}</span></div>`;
+              let currentBowlerOvers = data.bowler_overs || "0.0";
+              bowlScoreHtml += `
+                  <div class="ps-batter-header bowler-header" style="background: none; border-bottom: 1px solid #f0f0f0; font-weight: normal; padding: 6px 0; color: #000;">
+                      <span class="p-head-item hb-name" style="text-align: left;"><b>${data.bowler} *</b></span>
+                      <span class="p-head-item hb-o">${currentBowlerOvers}</span>
+                      <span class="p-head-item hb-m">0</span>
+                      <span class="p-head-item hb-r">${data.bowler_runs || 0}</span>
+                      <span class="p-head-item hb-w" style="color: red; font-weight: bold;">${data.bowler_wickets || 0}</span>
+                      <span class="p-head-item hb-wd">0</span>
+                      <span class="p-head-item hb-nb">0</span>
+                      <span class="p-head-item hb-econ" style="color: #666;">${getEC(data.bowler_runs || 0, currentBowlerOvers)}</span>
+                  </div>`;
           }
 
           if(document.getElementById("ps-t1-batting")) document.getElementById("ps-t1-batting").innerHTML = batScoreHtml;
@@ -1391,13 +1416,12 @@ body {
                   document.getElementById("ps-t1-batting").after(div);
               } else { extrasCheck.innerHTML = extrasHtml; }
           }
-          console.log("BKCC Scorecard Delay Engine Fixed Successfully! ✅");
+          console.log("BKCC Perfect Layout & Color Engine Loaded! ✅");
       }
   });
 </script>
     
 
-    
           
     <div id="home-section" class="tab-content"> 
     <div id="upcoming-matches-container" style="display: flex; overflow-x: auto; gap: 12px; padding: 15px 10px; scrollbar-width: none; -webkit-overflow-scrolling: touch; align-items: flex-start; flex-wrap: nowrap;">
