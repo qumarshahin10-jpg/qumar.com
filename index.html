@@ -1186,8 +1186,7 @@ body {
           });
       }, 1000);
   }
-    
-  const firebaseConfig = {
+      const firebaseConfig = {
     apiKey: "AIzaSyAEuQ3up4s30SWJVTNcMsIzG5FJNBH0iiM",
     authDomain: "livescore-77e1e.firebaseapp.com",
     projectId: "livescore-77e1e",
@@ -1248,7 +1247,7 @@ body {
           let tTxt = data.toss_text || "Waiting...";
           document.getElementById('toss-result-text').innerText = tTxt.toLowerCase().includes("toss:") ? tTxt : `Toss: ${tTxt}`;
       }
-     if(document.getElementById('partnershipbox')) document.getElementById('partnershipbox').innerText = `P'SHIP: ${data.partnership || "0 (0)"}`;
+      if(document.getElementById('partnershipbox')) document.getElementById('partnershipbox').innerText = `P'SHIP: ${data.partnership || "0 (0)"}`;
       if(document.getElementById('crrbox')) document.getElementById('crrbox').innerText = `CRR: ${data.crr || "0.00"}`;
 
       let targetBoxElem = document.getElementById('target-display-box');
@@ -1268,7 +1267,7 @@ body {
       
       let b1Live = cleanN(data.batsman1), b2Live = cleanN(data.batsman2), bwrLive = cleanN(data.bowler);
 
-      // 🎨 मिनी लाइव टेबल डिज़ाइन (बिना किसी हार्डकोडेड बाहरी कलर के - ओरिजिनल क्लास का इस्तेमाल)
+      // 🎨 मिनी लाइव टेबल डिज़ाइन
       let liveTablesHtml = `
           <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: sans-serif; margin-bottom: 15px;">
               <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; font-weight: bold;">
@@ -1312,51 +1311,69 @@ body {
                   <td style="padding: 8px; text-align: center;">${getEC(data.bowler_runs || 0, data.bowler_overs || "0.0")}</td>
               </tr>
           </table>`;
-      
       window.latestTablesHtml = liveTablesHtml;
       if(document.getElementById("live-data-wrapper")) { document.getElementById("live-data-wrapper").innerHTML = liveTablesHtml; }
 
-      // 📋 फुल बैटिंग स्कोरकार्ड लिस्ट (सभी जबरदस्ती वाले इन-लाइन रंग हटा दिए गए हैं)
+      // 🔍 पता करें कि स्क्रीन पर अभी कौन सी इनिंग का टैब बटन दबा हुआ/एक्टिव है
+      let activeInningTab = 1;
+      // आपके स्क्रीनशॉट के अनुसार 2nd Inning बटन का पता लगाने का डायनामिक तरीका
+      const activeTabBtn = document.querySelector('.nav-item.active, .tabs button.active, [style*="background"]'); 
+      // बटन टेक्स्ट या क्लिक फंक्शन के आधार पर चेक करना
+      document.querySelectorAll('.nav-item, .tabs button, [onclick*="showInnings"]').forEach((btn, idx) => {
+          if(btn.classList.contains('active') || btn.getAttribute('aria-selected') === 'true' || btn.style.backgroundColor !== '') {
+              if(btn.innerText.includes("2nd") || btn.onclick?.toString().includes("2")) {
+                  activeInningTab = 2;
+              }
+          }
+      }); 
+         // 📋 फुल बैटिंग स्कोरकार्ड लिस्ट
       let batScoreHtml = "";
       let arrayBatsmenNames = new Set();
 
-      if (data.all_batsmen && Array.isArray(data.all_batsmen)) {
-          data.all_batsmen.forEach(p => {
-              if (!p || !p.name) return;
-              let pNameClean = cleanN(p.name);
-              arrayBatsmenNames.add(pNameClean);
-              let isCurrentActive = (pNameClean === b1Live || pNameClean === b2Live);
-              
-              if (isCurrentActive || p.out || (parseInt(p.runs) > 0 || parseInt(p.balls) > 0)) {
-                  let outStatus = p.out ? `${p.outType || "Out"}${p.bowledBy ? ` b ${p.bowledBy}` : ""}` : "not out";
-                  let activeClass = isCurrentActive ? "font-weight: bold;" : "";
+      // 🛑 SMART CONTROL: अगर अभी पहली इनिंग चल रही है और यूजर 2nd Inning का टैब खुला है तो डेटा खाली रखें
+      let currentMatchInnings = parseInt(data.innings || 1);
+      if (activeInningTab === 2 && currentMatchInnings === 1) {
+          batScoreHtml = `<div style="padding: 20px; text-align: center; color: #888; font-style: italic; font-size: 14px;">Yet to Bat</div>`;
+      } else {
+          // आपका ओरिजिनल पुराना रेंडरिंग लॉजिक (बिना किसी बदलाव के)
+          if (data.all_batsmen && Array.isArray(data.all_batsmen)) {
+              data.all_batsmen.forEach(p => {
+                  if (!p || !p.name) return;
+                  let pNameClean = cleanN(p.name);
+                  arrayBatsmenNames.add(pNameClean);
+                  let isCurrentActive = (pNameClean === b1Live || pNameClean === b2Live);
+                  
+                  if (isCurrentActive || p.out || (parseInt(p.runs) > 0 || parseInt(p.balls) > 0)) {
+                      let outStatus = p.out ? `${p.outType || "Out"}${p.bowledBy ? ` b ${p.bowledBy}` : ""}` : "not out";
+                      let activeClass = isCurrentActive ? "font-weight: bold;" : "";
 
-                  batScoreHtml += `
-                      <div class="ps-batter-header" style="border-bottom: 1px solid #eee; font-family: sans-serif; font-size: 13px; padding: 10px 6px; display: flex; align-items: center; ${activeClass}">
-                          <span style="text-align: left; line-height: 1.4; flex: 3;"><b>${p.name.toUpperCase()} ${isCurrentActive ? '*' : ''}</b><br><small style="font-size: 11px; opacity: 0.8;">(${outStatus.toLowerCase()})</small></span>
-                          <span style="text-align: center; flex: 1; font-weight: bold;">${p.runs || 0}</span>
-                          <span style="text-align: center; flex: 1;">${p.balls || 0}</span>
-                          <span style="text-align: center; flex: 1;">${p.fours || 0}</span>
-                          <span style="text-align: center; flex: 1;">${p.sixes || 0}</span>
-                          <span style="text-align: center; flex: 1; font-weight: bold;">${getSR(p.runs || 0, p.balls || 0)}</span>
-                      </div>`;
-              }
-          });
-      }
-      
-      if (data.batsman1 && !arrayBatsmenNames.has(b1Live)) {
-          batScoreHtml += `<div class="ps-batter-header" style="border-bottom: 1px solid #eee; font-family: sans-serif; font-size: 13px; padding: 10px 6px; display: flex; align-items: center; font-weight: bold;"><span style="text-align: left; line-height: 1.4; flex: 3;"><b>${String(data.batsman1).replace(/[*🏏⚾]/g, "").toUpperCase()} *</b><br><small style="font-size: 11px; opacity: 0.8;">(not out)</small></span><span style="text-align: center; flex: 1; font-weight: bold;">${data.b1_runs || 0}</span><span style="text-align: center; flex: 1;">${data.b1_balls || 0}</span><span style="text-align: center; flex: 1;">${data.b1_4s || 0}</span><span style="text-align: center; flex: 1;">${data.b1_6s || 0}</span><span style="text-align: center; flex: 1; font-weight: bold;">${getSR(data.b1_runs || 0, data.b1_balls || 0)}</span></div>`;
-      }
-      if (data.batsman2 && !arrayBatsmenNames.has(b2Live)) {
-          batScoreHtml += `<div class="ps-batter-header" style="border-bottom: 1px solid #eee; font-family: sans-serif; font-size: 13px; padding: 10px 6px; display: flex; align-items: center;"><span style="text-align: left; line-height: 1.4; flex: 3;"><b>${String(data.batsman2).replace(/[*🏏⚾]/g, "").toUpperCase()}</b><br><small style="font-size: 11px; opacity: 0.8;">(not out)</small></span><span style="text-align: center; flex: 1; font-weight: bold;">${data.b2_runs || 0}</span><span style="text-align: center; flex: 1;">${data.b2_balls || 0}</span><span style="text-align: center; flex: 1;">${data.b2_4s || 0}</span><span style="text-align: center; flex: 1;">${data.b2_6s || 0}</span><span style="text-align: center; flex: 1;">${getSR(data.b2_runs || 0, data.b2_balls || 0)}</span></div>`;
-      }
+                      batScoreHtml += `
+                          <div class="ps-batter-header" style="border-bottom: 1px solid #eee; font-family: sans-serif; font-size: 13px; padding: 10px 6px; display: flex; align-items: center; ${activeClass}">
+                              <span style="text-align: left; line-height: 1.4; flex: 3;"><b>${p.name.toUpperCase()} ${isCurrentActive ? '*' : ''}</b><br><small style="font-size: 11px; opacity: 0.8;">(${outStatus.toLowerCase()})</small></span>
+                              <span style="text-align: center; flex: 1; font-weight: bold;">${p.runs || 0}</span>
+                              <span style="text-align: center; flex: 1;">${p.balls || 0}</span>
+                              <span style="text-align: center; flex: 1;">${p.fours || 0}</span>
+                              <span style="text-align: center; flex: 1;">${p.sixes || 0}</span>
+                              <span style="text-align: center; flex: 1; font-weight: bold;">${getSR(p.runs || 0, p.balls || 0)}</span>
+                          </div>`;
+                  }
+              });
+          }
+          
+          if (data.batsman1 && !arrayBatsmenNames.has(b1Live)) {
+              batScoreHtml += `<div class="ps-batter-header" style="border-bottom: 1px solid #eee; font-family: sans-serif; font-size: 13px; padding: 10px 6px; display: flex; align-items: center; font-weight: bold;"><span style="text-align: left; line-height: 1.4; flex: 3;"><b>${String(data.batsman1).replace(/[*🏏⚾]/g, "").toUpperCase()} *</b><br><small style="font-size: 11px; opacity: 0.8;">(not out)</small></span><span style="text-align: center; flex: 1; font-weight: bold;">${data.b1_runs || 0}</span><span style="text-align: center; flex: 1;">${data.b1_balls || 0}</span><span style="text-align: center; flex: 1;">${data.b1_4s || 0}</span><span style="text-align: center; flex: 1;">${data.b1_6s || 0}</span><span style="text-align: center; flex: 1; font-weight: bold;">${getSR(data.b1_runs || 0, data.b1_balls || 0)}</span></div>`;
+          }
+          if (data.batsman2 && !arrayBatsmenNames.has(b2Live)) {
+              batScoreHtml += `<div class="ps-batter-header" style="border-bottom: 1px solid #eee; font-family: sans-serif; font-size: 13px; padding: 10px 6px; display: flex; align-items: center;"><span style="text-align: left; line-height: 1.4; flex: 3;"><b>${String(data.batsman2).replace(/[*🏏⚾]/g, "").toUpperCase()}</b><br><small style="font-size: 11px; opacity: 0.8;">(not out)</small></span><span style="text-align: center; flex: 1; font-weight: bold;">${data.b2_runs || 0}</span><span style="text-align: center; flex: 1;">${data.b2_balls || 0}</span><span style="text-align: center; flex: 1;">${data.b2_4s || 0}</span><span style="text-align: center; flex: 1;">${data.b2_6s || 0}</span><span style="text-align: center; flex: 1;">${getSR(data.b2_runs || 0, data.b2_balls || 0)}</span></div>`;
+          }
 
-      if (data.extras_data) {
-          let ext = data.extras_data;
-          batScoreHtml += `
-              <div style="margin: 12px 0; padding: 10px 6px; border-top: 1px dashed #ccc; border-bottom: 1px dashed #ccc; font-size: 13px; font-family: sans-serif; display: flex; justify-content: space-between;">
-                  <span>Extras: <b>${ext.total || 0}</b> <span style="font-size:11px; opacity: 0.7;">(wd ${ext.wd || 0}, nb ${ext.nb || 0}, b ${ext.b || 0}, lb ${ext.lb || 0})</span></span>
-              </div>`;
+          if (data.extras_data) {
+              let ext = data.extras_data;
+              batScoreHtml += `
+                  <div style="margin: 12px 0; padding: 10px 6px; border-top: 1px dashed #ccc; border-bottom: 1px dashed #ccc; font-size: 13px; font-family: sans-serif; display: flex; justify-content: space-between;">
+                      <span>Extras: <b>${ext.total || 0}</b> <span style="font-size:11px; opacity: 0.7;">(wd ${ext.wd || 0}, nb ${ext.nb || 0}, b ${ext.b || 0}, lb ${ext.lb || 0})</span></span>
+                  </div>`;
+          }
       }
       if(document.getElementById("ps-t1-batting")) document.getElementById("ps-t1-batting").innerHTML = batScoreHtml;
 
@@ -1364,35 +1381,41 @@ body {
       let bowlScoreHtml = "";
       let arrayBowlersNames = new Set();
 
-      if (data.all_bowlers && Array.isArray(data.all_bowlers)) {
-          data.all_bowlers.forEach(b => {
-              if (!b || !b.name) return;
-              let bNameClean = cleanN(b.name);
-              arrayBowlersNames.add(bNameClean);
-              
-              let isCurrentBowler = (bNameClean === bwrLive);
-              let bowlerOversCombined = b.oversStr || `${b.overs || 0}.${b.balls || 0}`;
-              let hasActuallyBowled = (parseInt(b.runs) > 0 || parseInt(b.wickets) > 0 || (bowlerOversCombined !== "0.0" && bowlerOversCombined !== "0"));
-              
-              if (isCurrentBowler || hasActuallyBowled) {
-                  let activeClass = isCurrentBowler ? "font-weight: bold;" : "";
+      // 🛑 SMART CONTROL: अगर अभी पहली इनिंग चल रही है और यूजर 2nd Inning का टैब खोला है तो बॉलिंग भी खाली रखें
+      if (activeInningTab === 2 && currentMatchInnings === 1) {
+          bowlScoreHtml = `<div style="padding: 10px 6px; font-family: sans-serif; font-size: 13px; text-align: center; color: #888;">No Bowling Stats</div>`;
+      } else {
+          // आपका ओरिजिनल पुराना रेंडरिंग लॉजिक (बिना किसी बदलाव के)
+          if (data.all_bowlers && Array.isArray(data.all_bowlers)) {
+              data.all_bowlers.forEach(b => {
+                  if (!b || !b.name) return;
+                  let bNameClean = cleanN(b.name);
+                  arrayBowlersNames.add(bNameClean);
+                  
+                  let isCurrentBowler = (bNameClean === bwrLive);
+                  let bowlerOversCombined = b.oversStr || `${b.overs || 0}.${b.balls || 0}`;
+                  let hasActuallyBowled = (parseInt(b.runs) > 0 || parseInt(b.wickets) > 0 || (bowlerOversCombined !== "0.0" && bowlerOversCombined !== "0"));
+                  
+                  if (isCurrentBowler || hasActuallyBowled) {
+                      let activeClass = isCurrentBowler ? "font-weight: bold;" : "";
 
-                  bowlScoreHtml += `
-                      <div class="ps-batter-header bowler-header" style="border-bottom: 1px solid #eee; font-family: sans-serif; font-size: 13px; padding: 10px 6px; display: flex; align-items: center; ${activeClass}">
-                          <span style="text-align: left; flex: 3;"><b>${b.name.toUpperCase()} ${isCurrentBowler ? '*' : ''}</b></span>
-                          <span style="text-align: center; flex: 1; font-weight: 500;">${bowlerOversCombined}</span>
-                          <span style="text-align: center; flex: 1;">${b.maidens || 0}</span>
-                          <span style="text-align: center; flex: 1;">${b.runs || 0}</span>
-                          <span style="text-align: center; flex: 1; color: red; font-weight: bold;">${b.wickets || 0}</span>
-                          <span style="text-align: center; flex: 1;">${b.wides || 0}</span>
-                          <span style="text-align: center; flex: 1;">${b.noBalls || 0}</span>
-                          <span style="text-align: center; flex: 1; font-weight: bold;">${getEC(b.runs || 0, bowlerOversCombined)}</span>
-                      </div>`;
-              }
-          });
-      }
-      if (data.bowler && !arrayBowlersNames.has(bwrLive)) {
-          bowlScoreHtml += `<div class="ps-batter-header bowler-header" style="border-bottom: 1px solid #eee; font-family: sans-serif; font-size: 13px; padding: 10px 6px; display: flex; align-items: center; font-weight: bold;"><span style="text-align: left; flex: 3;"><b>${String(data.bowler).replace(/[*🏏⚾]/g, "").toUpperCase()} *</b></span><span style="text-align: center; flex: 1; font-weight: 500;">${data.bowler_overs || "0.0"}</span><span style="text-align: center; flex: 1;">0</span><span style="text-align: center; flex: 1;">${data.bowler_runs || 0}</span><span style="text-align: center; flex: 1; color: red; font-weight: bold;">${data.bowler_wickets || 0}</span><span style="text-align: center; flex: 1;">0</span><span style="text-align: center; flex: 1;">0</span><span style="text-align: center; flex: 1; font-weight: bold;">${getEC(data.bowler_runs || 0, data.bowler_overs || "0.0")}</span></div>`;
+                      bowlScoreHtml += `
+                          <div class="ps-batter-header bowler-header" style="border-bottom: 1px solid #eee; font-family: sans-serif; font-size: 13px; padding: 10px 6px; display: flex; align-items: center; ${activeClass}">
+                              <span style="text-align: left; flex: 3;"><b>${b.name.toUpperCase()} ${isCurrentBowler ? '*' : ''}</b></span>
+                              <span style="text-align: center; flex: 1; font-weight: 500;">${bowlerOversCombined}</span>
+                              <span style="text-align: center; flex: 1;">${b.maidens || 0}</span>
+                              <span style="text-align: center; flex: 1;">${b.runs || 0}</span>
+                              <span style="text-align: center; flex: 1; color: red; font-weight: bold;">${b.wickets || 0}</span>
+                              <span style="text-align: center; flex: 1;">${b.wides || 0}</span>
+                              <span style="text-align: center; flex: 1;">${b.noBalls || 0}</span>
+                              <span style="text-align: center; flex: 1; font-weight: bold;">${getEC(b.runs || 0, bowlerOversCombined)}</span>
+                          </div>`;
+                  }
+              });
+          }
+          if (data.bowler && !arrayBowlersNames.has(bwrLive)) {
+              bowlScoreHtml += `<div class="ps-batter-header bowler-header" style="border-bottom: 1px solid #eee; font-family: sans-serif; font-size: 13px; padding: 10px 6px; display: flex; align-items: center; font-weight: bold;"><span style="text-align: left; flex: 3;"><b>${String(data.bowler).replace(/[*🏏⚾]/g, "").toUpperCase()} *</b></span><span style="text-align: center; flex: 1; font-weight: 500;">${data.bowler_overs || "0.0"}</span><span style="text-align: center; flex: 1;">0</span><span style="text-align: center; flex: 1;">${data.bowler_runs || 0}</span><span style="text-align: center; flex: 1; color: red; font-weight: bold;">${data.bowler_wickets || 0}</span><span style="text-align: center; flex: 1;">0</span><span style="text-align: center; flex: 1;">0</span><span style="text-align: center; flex: 1; font-weight: bold;">${getEC(data.bowler_runs || 0, data.bowler_overs || "0.0")}</span></div>`;
+          }
       }
       if(document.getElementById("ps-t2-bowling")) document.getElementById("ps-t2-bowling").innerHTML = bowlScoreHtml;
   }
@@ -1413,8 +1436,7 @@ body {
           console.log("BKCC Live Sync Updated!");
       }
   });
-
-  // 🔄 टैब क्लिक चेंजर फिक्स (अब टैब बदलने पर भी ओरिजिनल फंक्शन ही रेंडर करेगा ताकि डिज़ाइन न बिगड़े)
+      // 🔄 टैब क्लिक चेंजर फिक्स (अब टैब बदलने पर भी ओरिजिनल फंक्शन ही रेंडर करेगा ताकि डिज़ाइन न बिगड़े)
   document.querySelectorAll('.nav-item, .tabs button, [onclick*="navTo"], #info-tab, #live-tab, #scorecard-tab, #graphs-tab, #controls-tab').forEach(button => {
       button.addEventListener('click', () => {
           if (window.latestFirebaseData) {
@@ -1424,14 +1446,10 @@ body {
           }
       });
   });
-</script> 
+</script>
 
-   
-          
-
-
-          
-    <div id="home-section" class="tab-content"> 
+    
+          <div id="home-section" class="tab-content"> 
     <div id="upcoming-matches-container" style="display: flex; overflow-x: auto; gap: 12px; padding: 15px 10px; scrollbar-width: none; -webkit-overflow-scrolling: touch; align-items: flex-start; flex-wrap: nowrap;">
         </div>
 </div>
