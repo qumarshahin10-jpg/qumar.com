@@ -1300,7 +1300,61 @@ body {
       } else { if (targetBoxElem) targetBoxElem.style.setProperty("display", "none", "important"); }
       
       let b1Live = cleanN(data.batsman1), b2Live = cleanN(data.batsman2), bwrLive = cleanN(data.bowler);
+      
 
+      // ==================== सिर्फ यह हिस्सा बदलना/जोड़ना है ====================
+      let liveTablesHtml = `
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: sans-serif; margin-bottom: 15px;">
+              <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; font-weight: bold;">
+                  <th style="padding: 8px;">BATTER</th>
+                  <th style="padding: 8px; text-align: center;">R</th>
+                  <th style="padding: 8px; text-align: center;">B</th>
+                  <th style="padding: 8px; text-align: center;">4s</th>
+                  <th style="padding: 8px; text-align: center;">6s</th>
+                  <th style="padding: 8px; text-align: center;">SR</th>
+              </tr>
+              <tr style="border-bottom: 1px solid #eee; font-weight: bold;">
+                  <td style="padding: 8px; color: #0284c7;">${data.batsman1 ? String(data.batsman1).replace(/[*🏏⚾]/g, "").toUpperCase() : "BATTSMAN 1"} *</td>
+                  <td style="padding: 8px; text-align: center;">${data.b1_runs || 0}</td>
+                  <td style="padding: 8px; text-align: center;">${data.b1_balls || 0}</td>
+                  <td style="padding: 8px; text-align: center;">${data.b1_4s || 0}</td>
+                  <td style="padding: 8px; text-align: center;">${data.b1_6s || 0}</td>
+                  <td style="padding: 8px; text-align: center; color: #0284c7;">${getSR(data.b1_runs || 0, data.b1_balls || 0)}</td>
+              </tr>
+              <tr style="border-bottom: 1px solid #eee;">
+                  <td style="padding: 8px;">${data.batsman2 ? String(data.batsman2).replace(/[*🏏⚾]/g, "").toUpperCase() : "BATTSMAN 2"}</td>
+                  <td style="padding: 8px; text-align: center; font-weight: bold;">${data.b2_runs || 0}</td>
+                  <td style="padding: 8px; text-align: center;">${data.b2_balls || 0}</td>
+                  <td style="padding: 8px; text-align: center;">${data.b2_4s || 0}</td>
+                  <td style="padding: 8px; text-align: center;">${data.b2_6s || 0}</td>
+                  <td style="padding: 8px; text-align: center; font-weight: bold;">${getSR(data.b2_runs || 0, data.b2_balls || 0)}</td>
+              </tr>
+          </table>
+          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: sans-serif; margin-bottom: 10px;">
+              <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; font-weight: bold;">
+                  <th style="padding: 8px;">BOWLER</th>
+                  <th style="padding: 8px; text-align: center;">O</th>
+                  <th style="padding: 8px; text-align: center;">R</th>
+                  <th style="padding: 8px; text-align: center;">W</th>
+                  <th style="padding: 8px; text-align: center;">EC</th>
+              </tr>
+              <tr style="font-weight: bold;">
+                  <td style="padding: 8px; color: #0284c7;">${data.bowler ? String(data.bowler).replace(/[*🏏⚾]/g, "").toUpperCase() : "BOWLER"} *</td>
+                  <td style="padding: 8px; text-align: center;">${data.bowler_overs || "0.0"}</td>
+                  <td style="padding: 8px; text-align: center;">${data.bowler_runs || 0}</td>
+                  <td style="padding: 8px; text-align: center; color: red;">${data.bowler_wickets || 0}</td>
+                  <td style="padding: 8px; text-align: center; color: #0284c7;">${getEC(data.bowler_runs || 0, data.bowler_overs || "0.0")}</td>
+              </tr>
+          </table>`;
+
+      window.latestTablesHtml = liveTablesHtml;
+      if(document.getElementById("live-data-wrapper")) { 
+          document.getElementById("live-data-wrapper").innerHTML = liveTablesHtml; 
+      }
+      // ======================================================================
+
+      
+      
       // 🔍 पता करें कि स्क्रीन पर अभी कौन सी इनिंग का टैब बटन दबा हुआ/एक्टिव है
       let activeInningTab = 1;
       document.querySelectorAll('.nav-item, .tabs button, [onclick*="showInnings"]').forEach((btn, idx) => {
