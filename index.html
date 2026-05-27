@@ -1275,7 +1275,7 @@ body {
       if(document.getElementById('ps-t1-total')) document.getElementById('ps-t1-total').innerText = currentScoreStr;
       
       let bowTeamHeader = document.getElementById('ps-bowling-team-header');
-      if(bowTeamHeader) { bowTeamHeader.innerHTML = `<span class="ps-tname">${fieldTeam} ⚾</span> <span class="ps-tscore">${ov} Overs</span>`; }
+      if(bowTeamHeader) { bowTeamHeader.innerHTML = `<span class="ps-tname">${fieldTeam} 🏏</span> <span class="ps-tscore">${ov} Overs</span>`; }
       
       if(document.getElementById('toss-result-text')) {
           let tTxt = data.toss_text || "Waiting...";
@@ -1301,58 +1301,8 @@ body {
       
       let b1Live = cleanN(data.batsman1), b2Live = cleanN(data.batsman2), bwrLive = cleanN(data.bowler);
 
-      // 🎨 मिनी लाइव टेबल डिज़ाइन
-      let liveTablesHtml = `
-          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: sans-serif; margin-bottom: 15px;">
-              <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; font-weight: bold;">
-                  <th style="padding: 8px;">BATTER</th>
-                  <th style="padding: 8px; text-align: center;">R</th>
-                  <th style="padding: 8px; text-align: center;">B</th>
-                  <th style="padding: 8px; text-align: center;">4s</th>
-                  <th style="padding: 8px; text-align: center;">6s</th>
-                  <th style="padding: 8px; text-align: center;">SR</th>
-              </tr>
-              <tr style="border-bottom: 1px solid #eee; font-weight: bold;">
-                  <td style="padding: 8px;">${data.batsman1 ? String(data.batsman1).replace(/[*🏏⚾]/g, "").toUpperCase() : "BATTER 1"} *</td>
-                  <td style="padding: 8px; text-align: center;">${data.b1_runs || 0}</td>
-                  <td style="padding: 8px; text-align: center;">${data.b1_balls || 0}</td>
-                  <td style="padding: 8px; text-align: center;">${data.b1_4s || 0}</td>
-                  <td style="padding: 8px; text-align: center;">${data.b1_6s || 0}</td>
-                  <td style="padding: 8px; text-align: center;">${getSR(data.b1_runs || 0, data.b1_balls || 0)}</td>
-              </tr>
-              <tr style="border-bottom: 1px solid #eee;">
-                  <td style="padding: 8px;">${data.batsman2 ? String(data.batsman2).replace(/[*🏏⚾]/g, "").toUpperCase() : "BATTER 2"}</td>
-                  <td style="padding: 8px; text-align: center; font-weight: bold;">${data.b2_runs || 0}</td>
-                  <td style="padding: 8px; text-align: center;">${data.b2_balls || 0}</td>
-                  <td style="padding: 8px; text-align: center;">${data.b1_4s || 0}</td>
-                  <td style="padding: 8px; text-align: center;">${data.b1_6s || 0}</td>
-                  <td style="padding: 8px; text-align: center;">${getSR(data.b2_runs || 0, data.b2_balls || 0)}</td>
-              </tr>
-          </table>
-          <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: sans-serif; margin-bottom: 10px;">
-              <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; font-weight: bold;">
-                  <th style="padding: 8px;">BOWLER</th>
-                  <th style="padding: 8px; text-align: center;">O</th>
-                  <th style="padding: 8px; text-align: center;">R</th>
-                  <th style="padding: 8px; text-align: center;">W</th>
-                  <th style="padding: 8px; text-align: center;">EC</th>
-              </tr>
-              <tr style="font-weight: bold;">
-                  <td style="padding: 8px;">${data.bowler ? String(data.bowler).replace(/[*🏏⚾]/g, "").toUpperCase() : "BOWLER"} *</td>
-                  <td style="padding: 8px; text-align: center;">${data.bowler_overs || "0.0"}</td>
-                  <td style="padding: 8px; text-align: center;">${data.bowler_runs || 0}</td>
-                  <td style="padding: 8px; text-align: center; color: red;">${data.bowler_wickets || 0}</td>
-                  <td style="padding: 8px; text-align: center;">${getEC(data.bowler_runs || 0, data.bowler_overs || "0.0")}</td>
-              </tr>
-          </table>`;
-      window.latestTablesHtml = liveTablesHtml;
-      if(document.getElementById("live-data-wrapper")) { document.getElementById("live-data-wrapper").innerHTML = liveTablesHtml; }
-
       // 🔍 पता करें कि स्क्रीन पर अभी कौन सी इनिंग का टैब बटन दबा हुआ/एक्टिव है
       let activeInningTab = 1;
-      // आपके स्क्रीनशॉट के अनुसार 2nd Inning बटन का पता लगाने का डायनामिक तरीका
-      const activeTabBtn = document.querySelector('.nav-item.active, .tabs button.active, [style*="background"]'); 
-      // बटन टेक्स्ट या क्लिक फंक्शन के आधार पर चेक करना
       document.querySelectorAll('.nav-item, .tabs button, [onclick*="showInnings"]').forEach((btn, idx) => {
           if(btn.classList.contains('active') || btn.getAttribute('aria-selected') === 'true' || btn.style.backgroundColor !== '') {
               if(btn.innerText.includes("2nd") || btn.onclick?.toString().includes("2")) {
@@ -1360,16 +1310,15 @@ body {
               }
           }
       }); 
-         // 📋 फुल बैटिंग स्कोरकार्ड लिस्ट
+
+      // 📋 फुल बैटिंग स्कोरकार्ड लिस्ट (ओरीज़िनल स्टाइल)
       let batScoreHtml = "";
       let arrayBatsmenNames = new Set();
 
-      // 🛑 SMART CONTROL: अगर अभी पहली इनिंग चल रही है और यूजर 2nd Inning का टैब खुला है तो डेटा खाली रखें
       let currentMatchInnings = parseInt(data.innings || 1);
       if (activeInningTab === 2 && currentMatchInnings === 1) {
           batScoreHtml = `<div style="padding: 20px; text-align: center; color: #888; font-style: italic; font-size: 14px;">Yet to Bat</div>`;
       } else {
-          // आपका ओरिजिनल पुराना रेंडरिंग लॉजिक (बिना किसी बदलाव के)
           if (data.all_batsmen && Array.isArray(data.all_batsmen)) {
               data.all_batsmen.forEach(p => {
                   if (!p || !p.name) return;
@@ -1411,15 +1360,13 @@ body {
       }
       if(document.getElementById("ps-t1-batting")) document.getElementById("ps-t1-batting").innerHTML = batScoreHtml;
 
-      // 📋 फुल बॉलिंग स्कोरकार्ड लिस्ट
+      // 📋 फुल बॉलिंग स्कोरकार्ड लिस्ट (ओरीज़िनल स्टाइल)
       let bowlScoreHtml = "";
       let arrayBowlersNames = new Set();
 
-      // 🛑 SMART CONTROL: अगर अभी पहली इनिंग चल रही है और यूजर 2nd Inning का टैब खोला है तो बॉलिंग भी खाली रखें
       if (activeInningTab === 2 && currentMatchInnings === 1) {
           bowlScoreHtml = `<div style="padding: 10px 6px; font-family: sans-serif; font-size: 13px; text-align: center; color: #888;">No Bowling Stats</div>`;
       } else {
-          // आपका ओरिजिनल पुराना रेंडरिंग लॉजिक (बिना किसी बदलाव के)
           if (data.all_bowlers && Array.isArray(data.all_bowlers)) {
               data.all_bowlers.forEach(b => {
                   if (!b || !b.name) return;
@@ -1432,7 +1379,6 @@ body {
                   
                   if (isCurrentBowler || hasActuallyBowled) {
                       let activeClass = isCurrentBowler ? "font-weight: bold;" : "";
-
                       bowlScoreHtml += `
                           <div class="ps-batter-header bowler-header" style="border-bottom: 1px solid #eee; font-family: sans-serif; font-size: 13px; padding: 10px 6px; display: flex; align-items: center; ${activeClass}">
                               <span style="text-align: left; flex: 3;"><b>${b.name.toUpperCase()} ${isCurrentBowler ? '*' : ''}</b></span>
@@ -1465,12 +1411,13 @@ body {
           }
           window.latestFirebaseData = data;
           
-          // रेंडर फंक्शन को कॉल किया
+          // ओरिजिनल रेंडर फंक्शन कॉल
           renderMatchData(data);
           console.log("BKCC Live Sync Updated!");
       }
   });
-      // 🔄 टैब क्लिक चेंजर फिक्स (अब टैब बदलने पर भी ओरिजिनल फंक्शन ही रेंडर करेगा ताकि डिज़ाइन न बिगड़े)
+
+  // 🔄 टैब चेंजर फिक्स
   document.querySelectorAll('.nav-item, .tabs button, [onclick*="navTo"], #info-tab, #live-tab, #scorecard-tab, #graphs-tab, #controls-tab').forEach(button => {
       button.addEventListener('click', () => {
           if (window.latestFirebaseData) {
@@ -1481,7 +1428,6 @@ body {
       });
   });
 </script>
-
     
           <div id="home-section" class="tab-content"> 
     <div id="upcoming-matches-container" style="display: flex; overflow-x: auto; gap: 12px; padding: 15px 10px; scrollbar-width: none; -webkit-overflow-scrolling: touch; align-items: flex-start; flex-wrap: nowrap;">
