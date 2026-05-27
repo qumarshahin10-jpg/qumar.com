@@ -1158,7 +1158,8 @@ body {
 </head>
 
 <body>
-<script type="module">
+
+ <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
@@ -1262,56 +1263,12 @@ body {
           } else {
               if (targetBoxElem) targetBoxElem.style.setProperty("display", "none", "important");
           }
-                    // मिनी लाइव टेबल (बैटर और बॉलर बॉक्स)
-          let liveTablesHtml = `
-              <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: sans-serif; margin-bottom: 15px;">
-                  <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; font-weight: bold; color: #555;">
-                      <th style="padding: 8px;">BATTER</th>
-                      <th style="padding: 8px; text-align: center;">R</th>
-                      <th style="padding: 8px; text-align: center;">B</th>
-                      <th style="padding: 8px; text-align: center;">4s</th>
-                      <th style="padding: 8px; text-align: center;">6s</th>
-                      <th style="padding: 8px; text-align: center; color: #00a862;">SR</th>
-                  </tr>
-                  <tr style="border-bottom: 1px solid #eee;">
-                      <td style="padding: 8px; font-weight: bold; color: #004ba0;">${data.batsman1 || "Batter 1"} *</td>
-                      <td style="padding: 8px; text-align: center; font-weight: bold;">${data.b1_runs || 0}</td>
-                      <td style="padding: 8px; text-align: center; color: #555;">${data.b1_balls || 0}</td>
-                      <td style="padding: 8px; text-align: center; color: #555;">${data.b1_4s || 0}</td>
-                      <td style="padding: 8px; text-align: center; color: #555;">${data.b1_6s || 0}</td>
-                      <td style="padding: 8px; text-align: center; color: #00a862; font-weight: bold;">${getSR(data.b1_runs || 0, data.b1_balls || 0)}</td>
-                  </tr>
-                  <tr style="border-bottom: 1px solid #eee;">
-                      <td style="padding: 8px; color: #333;">${data.batsman2 || "Batter 2"}</td>
-                      <td style="padding: 8px; text-align: center; font-weight: bold;">${data.b2_runs || 0}</td>
-                      <td style="padding: 8px; text-align: center; color: #555;">${data.b2_balls || 0}</td>
-                      <td style="padding: 8px; text-align: center; color: #555;">${data.b2_4s || 0}</td>
-                      <td style="padding: 8px; text-align: center; color: #555;">${data.b2_6s || 0}</td>
-                      <td style="padding: 8px; text-align: center; color: #00a862;">${getSR(data.b2_runs || 0, data.b2_balls || 0)}</td>
-                  </tr>
-              </table>
-              <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: sans-serif; margin-bottom: 10px;">
-                  <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; font-weight: bold; color: #555;">
-                      <th style="padding: 8px;">BOWLER</th>
-                      <th style="padding: 8px; text-align: center;">O</th>
-                      <th style="padding: 8px; text-align: center;">R</th>
-                      <th style="padding: 8px; text-align: center;">W</th>
-                      <th style="padding: 8px; text-align: center; color: #00a862;">EC</th>
-                  </tr>
-                  <tr>
-                      <td style="padding: 8px; font-weight: bold; color: #333;">${data.bowler || "Bowler"}</td>
-                      <td style="padding: 8px; text-align: center; font-weight: bold;">${data.bowler_overs || "0.0"}</td>
-                      <td style="padding: 8px; text-align: center; color: #555;">${data.bowler_runs || 0}</td>
-                      <td style="padding: 8px; text-align: center; color: red; font-weight: bold;">${data.bowler_wickets || 0}</td>
-                      <td style="padding: 8px; text-align: center; color: #00a862; font-weight: bold;">${getEC(data.bowler_runs || 0, data.bowler_overs || "0.0")}</td>
-                  </tr>
-              </table>`;
 
+          // फालतू दुबले नीले मिनी टेबल को क्लीन साफ़ कर दिया गया है
           if(document.getElementById("live-data-wrapper")) {
-              document.getElementById("live-data-wrapper").innerHTML = liveTablesHtml;
+              document.getElementById("live-data-wrapper").innerHTML = "";
           }
-
-          // 📋 7. फुल बैटिंग स्कोरकार्ड लिस्ट (क्लीन लेआउट फिक्स)
+                   // 📋 7. फुल बैटिंग स्कोरकार्ड लिस्ट (स्टाइल और रो को स्पैक एडिटर जैसा हुबहू मैच किया गया)
           let batScoreHtml = "";
           let displayedBatsmen = new Set();
 
@@ -1321,45 +1278,47 @@ body {
                   let pNameClean = String(p.name).trim().toLowerCase();
                   displayedBatsmen.add(pNameClean);
                   
-                  // लेआउट बिगाड़ने वाला पुराना स्मॉल टैग और (not out) यहाँ से गायब कर दिया गया है
-                  let outStatus = p.out ? `<small style="color: #666; font-size: 10px;"><br>${p.outType || "Out"}${p.bowledBy ? ` b ${p.bowledBy}` : ""}</small>` : "";
+                  let outStatus = p.out ? `<small style="color: #666; font-size: 11px;"><br>${p.outType || "Out"}${p.bowledBy ? ` b ${p.bowledBy}` : ""}</small>` : "";
+                  let isCurrentStrike = (pNameClean === String(data.batsman1).trim().toLowerCase() || pNameClean === String(data.batsman2).trim().toLowerCase()) ? "color: #000; font-weight: bold;" : "color: #333;";
+
                   batScoreHtml += `
-                      <div class="ps-batter-header" style="background: none; border-bottom: 1px solid #f0f0f0; font-weight: normal; padding: 6px 0; color: #000;">
-                          <span class="p-head-item h-name" style="text-align: left; line-height: 1.2;"><b>${p.name}</b>${outStatus}</span>
-                          <span class="p-head-item h-r"><b>${p.runs || 0}</b></span>
-                          <span class="p-head-item h-b">${p.balls || 0}</span>
-                          <span class="p-head-item h-4s">${p.fours || 0}</span>
-                          <span class="p-head-item h-6s">${p.sixes || 0}</span>
-                          <span class="p-head-item h-sr" style="color: #666;">${getSR(p.runs || 0, p.balls || 0)}</span>
+                      <div class="ps-batter-header" style="background: none; border-bottom: 1px solid #e0e0e0; font-weight: normal; padding: 10px 0;">
+                          <span class="p-head-item h-name" style="text-align: left; line-height: 1.3; ${isCurrentStrike}"><b>${p.name}</b>${outStatus}</span>
+                          <span class="p-head-item h-r" style="color: #000; font-weight: bold;">${p.runs || 0}</span>
+                          <span class="p-head-item h-b" style="color: #333;">${p.balls || 0}</span>
+                          <span class="p-head-item h-4s" style="color: #333;">${p.fours || 0}</span>
+                          <span class="p-head-item h-6s" style="color: #333;">${p.sixes || 0}</span>
+                          <span class="p-head-item h-sr" style="color: #555;">${getSR(p.runs || 0, p.balls || 0)}</span>
                       </div>`;
               });
           }
 
-          // [FALLBACK FIX] अगर लिस्ट में नहीं है, तो बिना (not out) के क्लीन रो बनाओ ताकि लेआउट न टूटे
+          // [FALLBACK - BATTER 1] अगर लिस्ट में अभी नहीं आया है, तो भी प्रो स्टाइल रो तुरंत इन्जेक्ट करो
           if (data.batsman1 && !displayedBatsmen.has(String(data.batsman1).trim().toLowerCase())) {
               batScoreHtml += `
-                  <div class="ps-batter-header" style="background: none; border-bottom: 1px solid #f0f0f0; font-weight: normal; padding: 6px 0; color: #000;">
-                      <span class="p-head-item h-name" style="text-align: left; line-height: 1.2;"><b>${data.batsman1} *</b></span>
-                      <span class="p-head-item h-r"><b>${data.b1_runs || 0}</b></span>
-                      <span class="p-head-item h-b">${data.b1_balls || 0}</span>
-                      <span class="p-head-item h-4s">${data.b1_4s || 0}</span>
-                      <span class="p-head-item h-6s">${data.b1_6s || 0}</span>
-                      <span class="p-head-item h-sr" style="color: #666;">${getSR(data.b1_runs || 0, data.b1_balls || 0)}</span>
+                  <div class="ps-batter-header" style="background: none; border-bottom: 1px solid #e0e0e0; font-weight: normal; padding: 10px 0;">
+                      <span class="p-head-item h-name" style="text-align: left; line-height: 1.3; color: #000; font-weight: bold;"><b>${data.batsman1} *</b></span>
+                      <span class="p-head-item h-r" style="color: #000; font-weight: bold;">${data.b1_runs || 0}</span>
+                      <span class="p-head-item h-b" style="color: #333;">${data.b1_balls || 0}</span>
+                      <span class="p-head-item h-4s" style="color: #333;">${data.b1_4s || 0}</span>
+                      <span class="p-head-item h-6s" style="color: #333;">${data.b1_6s || 0}</span>
+                      <span class="p-head-item h-sr" style="color: #555;">${getSR(data.b1_runs || 0, data.b1_balls || 0)}</span>
                   </div>`;
           }
+          // [FALLBACK - BATTER 2]
           if (data.batsman2 && !displayedBatsmen.has(String(data.batsman2).trim().toLowerCase())) {
               batScoreHtml += `
-                  <div class="ps-batter-header" style="background: none; border-bottom: 1px solid #f0f0f0; font-weight: normal; padding: 6px 0; color: #000;">
-                      <span class="p-head-item h-name" style="text-align: left; line-height: 1.2;"><b>${data.batsman2}</b></span>
-                      <span class="p-head-item h-r"><b>${data.b2_runs || 0}</b></span>
-                      <span class="p-head-item h-b">${data.b2_balls || 0}</span>
-                      <span class="p-head-item h-4s">${data.b2_4s || 0}</span>
-                      <span class="p-head-item h-6s">${data.b2_6s || 0}</span>
-                      <span class="p-head-item h-sr" style="color: #666;">${getSR(data.b2_runs || 0, data.b2_balls || 0)}</span>
+                  <div class="ps-batter-header" style="background: none; border-bottom: 1px solid #e0e0e0; font-weight: normal; padding: 10px 0;">
+                      <span class="p-head-item h-name" style="text-align: left; line-height: 1.3; color: #333;"><b>${data.batsman2}</b></span>
+                      <span class="p-head-item h-r" style="color: #000; font-weight: bold;">${data.b2_runs || 0}</span>
+                      <span class="p-head-item h-b" style="color: #333;">${data.b2_balls || 0}</span>
+                      <span class="p-head-item h-4s" style="color: #333;">${data.b2_4s || 0}</span>
+                      <span class="p-head-item h-6s" style="color: #333;">${data.b2_6s || 0}</span>
+                      <span class="p-head-item h-sr" style="color: #555;">${getSR(data.b2_runs || 0, data.b2_balls || 0)}</span>
                   </div>`;
           }
 
-          // 📋 8. Full बॉलिंग स्कोरकार्ड लिस्ट
+          // 📋 8. Full बॉलिंग स्कोरकार्ड लिस्ट (प्रो स्टाइल मैचिंग)
           let bowlScoreHtml = "";
           let displayedBowlers = new Set();
 
@@ -1370,32 +1329,35 @@ body {
                   displayedBowlers.add(bNameClean);
                   
                   let bowlerOversCombined = b.oversStr || `${b.overs || 0}.${b.balls || 0}`;
+                  let isCurrentBowler = (bNameClean === String(data.bowler).trim().toLowerCase()) ? "color: #000; font-weight: bold;" : "color: #333;";
+
                   bowlScoreHtml += `
-                      <div class="ps-batter-header bowler-header" style="background: none; border-bottom: 1px solid #f0f0f0; font-weight: normal; padding: 6px 0; color: #000;">
-                          <span class="p-head-item hb-name" style="text-align: left;"><b>${b.name}</b></span>
-                          <span class="p-head-item hb-o">${bowlerOversCombined}</span>
-                          <span class="p-head-item hb-m">${b.maidens || 0}</span>
-                          <span class="p-head-item hb-r">${b.runs || 0}</span>
+                      <div class="ps-batter-header bowler-header" style="background: none; border-bottom: 1px solid #e0e0e0; font-weight: normal; padding: 10px 0;">
+                          <span class="p-head-item hb-name" style="text-align: left; ${isCurrentBowler}"><b>${b.name}</b></span>
+                          <span class="p-head-item hb-o" style="color: #000; font-weight: bold;">${bowlerOversCombined}</span>
+                          <span class="p-head-item hb-m" style="color: #333;">${b.maidens || 0}</span>
+                          <span class="p-head-item hb-r" style="color: #333;">${b.runs || 0}</span>
                           <span class="p-head-item hb-w" style="color: red; font-weight: bold;">${b.wickets || 0}</span>
-                          <span class="p-head-item hb-wd">${b.wides || 0}</span>
-                          <span class="p-head-item hb-nb">${b.noBalls || 0}</span>
-                          <span class="p-head-item hb-econ" style="color: #666;">${getEC(b.runs || 0, bowlerOversCombined)}</span>
+                          <span class="p-head-item hb-wd" style="color: #555;">${b.wides || 0}</span>
+                          <span class="p-head-item hb-nb" style="color: #555;">${b.noBalls || 0}</span>
+                          <span class="p-head-item hb-econ" style="color: #555;">${getEC(b.runs || 0, bowlerOversCombined)}</span>
                       </div>`;
               });
           }
 
+          // [FALLBACK - BOWLER]
           if (data.bowler && !displayedBowlers.has(String(data.bowler).trim().toLowerCase())) {
               let currentBowlerOvers = data.bowler_overs || "0.0";
               bowlScoreHtml += `
-                  <div class="ps-batter-header bowler-header" style="background: none; border-bottom: 1px solid #f0f0f0; font-weight: normal; padding: 6px 0; color: #000;">
-                      <span class="p-head-item hb-name" style="text-align: left;"><b>${data.bowler} *</b></span>
-                      <span class="p-head-item hb-o">${currentBowlerOvers}</span>
-                      <span class="p-head-item hb-m">0</span>
-                      <span class="p-head-item hb-r">${data.bowler_runs || 0}</span>
+                  <div class="ps-batter-header bowler-header" style="background: none; border-bottom: 1px solid #e0e0e0; font-weight: normal; padding: 10px 0;">
+                      <span class="p-head-item hb-name" style="text-align: left; color: #000; font-weight: bold;"><b>${data.bowler} *</b></span>
+                      <span class="p-head-item hb-o" style="color: #000; font-weight: bold;">${currentBowlerOvers}</span>
+                      <span class="p-head-item hb-m" style="color: #333;">0</span>
+                      <span class="p-head-item hb-r" style="color: #333;">${data.bowler_runs || 0}</span>
                       <span class="p-head-item hb-w" style="color: red; font-weight: bold;">${data.bowler_wickets || 0}</span>
-                      <span class="p-head-item hb-wd">0</span>
-                      <span class="p-head-item hb-nb">0</span>
-                      <span class="p-head-item hb-econ" style="color: #666;">${getEC(data.bowler_runs || 0, currentBowlerOvers)}</span>
+                      <span class="p-head-item hb-wd" style="color: #555;">0</span>
+                      <span class="p-head-item hb-nb" style="color: #555;">0</span>
+                      <span class="p-head-item hb-econ" style="color: #555;">${getEC(data.bowler_runs || 0, currentBowlerOvers)}</span>
                   </div>`;
           }
 
@@ -1416,12 +1378,12 @@ body {
                   document.getElementById("ps-t1-batting").after(div);
               } else { extrasCheck.innerHTML = extrasHtml; }
           }
-          console.log("BKCC Perfect Layout & Color Engine Loaded! ✅");
+          console.log("BKCC Double Row Issue Fixed! Pro Scorecard Loaded! ✅");
       }
   });
 </script>
     
-
+            
           
     <div id="home-section" class="tab-content"> 
     <div id="upcoming-matches-container" style="display: flex; overflow-x: auto; gap: 12px; padding: 15px 10px; scrollbar-width: none; -webkit-overflow-scrolling: touch; align-items: flex-start; flex-wrap: nowrap;">
