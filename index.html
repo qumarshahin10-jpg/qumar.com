@@ -1765,40 +1765,22 @@ body {
             <span class="ps-tname"><span id="ps-batting-team-name">Team 1</span> 🏏</span>
             <span class="ps-tscore" id="ps-t1-total">0/0 (0.0)</span>
         </div>
-        <div class="ps-batter-header">
-            <span class="p-head-item h-name">BATTER</span>
-            <span class="p-head-item h-r">R</span>
-            <span class="p-head-item h-b">B</span>
-            <span class="p-head-item h-4s">4s</span>
-            <span class="p-head-item h-6s">6s</span>
-            <span class="p-head-item h-sr">SR</span>
-        </div>
 
+        <!-- ✂️ यहाँ से पुराना BATTER हेडर हटा दिया गया है क्योंकि JS खुद टेबल हेडर बना रहा है -->
         <div id="ps-t1-batting" class="ps-list"></div>
-
-        
     </div>
 
-<div class="pro-scorecard-card bowler-card" style="margin-top: 15px;">
-    <div class="ps-team-header" id="ps-bowling-team-header">
-        <span class="ps-tname">Team 2 ⚾</span>
-        <span class="ps-tscore">0.0 Overs</span>
-    </div>
-
-    <div class="ps-batter-header bowler-header">
-        <span class="p-head-item hb-name">BOWLER</span>
-        <span class="p-head-item hb-o">O</span>
-        <span class="p-head-item hb-m">M</span>
-        <span class="p-head-item hb-r">R</span>
-        <span class="p-head-item hb-w">W</span>
-        <span class="p-head-item hb-wd">WD</span> 
-        <span class="p-head-item hb-nb">NB</span> 
-        <span class="p-head-item hb-econ">ECON</span>
-    </div>
-
-    <div id="ps-t2-bowling" class="ps-list">
+    <div class="pro-scorecard-card bowler-card" style="margin-top: 15px;">
+        <div class="ps-team-header" id="ps-bowling-team-header">
+            <span class="ps-tname">Team 2 ⚾</span>
+            <span class="ps-tscore">0.0 Overs</span>
         </div>
+
+        <!-- ✂️ यहाँ से पुराना BOWLER हेडर भी हटा दिया गया है ताकि नीचे भी डबल न हो -->
+        <div id="ps-t2-bowling" class="ps-list"></div>
+    </div>
 </div>
+    
 
 
     <div id="fow-section" style="margin-top: 20px; background: #fff; border: 1px solid #e0e0e0; border-radius: 4px; overflow: hidden;">
