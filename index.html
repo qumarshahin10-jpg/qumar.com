@@ -1159,7 +1159,7 @@ body {
 
 <body>
 
-<script type="module">
+ <script type="module">
   // ✅ 1. इम्पॉर्ट यूआरएल को बिल्कुल सही किया गया (app और database को अलग-अलग किया)
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
   import { getDatabase, ref, set, onValue, update } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
@@ -1169,6 +1169,9 @@ body {
 
   if (!window.latestFirebaseData) { window.latestFirebaseData = null; }
   if (!window.latestTablesHtml) { window.latestTablesHtml = ""; }
+
+  // ✅ नामों को साफ और सुरक्षित तरीके से हर जगह मैच करने के लिए ग्लोबल यूटिलिटी फंक्शन
+  const cleanN = (str) => String(str || "").replace(/[*🏏⚾]/g, "").trim().toLowerCase();
 
   const safeUpdate = (dbRef, data) => { if (!isScorer) return Promise.resolve(); return update(dbRef, data); };
   const safeSet = (dbRef, data) => { if (!isScorer) return Promise.resolve(); return set(dbRef, data); };
@@ -1254,12 +1257,10 @@ body {
           let bowTeamHeader = document.getElementById('ps-bowling-team-header');
           if(bowTeamHeader) { bowTeamHeader.innerHTML = `<span class="ps-tname">${fieldTeam} ⚾</span> <span class="ps-tscore">${ov} Overs</span>`; }
           
-          // ✅ टॉस टेक्स्ट रेंडरिंग फिक्स (अगर डेटा में 'Toss: ...' पहले से लिखा है तो डुप्लीकेट न हो)
           if(document.getElementById('toss-result-text')) {
               let tTxt = data.toss_text || "Waiting...";
               document.getElementById('toss-result-text').innerText = tTxt.toLowerCase().includes("toss:") ? tTxt : `Toss: ${tTxt}`;
-          }
-          
+          }   
           if(document.getElementById('partnershipbox')) document.getElementById('partnershipbox').innerText = `P'SHIP: ${data.partnership || "0 (0)"}`;
           if(document.getElementById('crrbox')) document.getElementById('crrbox').innerText = `CRR: ${data.crr || "0.00"}`;
 
@@ -1278,9 +1279,9 @@ body {
               }
           } else { if (targetBoxElem) targetBoxElem.style.setProperty("display", "none", "important"); }
           
-          const cleanN = (str) => String(str || "").replace(/[*🏏⚾]/g, "").trim().toLowerCase();
           let b1Live = cleanN(data.batsman1), b2Live = cleanN(data.batsman2), bwrLive = cleanN(data.bowler);
 
+          // 🎨 मिनी लाइव टेबल डिज़ाइन
           let liveTablesHtml = `
               <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; font-family: sans-serif; margin-bottom: 15px;">
                   <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; font-weight: bold; color: #555;">
@@ -1292,7 +1293,7 @@ body {
                       <th style="padding: 8px; text-align: center; color: #004ba0;">SR</th>
                   </tr>
                   <tr style="border-bottom: 1px solid #eee;">
-                      <td style="padding: 8px; font-weight: bold; color: #004ba0;">${cleanN(data.batsman1) ? cleanN(data.batsman1).toUpperCase() : "BATTER 1"} *</td>
+                      <td style="padding: 8px; font-weight: bold; color: #004ba0;">${data.batsman1 ? String(data.batsman1).replace(/[*🏏⚾]/g, "").toUpperCase() : "BATTER 1"} *</td>
                       <td style="padding: 8px; text-align: center; font-weight: bold; color: #004ba0;">${data.b1_runs || 0}</td>
                       <td style="padding: 8px; text-align: center; color: #555;">${data.b1_balls || 0}</td>
                       <td style="padding: 8px; text-align: center; color: #555;">${data.b1_4s || 0}</td>
@@ -1300,7 +1301,7 @@ body {
                       <td style="padding: 8px; text-align: center; color: #004ba0; font-weight: bold;">${getSR(data.b1_runs || 0, data.b1_balls || 0)}</td>
                   </tr>
                   <tr style="border-bottom: 1px solid #eee;">
-                      <td style="padding: 8px; color: #333;">${cleanN(data.batsman2) ? cleanN(data.batsman2).toUpperCase() : "BATTER 2"}</td>
+                      <td style="padding: 8px; color: #333;">${data.batsman2 ? String(data.batsman2).replace(/[*🏏⚾]/g, "").toUpperCase() : "BATTER 2"}</td>
                       <td style="padding: 8px; text-align: center; font-weight: bold; color: #333;">${data.b2_runs || 0}</td>
                       <td style="padding: 8px; text-align: center; color: #555;">${data.b2_balls || 0}</td>
                       <td style="padding: 8px; text-align: center; color: #555;">${data.b2_4s || 0}</td>
@@ -1317,17 +1318,18 @@ body {
                       <th style="padding: 8px; text-align: center; color: #00a862;">EC</th>
                   </tr>
                   <tr>
-                      <td style="padding: 8px; font-weight: bold; color: #004ba0;">${cleanN(data.bowler) ? cleanN(data.bowler).toUpperCase() : "BOWLER"} *</td>
+                      <td style="padding: 8px; font-weight: bold; color: #004ba0;">${data.bowler ? String(data.bowler).replace(/[*🏏⚾]/g, "").toUpperCase() : "BOWLER"} *</td>
                       <td style="padding: 8px; text-align: center; font-weight: bold;">${data.bowler_overs || "0.0"}</td>
                       <td style="padding: 8px; text-align: center; color: #555;">${data.bowler_runs || 0}</td>
                       <td style="padding: 8px; text-align: center; color: red; font-weight: bold;">${data.bowler_wickets || 0}</td>
                       <td style="padding: 8px; text-align: center; color: #00a862; font-weight: bold;">${getEC(data.bowler_runs || 0, data.bowler_overs || "0.0")}</td>
                   </tr>
               </table>`;
-
+          
           window.latestTablesHtml = liveTablesHtml;
           if(document.getElementById("live-data-wrapper")) { document.getElementById("live-data-wrapper").innerHTML = liveTablesHtml; }
 
+          // 📋 फुल बैटिंग स्कोरकार्ड लिस्ट (क्लास रहित शुद्ध इन-लाइन सिंक सीएसएस)
           let batScoreHtml = "";
           let arrayBatsmenNames = new Set();
 
@@ -1340,38 +1342,39 @@ body {
                   
                   if (isCurrentActive || p.out || (parseInt(p.runs) > 0 || parseInt(p.balls) > 0)) {
                       let outStatus = p.out ? `${p.outType || "Out"}${p.bowledBy ? ` b ${p.bowledBy}` : ""}` : "not out";
-                      let nameStyle = isCurrentActive ? "color: #004ba0; font-weight: bold;" : "color: #222;";
-                      let runStyle = isCurrentActive ? "color: #004ba0; font-weight: bold;" : "font-weight: bold; color: #000;";
-                      let subTextStyle = isCurrentActive ? "color: #00a862; font-size: 10px;" : "color: #777; font-size: 10px;";
+                      let nameStyle = isCurrentActive ? "color: #004ba0; font-weight: bold;" : "color: #333;";
+                      let runStyle = isCurrentActive ? "color: #004ba0; font-weight: bold;" : "font-weight: bold; color: #333;";
+                      let subTextStyle = isCurrentActive ? "color: #00a862; font-size: 11px;" : "color: #666; font-size: 11px;";
 
                       batScoreHtml += `
-                          <div class="ps-batter-header" style="background: none; border-bottom: 1px solid #e0e0e0; font-weight: normal; padding: 8px 4px; color: #000; display: flex; align-items: center;">
-                              <span class="p-head-item h-name" style="text-align: left; line-height: 1.3; flex: 3;"><b style="${nameStyle}">${p.name} ${isCurrentActive ? '*' : ''}</b><br><small style="${subTextStyle}">(${outStatus})</small></span>
-                              <span class="p-head-item h-r" style="text-align: center; flex: 1; ${runStyle}">${p.runs || 0}</span>
-                              <span class="p-head-item h-b" style="text-align: center; flex: 1; color: #444;">${p.balls || 0}</span>
-                              <span class="p-head-item h-4s" style="text-align: center; flex: 1; color: #444;">${p.fours || 0}</span>
-                              <span class="p-head-item h-6s" style="text-align: center; flex: 1; color: #444;">${p.sixes || 0}</span>
-                              <span class="p-head-item h-sr" style="text-align: center; flex: 1; color: #004ba0; font-weight: 500;">${getSR(p.runs || 0, p.balls || 0)}</span>
+                          <div class="ps-batter-header" style="background: none; border-bottom: 1px solid #eee; font-family: sans-serif; font-size: 13px; padding: 10px 6px; display: flex; align-items: center;">
+                              <span style="text-align: left; line-height: 1.4; flex: 3;"><b style="${nameStyle}">${p.name.toUpperCase()} ${isCurrentActive ? '*' : ''}</b><br><small style="${subTextStyle}">(${outStatus.toLowerCase()})</small></span>
+                              <span style="text-align: center; flex: 1; ${runStyle}">${p.runs || 0}</span>
+                              <span style="text-align: center; flex: 1; color: #555;">${p.balls || 0}</span>
+                              <span style="text-align: center; flex: 1; color: #555;">${p.fours || 0}</span>
+                              <span style="text-align: center; flex: 1; color: #555;">${p.sixes || 0}</span>
+                              <span style="text-align: center; flex: 1; color: #004ba0; font-weight: bold;">${getSR(p.runs || 0, p.balls || 0)}</span>
                           </div>`;
                   }
               });
           }
           if (data.batsman1 && !arrayBatsmenNames.has(b1Live)) {
-              batScoreHtml += `<div class="ps-batter-header" style="background: none; border-bottom: 1px solid #e0e0e0; font-weight: normal; padding: 8px 4px; color: #000; display: flex; align-items: center;"><span class="p-head-item h-name" style="text-align: left; line-height: 1.3; flex: 3;"><b style="color: #004ba0; font-weight: bold;">${cleanN(data.batsman1).toUpperCase()} *</b><br><small style="color: #00a862; font-size: 10px;">(not out)</small></span><span class="p-head-item h-r" style="text-align: center; flex: 1; color: #004ba0; font-weight: bold;">${data.b1_runs || 0}</span><span class="p-head-item h-b" style="text-align: center; flex: 1; color: #444;">${data.b1_balls || 0}</span><span class="p-head-item h-4s" style="text-align: center; flex: 1; color: #444;">${data.b1_4s || 0}</span><span class="p-head-item h-6s" style="text-align: center; flex: 1; color: #444;">${data.b1_6s || 0}</span><span class="p-head-item h-sr" style="text-align: center; flex: 1; color: #004ba0; font-weight: 500;">${getSR(data.b1_runs || 0, data.b1_balls || 0)}</span></div>`;
+              batScoreHtml += `<div class="ps-batter-header" style="background: none; border-bottom: 1px solid #eee; font-family: sans-serif; font-size: 13px; padding: 10px 6px; display: flex; align-items: center;"><span style="text-align: left; line-height: 1.4; flex: 3;"><b style="color: #004ba0; font-weight: bold;">${cleanN(data.batsman1).toUpperCase()} *</b><br><small style="color: #00a862; font-size: 11px;">(not out)</small></span><span style="text-align: center; flex: 1; color: #004ba0; font-weight: bold;">${data.b1_runs || 0}</span><span style="text-align: center; flex: 1; color: #555;">${data.b1_balls || 0}</span><span style="text-align: center; flex: 1; color: #555;">${data.b1_4s || 0}</span><span style="text-align: center; flex: 1; color: #555;">${data.b1_6s || 0}</span><span style="text-align: center; flex: 1; color: #004ba0; font-weight: bold;">${getSR(data.b1_runs || 0, data.b1_balls || 0)}</span></div>`;
           }
           if (data.batsman2 && !arrayBatsmenNames.has(b2Live)) {
-              batScoreHtml += `<div class="ps-batter-header" style="background: none; border-bottom: 1px solid #e0e0e0; font-weight: normal; padding: 8px 4px; color: #000; display: flex; align-items: center;"><span class="p-head-item h-name" style="text-align: left; line-height: 1.3; flex: 3;"><b style="color: #222;">${cleanN(data.batsman2).toUpperCase()}</b><br><small style="color: #777; font-size: 10px;">(not out)</small></span><span class="p-head-item h-r" style="text-align: center; flex: 1; font-weight: bold; color: #000;">${data.b2_runs || 0}</span><span class="p-head-item h-b" style="text-align: center; flex: 1; color: #444;">${data.b2_balls || 0}</span><span class="p-head-item h-4s" style="text-align: center; flex: 1; color: #444;">${data.b2_4s || 0}</span><span class="p-head-item h-6s" style="text-align: center; flex: 1; color: #444;">${data.b2_6s || 0}</span><span class="p-head-item h-sr" style="text-align: center; flex: 1; color: #004ba0; font-weight: 500;">${getSR(data.b2_runs || 0, data.b2_balls || 0)}</span></div>`;
+              batScoreHtml += `<div class="ps-batter-header" style="background: none; border-bottom: 1px solid #eee; font-family: sans-serif; font-size: 13px; padding: 10px 6px; display: flex; align-items: center;"><span style="text-align: left; line-height: 1.4; flex: 3;"><b style="color: #333;">${cleanN(data.batsman2).toUpperCase()}</b><br><small style="color: #666; font-size: 11px;">(not out)</small></span><span style="text-align: center; flex: 1; font-weight: bold; color: #333;">${data.b2_runs || 0}</span><span style="text-align: center; flex: 1; color: #555;">${data.b2_balls || 0}</span><span style="text-align: center; flex: 1; color: #555;">${data.b2_4s || 0}</span><span style="text-align: center; flex: 1; color: #555;">${data.b2_6s || 0}</span><span style="text-align: center; flex: 1; color: #555;">${getSR(data.b2_runs || 0, data.b2_balls || 0)}</span></div>`;
           }
 
           if (data.extras_data) {
               let ext = data.extras_data;
               batScoreHtml += `
-                  <div style="margin: 12px 0; padding: 8px 4px; border-top: 1px dashed #ccc; border-bottom: 1px dashed #ccc; font-size: 13px; font-family: sans-serif; color: #000; display: flex; justify-content: space-between;">
+                  <div style="margin: 12px 0; padding: 10px 6px; border-top: 1px dashed #ccc; border-bottom: 1px dashed #ccc; font-size: 13px; font-family: sans-serif; color: #333; display: flex; justify-content: space-between;">
                       <span>Extras: <b style="color: #004ba0;">${ext.total || 0}</b> <span style="color: #666; font-size:11px;">(wd ${ext.wd || 0}, nb ${ext.nb || 0}, b ${ext.b || 0}, lb ${ext.lb || 0})</span></span>
                   </div>`;
           }
           if(document.getElementById("ps-t1-batting")) document.getElementById("ps-t1-batting").innerHTML = batScoreHtml;
 
+          // 📋 फुल बॉलिंग स्कोरकार्ड लिस्ट
           let bowlScoreHtml = "";
           let arrayBowlersNames = new Set();
 
@@ -1386,24 +1389,24 @@ body {
                   let hasActuallyBowled = (parseInt(b.runs) > 0 || parseInt(b.wickets) > 0 || (bowlerOversCombined !== "0.0" && bowlerOversCombined !== "0"));
                   
                   if (isCurrentBowler || hasActuallyBowled) {
-                      let bNameStyle = isCurrentBowler ? "color: #004ba0; font-weight: bold;" : "color: #222;";
+                      let bNameStyle = isCurrentBowler ? "color: #004ba0; font-weight: bold;" : "color: #333;";
 
                       bowlScoreHtml += `
-                          <div class="ps-batter-header bowler-header" style="background: none; border-bottom: 1px solid #e0e0e0; font-weight: normal; padding: 8px 4px; color: #000; display: flex; align-items: center;">
-                              <span class="p-head-item hb-name" style="text-align: left; flex: 3;"><b style="${bNameStyle}">${b.name} ${isCurrentBowler ? '*' : ''}</b></span>
-                              <span class="p-head-item hb-o" style="text-align: center; flex: 1; font-weight: 500;">${bowlerOversCombined}</span>
-                              <span class="p-head-item hb-m" style="text-align: center; flex: 1; color: #444;">${b.maidens || 0}</span>
-                              <span class="p-head-item hb-r" style="text-align: center; flex: 1; color: #444;">${b.runs || 0}</span>
-                              <span class="p-head-item hb-w" style="text-align: center; flex: 1; color: red; font-weight: bold;">${b.wickets || 0}</span>
-                              <span class="p-head-item hb-wd" style="text-align: center; flex: 1; color: #555;">${b.wides || 0}</span>
-                              <span class="p-head-item hb-nb" style="text-align: center; flex: 1; color: #555;">${b.noBalls || 0}</span>
-                              <span class="p-head-item hb-econ" style="text-align: center; flex: 1; color: #00a862; font-weight: 500;">${getEC(b.runs || 0, bowlerOversCombined)}</span>
+                          <div class="ps-batter-header bowler-header" style="background: none; border-bottom: 1px solid #eee; font-family: sans-serif; font-size: 13px; padding: 10px 6px; color: #333; display: flex; align-items: center;">
+                              <span style="text-align: left; flex: 3;"><b style="${bNameStyle}">${b.name.toUpperCase()} ${isCurrentBowler ? '*' : ''}</b></span>
+                              <span style="text-align: center; flex: 1; font-weight: 500;">${bowlerOversCombined}</span>
+                              <span style="text-align: center; flex: 1; color: #555;">${b.maidens || 0}</span>
+                              <span style="text-align: center; flex: 1; color: #555;">${b.runs || 0}</span>
+                              <span style="text-align: center; flex: 1; color: red; font-weight: bold;">${b.wickets || 0}</span>
+                              <span style="text-align: center; flex: 1; color: #555;">${b.wides || 0}</span>
+                              <span style="text-align: center; flex: 1; color: #555;">${b.noBalls || 0}</span>
+                              <span style="text-align: center; flex: 1; color: #00a862; font-weight: bold;">${getEC(b.runs || 0, bowlerOversCombined)}</span>
                           </div>`;
                   }
               });
           }
           if (data.bowler && !arrayBowlersNames.has(bwrLive)) {
-              bowlScoreHtml += `<div class="ps-batter-header bowler-header" style="background: none; border-bottom: 1px solid #e0e0e0; font-weight: normal; padding: 8px 4px; color: #000; display: flex; align-items: center;"><span class="p-head-item hb-name" style="text-align: left; flex: 3;"><b style="color: #004ba0; font-weight: bold;">${cleanN(data.bowler).toUpperCase()} *</b></span><span class="p-head-item hb-o" style="text-align: center; flex: 1; font-weight: 500;">${data.bowler_overs || "0.0"}</span><span class="p-head-item hb-m" style="text-align: center; flex: 1; color: #444;">0</span><span class="p-head-item hb-r" style="text-align: center; flex: 1; color: #444;">${data.bowler_runs || 0}</span><span class="p-head-item hb-w" style="text-align: center; flex: 1; color: red; font-weight: bold;">${data.bowler_wickets || 0}</span><span class="p-head-item hb-wd" style="text-align: center; flex: 1; color: #555;">0</span><span class="p-head-item hb-nb" style="text-align: center; flex: 1; color: #555;">0</span><span class="p-head-item hb-econ" style="text-align: center; flex: 1; color: #00a862; font-weight: 500;">${getEC(data.bowler_runs || 0, data.bowler_overs || "0.0")}</span></div>`;
+              bowlScoreHtml += `<div class="ps-batter-header bowler-header" style="background: none; border-bottom: 1px solid #eee; font-family: sans-serif; font-size: 13px; padding: 10px 6px; display: flex; align-items: center;"><span style="text-align: left; flex: 3;"><b style="color: #004ba0; font-weight: bold;">${cleanN(data.bowler).toUpperCase()} *</b></span><span style="text-align: center; flex: 1; font-weight: 500;">${data.bowler_overs || "0.0"}</span><span style="text-align: center; flex: 1; color: #555;">0</span><span style="text-align: center; flex: 1; color: #555;">${data.bowler_runs || 0}</span><span style="text-align: center; flex: 1; color: red; font-weight: bold;">${data.bowler_wickets || 0}</span><span style="text-align: center; flex: 1; color: #555;">0</span><span style="text-align: center; flex: 1; color: #555;">0</span><span style="text-align: center; flex: 1; color: #00a862; font-weight: bold;">${getEC(data.bowler_runs || 0, data.bowler_overs || "0.0")}</span></div>`;
           }
           if(document.getElementById("ps-t2-bowling")) document.getElementById("ps-t2-bowling").innerHTML = bowlScoreHtml;
 
@@ -1411,6 +1414,7 @@ body {
       }
   });
 
+  // ✅ टैब क्लिक चेंजर फिक्स (जो ओवरराइड होकर लेआउट बिगाड़ रहा था उसे सुरक्षित किया)
   document.querySelectorAll('.nav-item, .tabs button, [onclick*="navTo"], #info-tab, #live-tab, #scorecard-tab, #graphs-tab, #controls-tab').forEach(button => {
       button.addEventListener('click', () => {
           if (window.latestFirebaseData) {
@@ -1443,14 +1447,14 @@ body {
                   if(document.getElementById('ps-t1-total')) document.getElementById('ps-t1-total').innerText = currentScoreStr;
                   let bowTeamHeader = document.getElementById('ps-bowling-team-header');
                   if(bowTeamHeader) { bowTeamHeader.innerHTML = `<span class="ps-tname">${fieldTeam} ⚾</span> <span class="ps-tscore">${ov} Overs</span>`; }
-                  if(document.getElementById("live-data-wrapper") && window.latestTablesHtml) { document.getElementById("live-data-wrapper").innerHTML = window.latestTablesHtml; }
+                  
+                  // ⚠️ ध्यान दें: यहाँ से वो ओवरराइड लाइन पूरी तरह हटा दी गई है जो मिनी-लाइव टेबल को फुल-स्कोरकार्ड वाले डिज़ाइन रैपर पर ज़बरदस्ती थोप देती थी।
               }, 150); 
           }
       });
   });
-</script>
-
-
+</script>    
+          
 
 
           
