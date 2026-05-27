@@ -1219,8 +1219,7 @@ body {
   }
     
   
-  
-      const firebaseConfig = {
+  const firebaseConfig = {
     apiKey: "AIzaSyAEuQ3up4s30SWJVTNcMsIzG5FJNBH0iiM",
     authDomain: "livescore-77e1e.firebaseapp.com",
     projectId: "livescore-77e1e",
@@ -1229,19 +1228,37 @@ body {
 
   const app = initializeApp(firebaseConfig);
   const db = getDatabase(app);
-  window.db = db; window.dbRef = ref;
+
+  window.db = db;
+  window.dbRef = ref;
+  window.dbSet = set;
+  window.dbUpdate = update;
+
+  if (!window.latestFirebaseData) {
+      window.latestFirebaseData = null;
+  }
+
+  // नामों को साफ और सुरक्षित तरीके से मैच करने के लिए यूटिलिटी फंक्शन
+  const cleanN = (str) => String(str || "").replace(/[*🏏⚾]/g, "").trim().toLowerCase();
 
   const getSR = (r, b) => (b > 0 ? ((r / b) * 100).toFixed(1) : "0.0");
   const getEC = (runs, oversStr) => {
       if (!oversStr || oversStr === "0.0" || oversStr === 0 || oversStr === "0") return "0.0";
       let parts = String(oversStr).split('.');
-      let overs = parseInt(parts[0]) || 0; let balls = parseInt(parts[1]) || 0;
+      let overs = parseInt(parts[0]) || 0;
+      let balls = parseInt(parts[1]) || 0;
       let totalBalls = (overs * 6) + balls;
       return totalBalls > 0 ? ((runs / totalBalls) * 6).toFixed(1) : "0.0";
   };
 
-  // ✅ डेटा रेंडर करने के लिए एक कॉमन फंक्शन बनाया ताकि टैब बदलने पर भी यही रेंडर हो और डिज़ाइन न बिगड़े
-    let ov = `${Math.floor((data.balls || 0)/6)}.${(data.balls || 0)%6}`;
+
+
+  onValue(ref(db, 'live_match_data'), (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+          window.latestFirebaseData = data;
+
+          let ov = `${Math.floor((data.balls || 0)/6)}.${(data.balls || 0)%6}`;
           let bTeam = data.battingTeam || "Team 1";
           let fieldTeam = data.bowlingTeam || "Team 2";
           let currentScoreStr = `${data.runs || 0}/${data.wickets || 0} (${ov})`;
@@ -1403,36 +1420,18 @@ body {
           }
           bowlScoreHtml += `</table>`;
           if(document.getElementById("ps-t2-bowling")) document.getElementById("ps-t2-bowling").innerHTML = bowlScoreHtml;
-    
 
-  // 📡 Firebase Listener
-  onValue(ref(db, 'live_match_data'), (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-          if (window.latestFirebaseData && !isScorer) {
-              if (data.innings === window.latestFirebaseData.innings && data.runs < window.latestFirebaseData.runs) {
-                  if ((data.balls || 0) !== 0) { return; }
-              }
-          }
-          window.latestFirebaseData = data;
-          
-          // ओरिजिनल रेंडर फंक्शन कॉल
-          renderMatchData(data);
-          console.log("BKCC Live Sync Updated!");
+          // पुराने एक्स्ट्रा इन्सर्शन वाले कचरे को क्लीन करना ताकि डुप्लीकेट न दिखे
+          let oldExtras = document.getElementById("viewer-extras-inserted");
+          if(oldExtras) oldExtras.remove();
+
+          console.log("BKCC Scorecard Mistakes Fixed! Viewer perfectly matching Scorer now. ✅🏆");
       }
   });
-
-  // 🔄 टैब चेंजर फिक्स
-  document.querySelectorAll('.nav-item, .tabs button, [onclick*="navTo"], #info-tab, #live-tab, #scorecard-tab, #graphs-tab, #controls-tab').forEach(button => {
-      button.addEventListener('click', () => {
-          if (window.latestFirebaseData) {
-              setTimeout(() => {
-                  renderMatchData(window.latestFirebaseData);
-              }, 150); 
-          }
-      });
-  });
 </script>
+    
+  
+
     
           <div id="home-section" class="tab-content"> 
     <div id="upcoming-matches-container" style="display: flex; overflow-x: auto; gap: 12px; padding: 15px 10px; scrollbar-width: none; -webkit-overflow-scrolling: touch; align-items: flex-start; flex-wrap: nowrap;">
