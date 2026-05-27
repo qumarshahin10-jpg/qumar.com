@@ -1217,15 +1217,15 @@ body {
 
       let t1NameFinal = bTeam; let t2NameFinal = fieldTeam;
       let t1ScoreFinal = currentScoreStr;
-      let t2ScoreFinal = (data.innings === 2 || data.innings === "2") ? currentScoreStr : "Yet to Bat";
+      let t2ScoreFinal = (data.innings === 2 || data.innings === "2") ? currentScoreStr : "0/0 (0.0)";
       let liveMainBattingTeamName = bTeam; let liveMainBowlingTeamName = fieldTeam;
 
       if (data.innings === 2 || data.innings === "2") {
           t1NameFinal = fieldTeam; 
           t1ScoreFinal = `${data.t1_runs || 0}/${data.t1_wickets || 0} (${data.t1_overs || "0.0"})`;
-          t2NameFinal = `${bTeam} 🏏`; t2ScoreFinal = currentScoreStr;
-          liveMainBattingTeamName = fieldTeam; liveMainBowlingTeamName = `${bTeam} 🏏`;
-      } else { t1NameFinal = `${bTeam} 🏏`; t2NameFinal = fieldTeam; }
+          t2NameFinal = `${bTeam} `; t2ScoreFinal = currentScoreStr;
+          liveMainBattingTeamName = fieldTeam; liveMainBowlingTeamName = `${bTeam} `;
+      } else { t1NameFinal = `${bTeam} `; t2NameFinal = fieldTeam; }
              
       if(document.getElementById('live-batting-team')) document.getElementById('live-batting-team').innerText = liveMainBattingTeamName;
       if(document.getElementById('live-bowling-team')) document.getElementById('live-bowling-team').innerText = liveMainBowlingTeamName;
