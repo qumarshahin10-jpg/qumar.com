@@ -1175,17 +1175,43 @@ body {
   window.dbSet = safeSet; window.dbUpdate = safeUpdate;
 
   if (!isScorer) {
-      setInterval(() => {
-          const scoringButtons = document.querySelectorAll('button, input[type="button"], .btn, [onclick]');
-          scoringButtons.forEach(btn => {
-              const btnText = (btn.innerText || btn.value || "").toLowerCase();
-              const btnId = (btn.id || "").toLowerCase();
-              const btnClass = (btn.className || "").toLowerCase();
-              if (btnText.includes("info") || btnText.includes("live") || btnText.includes("scorecard") || btnText.includes("graphs") || btnText.includes("controls") || btnText.includes("Matches") || btnText.includes("home") || btnText.includes("innings") || btnId.includes("menu") || btnId.includes("nav") || btnId.includes("tab") || btnId.includes("innings") || btnClass.includes("menu") || btnClass.includes("nav") || btnClass.includes("tab") || btnClass.includes("innings") || btnClass.includes("nav-item") || btnClass.includes("hamburger")) { return; }
-              btn.disabled = true; btn.style.opacity = "0.5"; btn.style.pointerEvents = "none"; 
-          });
-      }, 1000);
+    setInterval(() => {
+        // Saare buttons aur clickable elements ko select karna
+        const scoringButtons = document.querySelectorAll('button, input[type="button"], .btn, [onclick], .menu-item, .nav-link');
+        
+        scoringButtons.forEach(btn => {
+            const btnText = (btn.innerText || btn.value || "").toLowerCase().trim();
+            const btnId = (btn.id || "").toLowerCase();
+            const btnClass = (btn.className || "").toLowerCase();
+
+            // 1. Menu ke andar ke specific keywords (Lower case mein)
+            const allowedKeywords = [
+                "info", "live", "scorecard", "graphs", "controls", "matches", "home", "innings",
+                "teams", "players", "schedule", "history", "table", "stats", "results", "rules", "gallery"
+            ];
+
+            // Check karein kya koi keyword match ho raha hai
+            const hasAllowedText = allowedKeywords.some(keyword => btnText.includes(keyword));
+
+            // 2. ID ya Class mein menu/nav check karna
+            const isMenuOrNav = btnId.includes("menu") || btnId.includes("nav") || btnId.includes("tab") || btnId.includes("innings") ||
+                                btnClass.includes("menu") || btnClass.includes("nav") || btnClass.includes("tab") || btnClass.includes("innings") || 
+                                btnClass.includes("nav-item") || btnClass.includes("hamburger") || btnClass.includes("close");
+
+            // Agar element menu ka hissa hai ya allowed text rakhta hai, toh use disable MAT karo
+            if (hasAllowedText || isMenuOrNav) { 
+                return; 
+            }
+
+            // Baaki scoring buttons (jaise runs, wickets, wide, etc.) ko public ke liye disable kar do
+            btn.disabled = true; 
+            btn.style.opacity = "0.5"; 
+            btn.style.pointerEvents = "none"; 
+        });
+    }, 1000);
   }
+    
+  
       const firebaseConfig = {
     apiKey: "AIzaSyAEuQ3up4s30SWJVTNcMsIzG5FJNBH0iiM",
     authDomain: "livescore-77e1e.firebaseapp.com",
