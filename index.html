@@ -1181,7 +1181,7 @@ body {
               const btnText = (btn.innerText || btn.value || "").toLowerCase();
               const btnId = (btn.id || "").toLowerCase();
               const btnClass = (btn.className || "").toLowerCase();
-              if (btnText.includes("info") || btnText.includes("live") || btnText.includes("scorecard") || btnText.includes("graphs") || btnText.includes("controls") || btnText.includes("menu") || btnText.includes("home") || btnText.includes("innings") || btnId.includes("menu") || btnId.includes("nav") || btnId.includes("tab") || btnId.includes("innings") || btnClass.includes("menu") || btnClass.includes("nav") || btnClass.includes("tab") || btnClass.includes("innings") || btnClass.includes("nav-item") || btnClass.includes("hamburger")) { return; }
+              if (btnText.includes("info") || btnText.includes("live") || btnText.includes("scorecard") || btnText.includes("graphs") || btnText.includes("controls") || btnText.includes("Matches") || btnText.includes("home") || btnText.includes("innings") || btnId.includes("menu") || btnId.includes("nav") || btnId.includes("tab") || btnId.includes("innings") || btnClass.includes("menu") || btnClass.includes("nav") || btnClass.includes("tab") || btnClass.includes("innings") || btnClass.includes("nav-item") || btnClass.includes("hamburger")) { return; }
               btn.disabled = true; btn.style.opacity = "0.5"; btn.style.pointerEvents = "none"; 
           });
       }, 1000);
