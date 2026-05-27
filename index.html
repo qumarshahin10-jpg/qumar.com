@@ -1176,34 +1176,41 @@ body {
 
   if (!isScorer) {
     setInterval(() => {
-        // Saare buttons aur clickable elements ko select karna
-        const scoringButtons = document.querySelectorAll('button, input[type="button"], .btn, [onclick], .menu-item, .nav-link');
+        // Saare buttons, clickable elements aur icons ko select karna
+        const scoringButtons = document.querySelectorAll('button, input[type="button"], .btn, [onclick], .menu-item, .nav-link, .close-btn, .close');
         
         scoringButtons.forEach(btn => {
-            const btnText = (btn.innerText || btn.value || "").toLowerCase().trim();
+            const btnText = (btn.innerText || btn.value || btn.textContent || "").toLowerCase().trim();
             const btnId = (btn.id || "").toLowerCase();
             const btnClass = (btn.className || "").toLowerCase();
 
-            // 1. Menu ke andar ke specific keywords (Lower case mein)
+            // 1. Menu aur CROSS button ke liye allowed keywords
+            // Isme '×', 'x', 'close', aur 'times' ko jod diya hai cross icon ke liye
             const allowedKeywords = [
                 "info", "live", "scorecard", "graphs", "controls", "matches", "home", "innings",
-                "teams", "players", "schedule", "history", "table", "stats", "results", "rules", "gallery"
+                "teams", "players", "schedule", "history", "table", "stats", "results", "rules", "gallery",
+                "close", "×", "times", "x"
             ];
 
             // Check karein kya koi keyword match ho raha hai
-            const hasAllowedText = allowedKeywords.some(keyword => btnText.includes(keyword));
+            const hasAllowedText = allowedKeywords.some(keyword => btnText === keyword || btnText.includes(keyword));
 
-            // 2. ID ya Class mein menu/nav check karna
-            const isMenuOrNav = btnId.includes("menu") || btnId.includes("nav") || btnId.includes("tab") || btnId.includes("innings") ||
-                                btnClass.includes("menu") || btnClass.includes("nav") || btnClass.includes("tab") || btnClass.includes("innings") || 
-                                btnClass.includes("nav-item") || btnClass.includes("hamburger") || btnClass.includes("close");
+            // 2. ID ya Class mein cross/close/menu check karna
+            const isMenuOrNavOrClose = 
+                btnId.includes("menu") || btnId.includes("nav") || btnId.includes("tab") || btnId.includes("close") || btnId.includes("cross") ||
+                btnClass.includes("menu") || btnClass.includes("nav") || btnClass.includes("tab") || btnClass.includes("close") || 
+                btnClass.includes("cross") || btnClass.includes("hamburger") || btnClass.includes("times");
 
-            // Agar element menu ka hissa hai ya allowed text rakhta hai, toh use disable MAT karo
-            if (hasAllowedText || isMenuOrNav) { 
+            // Agar element menu ka hissa hai, ya cross button hai, toh use disable MAT karo
+            if (hasAllowedText || isMenuOrNavOrClose) { 
+                // Unhe wapas normal dikhane ke liye reset karein (agar pehle se disabled ho gaye hon)
+                btn.disabled = false;
+                btn.style.opacity = "1";
+                btn.style.pointerEvents = "auto";
                 return; 
             }
 
-            // Baaki scoring buttons (jaise runs, wickets, wide, etc.) ko public ke liye disable kar do
+            // Baaki scoring buttons ko public ke liye disable kar do
             btn.disabled = true; 
             btn.style.opacity = "0.5"; 
             btn.style.pointerEvents = "none"; 
@@ -1211,6 +1218,7 @@ body {
     }, 1000);
   }
     
+  
   
       const firebaseConfig = {
     apiKey: "AIzaSyAEuQ3up4s30SWJVTNcMsIzG5FJNBH0iiM",
